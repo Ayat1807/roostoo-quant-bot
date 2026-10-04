@@ -1,0 +1,49 @@
+# strategy_bot configuration. CLI flags (--live / --dry-run / --max-cycles) override a few.
+
+dry_run: true              # true = log intended orders only (default). Live needs --live or false here.
+poll_s: 60                 # one ticker call (all pairs) per minute
+
+# --- universe: checked at startup (must be crypto, CanTrade, and have live ticker data) ---
+universe: [BTC/USD, ETH/USD, SOL/USD, BNB/USD, XRP/USD, ADA/USD, DOGE/USD, AVAX/USD, LINK/USD, DOT/USD]
+
+# --- strategy plug-in (strategies/<name>.py) and its parameters ---
+strategy:
+  name: s3v2
+  horizons: [24, 72, 168, 336]   # hours: 1d, 3d, 7d, 14d momentum
+  vol_win: 336                   # 14-day realised volatility (hourly returns)
+  regime_win: 336                # BTC regime: price vs its 14-day mean
+  target_vol: 0.40               # per-asset annualised vol target (divided by N assets)
+  short_scale_bull: 0.5          # shorts at half size while BTC > its 14-day mean
+  max_w: 0.30                    # per-asset weight cap
+  btc_pair: BTC/USD
+
+allow_short: true          # false: negative weights become 0 (fallback if /v6 is blocked)
+capital_cap_usd: 3000      # size as if equity = min(actual, cap); null = full equity
+
+# --- execution ---
+rebalance_hour_utc: 0      # targets recomputed once a day (and at first start)
+band: 0.06                 # only trade a pair if its weight is off target by > 6 pp
+activity_guard_hour_utc: 20
+guard_band: 0.01           # if nothing traded today by 20:00 UTC, rebalance with a 1 pp band
+entry_order: limit         # limit at our side of the touch (0.05% maker), market fallback
+limit_wait_s: 300          # cancel unfilled limit after 5 min, MARKET the remainder
+limit_poll_s: 15
+
+# --- risk ---
+dd_soft: -0.04             # equity vs rolling 14-day peak: halve exposure
+dd_hard: -0.07             # go flat for cooloff_h, then reset the peak
+cooloff_h: 24
+peak_days: 14
+
+# --- key safety ---
+allow_competition: false   # ROOSTOO_KEY_LABEL=competition is refused unless true
+
+# --- files (relative to strategy_bot/) ---
+bootstrap_hours: 800
+paths:
+  log_dir: logs
+  state_dir: state
+  kill_file: KILL
+bot_log:
+  max_bytes: 5000000
+  backups: 5
