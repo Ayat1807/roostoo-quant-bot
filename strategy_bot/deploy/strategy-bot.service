@@ -1,0 +1,28 @@
+# systemd unit for strategy_bot (alternative to tmux). Never run both.
+# Install: see DEPLOY.md section 7.
+# Paths assume the repo is cloned to /home/ec2-user/Trading_Competition.
+
+[Unit]
+Description=Roostoo strategy bot (S3v2)
+Wants=network-online.target
+After=network-online.target
+# Avoid a tight crash loop: max 10 restarts per 10 minutes.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/Trading_Competition/strategy_bot
+ExecStart=/home/ec2-user/Trading_Competition/strategy_bot/.venv/bin/python bot.py
+Environment=PYTHONUNBUFFERED=1
+# Restart on crash or non-zero exit, and start on boot (WantedBy below).
+Restart=always
+RestartSec=30
+# Graceful stop: SIGTERM lets the bot finish the order in progress (a limit order can
+# wait limit_wait_s=300 s before its market fallback), so allow 420 s.
+KillSignal=SIGTERM
+TimeoutStopSec=420
+
+[Install]
+WantedBy=multi-user.target
