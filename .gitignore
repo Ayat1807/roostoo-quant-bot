@@ -18,3 +18,11 @@ KILL
 __pycache__/
 **/__pycache__/
 *.pyc
+
+# Reference prototype (read-only, not ours to commit)
+_reference/
+roostoo-bot.zip
+
+# Strategy bot: downloaded historical data cache
+.cache/
+**/.cache/
