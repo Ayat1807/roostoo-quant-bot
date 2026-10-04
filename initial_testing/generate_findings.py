@@ -230,7 +230,7 @@ def main() -> None:
             if f.get("slippage_vs_bid_pct") is not None:
                 L.append(f"- Market SELL filled at {f['price']} vs ticker bid "
                          f"{f['ticker_bid']} ({f['slippage_vs_bid_pct']:+.4f}%).")
-        a = trade.get("a", {})
+        a = trade.get("a") or (load_json("results_trading_a.json") or {}).get("a", {})
         if a:
             L.append(f"- Limit/cancel lifecycle: placed status `{a.get('placed_status')}`, "
                      f"after cancel `{a.get('status_after_cancel')}`, "
@@ -257,7 +257,18 @@ def main() -> None:
         L.append("**Yes** on the testing account: short_open, partial close (50%) and "
                  f"final close all succeeded. Positions after close: "
                  f"`{d.get('positions_after_close')}`.\n")
-        L.append("This does NOT prove the competition account allows shorts; ask organizers.\n")
+        op = d.get("open", {})
+        if op:
+            L.append(f"- Requested collateral $20 -> response `Collateral`={op.get('Collateral')}, "
+                     f"`ShortQty`={op.get('ShortQty')}, `EntryPrice`={op.get('EntryPrice')}, "
+                     f"`OpenFee`={op.get('OpenFee')}. Collateral is re-computed as "
+                     "ShortQty x EntryPrice after rounding the quantity DOWN, so slightly "
+                     "less than requested is locked (1x, no leverage).")
+            L.append(f"- Entry vs bid: {d.get('entry_vs_bid_pct'):+.4f}% (fills at MaxBid); "
+                     "closes fill at MinAsk, so every short round trip pays the spread + 0.2%.")
+            diffs.append("`/v6/short_open` returns `Collateral` = ShortQty x EntryPrice (after "
+                         "rounding qty down), not the requested collateral.")
+        L.append("\nThis does NOT prove the competition account allows shorts; ask organizers.\n")
     else:
         L.append(f"**No / failed**: ErrMsg `{d.get('ErrMsg')}`.\n")
 
@@ -292,6 +303,17 @@ def main() -> None:
                           [[f"`{ep}`", m, n, f"`{p}`"] for ep, m, n, p in errs]))
         L.append("\n`no pending order under this account` and `no order matched` are "
                  "documented 'empty' answers (Success=false), not failures.\n")
+        known = {
+            "price should not less than market price 30%":
+                "Undocumented rule: a LIMIT price may not be more than 30% below market "
+                "(seen with a BUY at 50% of bid; 75% works). Expect a symmetric cap above "
+                "market for SELLs.",
+        }
+        for ep, m, _, _ in errs:
+            if m in known:
+                L.append(f"- `{m}`: {known[m]}")
+                diffs.append(f"`{ep}`: {known[m]}")
+        L.append("")
     else:
         L.append("None.\n")
 

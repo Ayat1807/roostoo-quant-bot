@@ -3,7 +3,7 @@
     python test_trading.py --confirm
 
 Steps (each request is logged to logs/api_log.jsonl):
-  a) far-away LIMIT BUY -> query -> cancel -> query (expect CANCELED)
+  a) far-away LIMIT BUY (75% of bid) -> query -> cancel -> query (expect CANCELED)
   b) MARKET BUY then MARKET SELL of the same BTC -> taker fee, fill vs bid/ask
   c) LIMIT BUY at best bid, wait up to ~2 min -> maker fee (or cancel)
   d) short_open $20 -> short_positions -> close 50% -> close rest -> positions == []
@@ -44,6 +44,9 @@ MAKER_NOTIONAL = 15.0       # step c
 SHORT_COLLATERAL = 20.0     # step d
 MAKER_WAIT_S = 120
 POLL_S = 10
+# Live rule (undocumented): "price should not less than market price 30%", so a
+# resting BUY must be >= 70% of market. 75% stays well away from filling.
+FAR_LIMIT_FACTOR = 0.75
 
 
 class Budget:
@@ -62,6 +65,8 @@ class Budget:
 
 
 class TradingTest:
+    results_name = "results_trading.json"  # partial runs (--steps) use their own file
+
     def __init__(self, client: RoostooClient) -> None:
         self.c = client
         self.budget = Budget(MAX_TOTAL_NOTIONAL)
@@ -141,9 +146,9 @@ class TradingTest:
     # ----- steps ----------------------------------------------------------- #
 
     def step_a_limit_cancel(self) -> None:
-        print("\n(a) LIMIT BUY at ~50% of bid -> query -> cancel -> query")
+        print(f"\n(a) LIMIT BUY at {FAR_LIMIT_FACTOR:.0%} of bid -> query -> cancel -> query")
         bid, _ = self.book()
-        px = round_price(bid * 0.5, int(self.rules["PricePrecision"]))
+        px = round_price(bid * FAR_LIMIT_FACTOR, int(self.rules["PricePrecision"]))
         qty = self.qty_for(float(self.rules["MiniOrder"]) * 1.1, float(px))
         self.budget.spend(float(qty * px), "a) LIMIT BUY (locked)")
         od = self.c.place_order(PAIR, "BUY", qty, "LIMIT", px)["OrderDetail"]
@@ -273,7 +278,7 @@ class TradingTest:
 
     # ----- run ------------------------------------------------------------- #
 
-    def run(self) -> int:
+    def run(self, steps: str = "abcd") -> int:
         self.c.sync_clock()
         self.rules = self.c.exchange_info()["TradePairs"][PAIR]
         print(f"Rules {PAIR}: {self.rules}")
@@ -284,8 +289,9 @@ class TradingTest:
         print(f"Start: USD={usd0:,.6f} {COIN}={coin0:g}  pending={pend.get('OrderPairs')}")
         self.out["start"] = {"usd": usd0, "coin": coin0, "pending": pend.get("OrderPairs")}
 
-        for step in (self.step_a_limit_cancel, self.step_b_market_round_trip,
-                     self.step_c_maker, self.step_d_short):
+        all_steps = {"a": self.step_a_limit_cancel, "b": self.step_b_market_round_trip,
+                     "c": self.step_c_maker, "d": self.step_d_short}
+        for step in (all_steps[k] for k in steps):
             try:
                 step()
             except RoostooAPIError as exc:
@@ -322,9 +328,9 @@ class TradingTest:
         self.out["fees"] = self.fees
         self.out["errors"] = self.errors
         LOG_DIR.mkdir(exist_ok=True)
-        (LOG_DIR / "results_trading.json").write_text(
+        (LOG_DIR / self.results_name).write_text(
             json.dumps(self.out, indent=2, default=str), encoding="utf-8")
-        print("\nSaved logs/results_trading.json")
+        print(f"\nSaved logs/{self.results_name}")
         return 1 if self.errors else 0
 
 
@@ -333,7 +339,14 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--confirm", action="store_true",
                     help="required: places real orders on the TESTING account")
+    ap.add_argument("--steps", default="abcd",
+                    help="subset of steps to run, e.g. 'a' or 'bd' (default: abcd)")
     args = ap.parse_args()
+    if not args.steps or set(args.steps) - set("abcd"):
+        print("--steps may only contain a, b, c, d")
+        return 2
+    if args.steps != "abcd":
+        TradingTest.results_name = f"results_trading_{args.steps}.json"
     if not args.confirm:
         print("Refusing to trade without --confirm. This places real orders on the "
               "TESTING account (total notional < $%d)." % MAX_TOTAL_NOTIONAL)
@@ -345,7 +358,7 @@ def main() -> int:
         print(f"ERROR: {exc}")
         return 2
     print(f"Trading with key {mask_key(client.api_key)} (label={client.key_label}) on {PAIR}")
-    return TradingTest(client).run()
+    return TradingTest(client).run(args.steps)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,8 @@ Stop with **Ctrl+C** (or SIGTERM). The bot finishes the current cycle, writes `s
 
 ## 2. EC2 setup (Amazon Linux 2023, Session Manager)
 
+Short version below. The full step-by-step guide (deploy key, reboot test, updates) is in [DEPLOY_AWS.md](DEPLOY_AWS.md).
+
 ```bash
 # connect: AWS console -> EC2 -> instance -> Connect -> Session Manager, then:
 sudo su - ec2-user

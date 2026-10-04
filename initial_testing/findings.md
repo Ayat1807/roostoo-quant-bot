@@ -1,11 +1,11 @@
 # Roostoo API: initial testing findings
 
-_Generated 2026-10-04 09:04:53 UTC by `generate_findings.py` from `logs/` (23 logged requests). Re-run after each test to refresh._
+_Generated 2026-10-04 09:50:26 UTC by `generate_findings.py` from `logs/` (60 logged requests). Re-run after each test to refresh._
 
 ## 1. Connectivity and clock
 
-- Base URL `https://mock-api.roostoo.com`: 18/18 Roostoo requests returned HTTP 200.
-- HTTP status counts: {'200': 18}
+- Base URL `https://mock-api.roostoo.com`: 55/55 Roostoo requests returned HTTP 200.
+- HTTP status counts: {'200': 55}
 - Clock offset (server - local): **-111 ms** (samples [359, -264, -111]); well inside the +-60 s window. The client still applies the offset to every timestamp.
 - `IsRunning`=True, `InitialWallet`={'USD': 50000}
 
@@ -40,11 +40,28 @@ MiniOrder values across all pairs: {1: 88} (rule: price x quantity must be > Min
 
 ## 3. Observed fees
 
-test_trading.py not run yet (needs `--confirm` and the TESTING key).
+| Fee type | Fills | Implied fee (fee / notional) | CommissionPercent field | Total fee USD |
+|---|---|---|---|---|
+| short_close | 2 | 0.1000% | n/a | 0.019621 |
+| short_open | 1 | 0.1000% | n/a | 0.019622 |
+| spot_maker | 1 | 0.0500% | 0.0005 | 0.007251 |
+| spot_taker | 3 | 0.1000% | 0.001 | 0.043509 |
+
+Expected: taker 0.1%, maker 0.05%, short open/close 0.1%.
+
+- Market BUY filled at 85316.01 vs ticker ask 85316.01 (+0.0000%).
+- Market SELL filled at 85316.0 vs ticker bid 85316.0 (+0.0000%).
+- Limit/cancel lifecycle: placed status `PENDING`, after cancel `CANCELED`, CanceledList=[3421109].
+- Reconciliation: USD spent 0.090000; explained by fees 0.090003, spot PnL -0.000002, short PnL -0.000002, retained coin 0.000000 -> unexplained **-0.000007 USD**. Total test notional $98.92.
 
 ## 4. Is shorting allowed?
 
-Unknown: test_trading.py not run yet.
+**Yes** on the testing account: short_open, partial close (50%) and final close all succeeded. Positions after close: `[]`.
+
+- Requested collateral $20 -> response `Collateral`=19.62, `ShortQty`=0.00023, `EntryPrice`=85316, `OpenFee`=0.019622. Collateral is re-computed as ShortQty x EntryPrice after rounding the quantity DOWN, so slightly less than requested is locked (1x, no leverage).
+- Entry vs bid: +0.0000% (fills at MaxBid); closes fill at MinAsk, so every short round trip pays the spread + 0.2%.
+
+This does NOT prove the competition account allows shorts; ask organizers.
 
 ## 5. Response field names (live vs docs)
 
@@ -53,38 +70,47 @@ Unknown: test_trading.py not run yet.
 - `/v3/balance`: `ErrMsg`, `MarginWallet`, `SpotWallet.<key>.Free`, `SpotWallet.<key>.Lock`, `SpotWallet.<key>.PendingOrders`, `SpotWallet.<key>.ShortCollateral`, `Success`
   - **Undocumented, seen live:** MarginWallet, SpotWallet.<key>.Free, SpotWallet.<key>.Lock, SpotWallet.<key>.PendingOrders, SpotWallet.<key>.ShortCollateral
   - Documented, not seen: Wallet.<key>.Free, Wallet.<key>.Lock
-- `/v3/cancel_order`: no successful live response logged yet.
+- `/v3/cancel_order`: `CanceledList[]`, `ErrMsg`, `Success`
 - `/v3/exchangeInfo`: `InitialWallet.<key>`, `IsRunning`, `TradePairs.<key>.AmountPrecision`, `TradePairs.<key>.AssetType`, `TradePairs.<key>.CanTrade`, `TradePairs.<key>.Coin`, `TradePairs.<key>.CoinFullName`, `TradePairs.<key>.MiniOrder`, `TradePairs.<key>.PricePrecision`, `TradePairs.<key>.Unit`, `TradePairs.<key>.UnitFullName`
   - **Undocumented, seen live:** TradePairs.<key>.AssetType
 - `/v3/pending_count`: no successful live response logged yet.
-- `/v3/place_order`: no successful live response logged yet.
-- `/v3/query_order`: no successful live response logged yet.
+- `/v3/place_order`: `ErrMsg`, `OrderDetail.CoinChange`, `OrderDetail.CommissionChargeValue`, `OrderDetail.CommissionCoin`, `OrderDetail.CommissionPercent`, `OrderDetail.CreateTimestamp`, `OrderDetail.FilledAverPrice`, `OrderDetail.FilledQuantity`, `OrderDetail.FinishTimestamp`, `OrderDetail.OrderID`, `OrderDetail.OrderSource`, `OrderDetail.OrderWalletType`, `OrderDetail.Pair`, `OrderDetail.Price`, `OrderDetail.Quantity`, `OrderDetail.Role`, `OrderDetail.ServerTimeUsage`, `OrderDetail.Side`, `OrderDetail.Status`, `OrderDetail.StopType`, `OrderDetail.Type`, `OrderDetail.UnitChange`, `Success`
+  - **Undocumented, seen live:** OrderDetail.OrderSource, OrderDetail.OrderWalletType
+- `/v3/query_order`: `ErrMsg`, `OrderMatched[].CoinChange`, `OrderMatched[].CommissionChargeValue`, `OrderMatched[].CommissionCoin`, `OrderMatched[].CommissionPercent`, `OrderMatched[].CreateTimestamp`, `OrderMatched[].FilledAverPrice`, `OrderMatched[].FilledQuantity`, `OrderMatched[].FinishTimestamp`, `OrderMatched[].OrderID`, `OrderMatched[].OrderSource`, `OrderMatched[].OrderWalletType`, `OrderMatched[].Pair`, `OrderMatched[].Price`, `OrderMatched[].Quantity`, `OrderMatched[].Role`, `OrderMatched[].ServerTimeUsage`, `OrderMatched[].Side`, `OrderMatched[].Status`, `OrderMatched[].StopType`, `OrderMatched[].Type`, `OrderMatched[].UnitChange`, `Success`
+  - **Undocumented, seen live:** OrderMatched[].OrderSource, OrderMatched[].OrderWalletType
 - `/v3/serverTime`: `ServerTime`
 - `/v3/ticker`: `Data.<key>.Change`, `Data.<key>.CoinTradeValue`, `Data.<key>.LastPrice`, `Data.<key>.MaxBid`, `Data.<key>.MinAsk`, `Data.<key>.UnitTradeValue`, `ErrMsg`, `ServerTime`, `Success`
-- `/v6/short_close`: no successful live response logged yet.
-- `/v6/short_open`: no successful live response logged yet.
-- `/v6/short_positions`: `Positions[]`, `Success`
+- `/v6/short_close`: `CloseFee`, `ClosePrice`, `ClosedQty`, `FullyClosed`, `RealizedPNL`, `RemainingCollateral`, `RemainingQty`, `ReturnAmount`, `Success`
+- `/v6/short_open`: `Collateral`, `CreateTimestamp`, `EntryPrice`, `ID`, `OpenFee`, `OrderType`, `Pair`, `ShortQty`, `Status`, `Success`
+- `/v6/short_positions`: `Positions[]`, `Positions[].Collateral`, `Positions[].CreateTimestamp`, `Positions[].CurrentPrice`, `Positions[].EntryPrice`, `Positions[].ID`, `Positions[].Pair`, `Positions[].PositionStatus`, `Positions[].PositionValue`, `Positions[].ShortQty`, `Positions[].UnrealizedPNL`, `Positions[].UnrealizedPNLPct`, `Success`
   - **Undocumented, seen live:** Positions[]
-  - Documented, not seen: Positions[].Collateral, Positions[].CreateTimestamp, Positions[].CurrentPrice, Positions[].EntryPrice, Positions[].ID, Positions[].Pair, Positions[].PositionStatus, Positions[].PositionValue, Positions[].ShortQty, Positions[].UnrealizedPNL, Positions[].UnrealizedPNLPct
 
 ## 6. ErrMsg / errors encountered
 
 | Endpoint | ErrMsg | Count | Params (example) |
 |---|---|---|---|
-| `/v3/pending_count` | no pending order under this account | 2 | `{}` |
+| `/v3/pending_count` | no pending order under this account | 4 | `{}` |
+| `/v3/place_order` | price should not less than market price 30% | 1 | `{"pair": "BTC/USD", "side": "BUY", "type": "LIMIT", "quantity": "0.00003", "price": "42658"}` |
 
 `no pending order under this account` and `no order matched` are documented 'empty' answers (Success=false), not failures.
+
+- `price should not less than market price 30%`: Undocumented rule: a LIMIT price may not be more than 30% below market (seen with a BUY at 50% of bid; 75% works). Expect a symmetric cap above market for SELLs.
 
 ## 7. Latency per endpoint (ms)
 
 | Endpoint | Calls | Mean | Median | p95 | Max |
 |---|---|---|---|---|---|
-| `/v3/balance` | 2 | 507 | 507 | 659 | 659 |
-| `/v3/exchangeInfo` | 1 | 684 | 684 | 684 | 684 |
-| `/v3/pending_count` | 2 | 554 | 554 | 655 | 655 |
-| `/v3/serverTime` | 6 | 1007 | 1042 | 1667 | 1667 |
-| `/v3/ticker` | 5 | 732 | 692 | 1524 | 1524 |
-| `/v6/short_positions` | 2 | 522 | 522 | 691 | 691 |
+| `/v3/balance` | 10 | 460 | 367 | 700 | 700 |
+| `/v3/cancel_order` | 1 | 364 | 364 | 364 | 364 |
+| `/v3/exchangeInfo` | 3 | 577 | 684 | 688 | 688 |
+| `/v3/pending_count` | 4 | 623 | 671 | 694 | 694 |
+| `/v3/place_order` | 6 | 1288 | 1235 | 1932 | 1932 |
+| `/v3/query_order` | 3 | 584 | 687 | 694 | 694 |
+| `/v3/serverTime` | 8 | 1148 | 1497 | 1667 | 1667 |
+| `/v3/ticker` | 12 | 653 | 682 | 718 | 1524 |
+| `/v6/short_close` | 2 | 1862 | 1862 | 1881 | 1881 |
+| `/v6/short_open` | 1 | 1490 | 1490 | 1490 | 1490 |
+| `/v6/short_positions` | 5 | 553 | 684 | 691 | 691 |
 | `api.binance.com/api/v3/klines` | 4 | 1151 | 959 | 1744 | 1744 |
 | `data-api.binance.vision/api/v3/klines` | 1 | 2701 | 2701 | 2701 | 2701 |
 
@@ -112,9 +138,13 @@ Max abs difference 0.0004%. Roostoo prices track Binance USDT spot almost exactl
 ## 10. Live API vs documentation
 
 - Pairs listed in exchangeInfo with `CanTrade=true` but absent from the ticker: OMNI/USD, TON/USD. Do not trade them.
+- `/v6/short_open` returns `Collateral` = ShortQty x EntryPrice (after rounding qty down), not the requested collateral.
 - `/v3/balance` returns undocumented fields: MarginWallet, SpotWallet.<key>.Free, SpotWallet.<key>.Lock, SpotWallet.<key>.PendingOrders, SpotWallet.<key>.ShortCollateral
 - `/v3/exchangeInfo` returns undocumented fields: TradePairs.<key>.AssetType
+- `/v3/place_order` returns undocumented fields: OrderDetail.OrderSource, OrderDetail.OrderWalletType
+- `/v3/query_order` returns undocumented fields: OrderMatched[].OrderSource, OrderMatched[].OrderWalletType
 - `/v6/short_positions` returns undocumented fields: Positions[]
+- `/v3/place_order`: Undocumented rule: a LIMIT price may not be more than 30% below market (seen with a BUY at 50% of bid; 75% works). Expect a symmetric cap above market for SELLs.
 
 ## 11. Open questions for the organizers
 
