@@ -1,0 +1,27 @@
+# Pipeline bot configuration (toy strategy: price vs 24h SMA on BTC/USD).
+# CLI flags in bot.py can override a few of these for short tests (see RUNNING.md).
+
+pair: BTC/USD
+binance_symbol: BTCUSDT        # used only to seed price history at startup
+notional_usd: 300              # fixed LONG (or SHORT) position size in USD
+interval_min: 15               # minutes between cycles
+sma_hours: 24                  # SMA over the last N hourly closes
+allow_short: false             # true: target SHORT instead of FLAT (uses /v6 endpoints)
+dry_run: true                  # true: decide and log, but never send orders
+
+# Key safety: the bot runs with ROOSTOO_KEY_LABEL=testing. "competition" is refused
+# unless this is true (and then a 10 s warning is shown before starting).
+allow_competition: false
+
+# A position counts as LONG when BTC value >= this fraction of notional_usd,
+# so leftover rounding dust is treated as FLAT.
+long_threshold_frac: 0.5
+
+paths:
+  log_dir: logs
+  state_dir: state
+  kill_file: KILL
+
+bot_log:
+  max_bytes: 5000000            # rotate bot.log at ~5 MB
+  backups: 5

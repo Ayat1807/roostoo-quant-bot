@@ -1,0 +1,20 @@
+# Secrets: API keys live only in .env files (never commit them)
+.env
+**/.env
+!**/.env.example
+
+# Raw API logs may contain account data
+logs/
+**/logs/
+
+# Bot runtime state and kill switch
+state/
+**/state/
+KILL
+
+# Python artifacts
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc

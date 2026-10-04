@@ -1,0 +1,27 @@
+# systemd unit for the pipeline bot (alternative to tmux).
+# Install: see RUNNING.md -> "Run as a systemd service".
+# Paths assume the repo is cloned to /home/ec2-user/Trading_Competition.
+
+[Unit]
+Description=Roostoo pipeline bot
+Wants=network-online.target
+After=network-online.target
+# Avoid a tight crash loop: max 10 restarts per 10 minutes.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/Trading_Competition/pipeline_bot
+ExecStart=/home/ec2-user/Trading_Competition/pipeline_bot/.venv/bin/python bot.py
+Environment=PYTHONUNBUFFERED=1
+# Restart on crash or non-zero exit, and start on boot (WantedBy below).
+Restart=always
+RestartSec=30
+# Graceful stop: SIGTERM lets the bot finish its current cycle.
+KillSignal=SIGTERM
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target
