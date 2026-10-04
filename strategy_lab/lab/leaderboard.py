@@ -129,7 +129,7 @@ def main() -> int:
                  f"{r.is_sharpe:.2f} | {r.full_sharpe:.2f} | {r.w_median_comp:.2f} | {r.w_median_ret:+.2%} | "
                  f"{r.w_pct_pos:.0%} | {r.w_worst:+.1%} | {r.w_all_active:.0%} | {r.fees_yr:.1%} | "
                  f"{'' if pd.isna(r.corr_s3v2) else f'{r.corr_s3v2:.2f}'} | "
-                 f"{'' if pd.isna(r.dsr) else f'{r.dsr:.2f}'} | {r.flags} |")
+                 f"{'' if pd.isna(r.dsr) else f'{r.dsr:.2f}'} | {r['flags']} |")
     rec = (ROOT / "reports" / "recommendation.md")
     if rec.exists():
         L.append("\n" + rec.read_text(encoding="utf-8"))
