@@ -1,0 +1,44 @@
+# strategy_lab configuration: data, costs and market regimes shared by every run.
+
+data:
+  start: "2020-01"            # first month to download
+  cache_dir: .cache            # git-ignored
+  min_gap_split_days: 7        # a gap longer than this splits a symbol into a new asset
+                               # (e.g. LUNAUSDT was reused for LUNA2 after May 2022)
+  exclude_regex: "(UP|DOWN|BULL|BEAR)USDT$"   # leveraged tokens
+  exclude_bases: [USDC, BUSD, TUSD, USDP, PAX, DAI, FDUSD, USDS, USDSB, UST, SUSD, USDE,
+                  EUR, GBP, AUD, BRL, TRY, RUB, NGN, UAH, ZAR, BIDR, IDRT, BVND, AEUR, EURI,
+                  XUSD, USD1, BFUSD, RLUSD]   # stablecoins and fiat
+  # Binance tokenised stocks/ETFs (NVDAB, TSLAB, SPYB, TQQQB, ...): base ends in "B" and
+  # first listed from June 2026. Excluded from volume-ranked universes (not crypto).
+  # (YBUSDT, a crypto listed 2025-10, is correctly kept by the date condition.)
+  stock_tokens: {base_suffix: "B", first_listed_after: "2026-06-01"}
+
+# Costs: identical to the live Roostoo account (verified in initial_testing).
+costs:
+  taker: 0.0010               # market orders
+  maker: 0.0005               # filled limit orders
+  short: 0.0010               # /v6 short open and close
+  slippage: 0.0002            # 2 bps on every fill
+  spot_maker_share: 0.0       # share of spot notional assumed filled as maker (0 = all taker,
+                              # conservative; live bot rests limits first, ~75% filled in tests)
+  min_order_usd: 1.0          # Roostoo MiniOrder: price * qty must be > this
+
+backtest:
+  initial_equity: 50000       # Roostoo InitialWallet
+  capital_cap_usd: null       # size as if equity = min(actual, cap); null = full equity
+  lookback_bars: 800          # bars handed to the strategy (same as the live bot)
+
+# BTC regime of each day (evaluated in order; first match wins). Used by the scorecard.
+regimes:
+  shock: "abs(btc_ret_1d) > 0.07 or btc_vol_7d_pct > 0.95"
+  bull:  "btc_ret_30d > 0.10 and btc_above_ma50"
+  bear:  "btc_ret_30d < -0.10 and not btc_above_ma50"
+  chop:  "True"
+
+# Period splits for the scorecard.
+periods:
+  full: ["2020-01-01", null]
+  in_sample: ["2020-01-01", "2024-12-31 23:00"]
+  out_of_sample: ["2025-01-01", null]
+  oos_12m_ref: ["2025-10-01", "2026-10-01"]   # strategy_bot reference window

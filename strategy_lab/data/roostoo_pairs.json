@@ -1,0 +1,485 @@
+{
+ "fetched_utc": "2026-10-04 15:54",
+ "pairs": {
+  "1000CHEEMS/USD": {
+   "binance": "1000CHEEMSUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 6,
+   "MiniOrder": 1,
+   "usd_volume_24h": 341571.65489
+  },
+  "AAVE/USD": {
+   "binance": "AAVEUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 15098223.05562
+  },
+  "ADA/USD": {
+   "binance": "ADAUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 20333233.33608
+  },
+  "APT/USD": {
+   "binance": "APTUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 4801367.226359
+  },
+  "ARB/USD": {
+   "binance": "ARBUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 7383012.38759
+  },
+  "ASTER/USD": {
+   "binance": "ASTERUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 10458517.48344
+  },
+  "AVAX/USD": {
+   "binance": "AVAXUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 17800004.32777
+  },
+  "AVNT/USD": {
+   "binance": "AVNTUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 302923.90638
+  },
+  "BIO/USD": {
+   "binance": "BIOUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 787943.059226
+  },
+  "BMT/USD": {
+   "binance": "BMTUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 834269.21743
+  },
+  "BNB/USD": {
+   "binance": "BNBUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 80288035.02343
+  },
+  "BONK/USD": {
+   "binance": "BONKUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 8,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2252568.95672687
+  },
+  "BTC/USD": {
+   "binance": "BTCUSDT",
+   "AmountPrecision": 5,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 601606302.5042758
+  },
+  "CAKE/USD": {
+   "binance": "CAKEUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2567305.42577
+  },
+  "CFX/USD": {
+   "binance": "CFXUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 544891.38
+  },
+  "CRV/USD": {
+   "binance": "CRVUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2172318.44241
+  },
+  "DOGE/USD": {
+   "binance": "DOGEUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 28579088.22401
+  },
+  "DOT/USD": {
+   "binance": "DOTUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 5912855.03598
+  },
+  "EDEN/USD": {
+   "binance": "EDENUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 273749.33709
+  },
+  "EIGEN/USD": {
+   "binance": "EIGENUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2811729.580848
+  },
+  "ENA/USD": {
+   "binance": "ENAUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 22436836.200059
+  },
+  "ETH/USD": {
+   "binance": "ETHUSDT",
+   "AmountPrecision": 4,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 202644423.819092
+  },
+  "FET/USD": {
+   "binance": "FETUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 24982783.73169
+  },
+  "FIL/USD": {
+   "binance": "FILUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 3949739.463026
+  },
+  "FLOKI/USD": {
+   "binance": "FLOKIUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 8,
+   "MiniOrder": 1,
+   "usd_volume_24h": 990444.93704776
+  },
+  "FORM/USD": {
+   "binance": "FORMUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 549283.71164
+  },
+  "HBAR/USD": {
+   "binance": "HBARUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 7197363.52938
+  },
+  "HEMI/USD": {
+   "binance": "HEMIUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 988453.557362
+  },
+  "ICP/USD": {
+   "binance": "ICPUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 11315325.84553
+  },
+  "LINEA/USD": {
+   "binance": "LINEAUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 6,
+   "MiniOrder": 1,
+   "usd_volume_24h": 419430.853944
+  },
+  "LINK/USD": {
+   "binance": "LINKUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 14711785.18844
+  },
+  "LISTA/USD": {
+   "binance": "LISTAUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 228081.92595
+  },
+  "LTC/USD": {
+   "binance": "LTCUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 22756142.94331
+  },
+  "MIRA/USD": {
+   "binance": "MIRAUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 380548.656915
+  },
+  "NEAR/USD": {
+   "binance": "NEARUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 79520443.3603
+  },
+  "ONDO/USD": {
+   "binance": "ONDOUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 10636433.65178
+  },
+  "OPEN/USD": {
+   "binance": "OPENUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 6811961.78053
+  },
+  "PAXG/USD": {
+   "binance": "PAXGUSDT",
+   "AmountPrecision": 4,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 4141283.488422
+  },
+  "PENDLE/USD": {
+   "binance": "PENDLEUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 3087034.668
+  },
+  "PENGU/USD": {
+   "binance": "PENGUUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 6,
+   "MiniOrder": 1,
+   "usd_volume_24h": 5300768.455464
+  },
+  "PEPE/USD": {
+   "binance": "PEPEUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 8,
+   "MiniOrder": 1,
+   "usd_volume_24h": 11737100.07221376
+  },
+  "PLUME/USD": {
+   "binance": "PLUMEUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 1523943.11392
+  },
+  "POL/USD": {
+   "binance": "POLUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2777619.844776
+  },
+  "PUMP/USD": {
+   "binance": "PUMPUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 6,
+   "MiniOrder": 1,
+   "usd_volume_24h": 41381460.325616
+  },
+  "S/USD": {
+   "binance": "SUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 3972048.603913
+  },
+  "SEI/USD": {
+   "binance": "SEIUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 4839072.732227
+  },
+  "SHIB/USD": {
+   "binance": "SHIBUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 8,
+   "MiniOrder": 1,
+   "usd_volume_24h": 1513914.74305633
+  },
+  "SOL/USD": {
+   "binance": "SOLUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 134095911.25397
+  },
+  "SOMI/USD": {
+   "binance": "SOMIUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 299668.71196
+  },
+  "STO/USD": {
+   "binance": "STOUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 248438.48717
+  },
+  "SUI/USD": {
+   "binance": "SUIUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 56764767.20749
+  },
+  "TAO/USD": {
+   "binance": "TAOUSDT",
+   "AmountPrecision": 4,
+   "PricePrecision": 1,
+   "MiniOrder": 1,
+   "usd_volume_24h": 23969217.37126
+  },
+  "TRUMP/USD": {
+   "binance": "TRUMPUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 13447993.46621
+  },
+  "TRX/USD": {
+   "binance": "TRXUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 13828823.20023
+  },
+  "TUT/USD": {
+   "binance": "TUTUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 1727426.72962
+  },
+  "UNI/USD": {
+   "binance": "UNIUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 20200350.79988
+  },
+  "VIRTUAL/USD": {
+   "binance": "VIRTUALUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 4588287.87816
+  },
+  "WIF/USD": {
+   "binance": "WIFUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 1166206.967608
+  },
+  "WLD/USD": {
+   "binance": "WLDUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 37525734.82556
+  },
+  "WLFI/USD": {
+   "binance": "WLFIUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 2268978.75818
+  },
+  "XLM/USD": {
+   "binance": "XLMUSDT",
+   "AmountPrecision": 0,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 7176711.0874
+  },
+  "XPL/USD": {
+   "binance": "XPLUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 5,
+   "MiniOrder": 1,
+   "usd_volume_24h": 5315336.706422
+  },
+  "XRP/USD": {
+   "binance": "XRPUSDT",
+   "AmountPrecision": 1,
+   "PricePrecision": 4,
+   "MiniOrder": 1,
+   "usd_volume_24h": 66067195.53561
+  },
+  "ZEC/USD": {
+   "binance": "ZECUSDT",
+   "AmountPrecision": 3,
+   "PricePrecision": 2,
+   "MiniOrder": 1,
+   "usd_volume_24h": 104930405.87574
+  },
+  "ZEN/USD": {
+   "binance": "ZENUSDT",
+   "AmountPrecision": 2,
+   "PricePrecision": 3,
+   "MiniOrder": 1,
+   "usd_volume_24h": 1416209.82166
+  }
+ },
+ "dropped": {
+  "AMDB/USD": "AssetType=stock",
+  "CBRSB/USD": "AssetType=stock",
+  "COINB/USD": "AssetType=stock",
+  "CRCLB/USD": "AssetType=stock",
+  "GLWB/USD": "AssetType=stock",
+  "GOOGLB/USD": "AssetType=stock",
+  "INTCB/USD": "AssetType=stock",
+  "LITEB/USD": "AssetType=stock",
+  "METAB/USD": "AssetType=stock",
+  "MSFTB/USD": "AssetType=stock",
+  "MSTRB/USD": "AssetType=stock",
+  "MUB/USD": "AssetType=stock",
+  "NBISB/USD": "AssetType=stock",
+  "NVDAB/USD": "AssetType=stock",
+  "OMNI/USD": "no ticker data",
+  "PLTRB/USD": "AssetType=stock",
+  "QCOMB/USD": "AssetType=stock",
+  "SKHYB/USD": "AssetType=stock",
+  "SNDKB/USD": "AssetType=stock",
+  "SPCXB/USD": "AssetType=stock",
+  "TON/USD": "no ticker data",
+  "TSLAB/USD": "AssetType=stock",
+  "WDCB/USD": "AssetType=stock"
+ }
+}
