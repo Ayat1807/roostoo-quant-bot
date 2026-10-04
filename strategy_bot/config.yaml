@@ -24,7 +24,15 @@ capital_cap_usd: 3000      # size as if equity = min(actual, cap); null = full e
 rebalance_hour_utc: 0      # targets recomputed once a day (and at first start)
 band: 0.06                 # only trade a pair if its weight is off target by > 6 pp
 activity_guard_hour_utc: 20
-guard_band: 0.01           # if nothing traded today by 20:00 UTC, rebalance with a 1 pp band
+# If nothing traded today by 20:00 UTC:
+#   full    = rebalance every pair with a 1 pp band (current live behaviour)
+#   minimal = ONE trade on the pair furthest from target, size min(gap, guard_max_frac)
+#   off     = no guard (fails the one-trade-per-day rule on ~5 of 14 days)
+# strategy_lab (2020-2026): minimal = best Sharpe, every day active; full adds +-20pp/yr
+# path variance. Team decision pending; the live bot keeps `full` until then.
+activity_guard: full
+guard_band: 0.01           # used by `full`
+guard_max_frac: 0.02       # used by `minimal`: max trade size as a fraction of sizing equity
 entry_order: limit         # limit at our side of the touch (0.05% maker), market fallback
 limit_wait_s: 300          # cancel unfilled limit after 5 min, MARKET the remainder
 limit_poll_s: 15

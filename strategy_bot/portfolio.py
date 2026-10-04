@@ -91,7 +91,9 @@ class Portfolio:
 
     # ---------- planning ----------
     def rebalance(self, target_w: dict[str, float], tick: dict[str, dict], band: float,
-                  reason: str = "") -> int:
+                  reason: str = "", only: set[str] | None = None) -> int:
+        """Band rebalance toward target_w. `only` restricts planning to those pairs (used
+        by the minimal activity guard: one pair, band 0)."""
         equity, sizing, expo, units = self.snapshot(tick)
         cur_w = {p: (expo[p] / sizing if sizing else 0.0) for p in self.pairs}
         # Per-leg weights. Roostoo keeps spot longs and /v6 shorts as separate books, so a
@@ -104,6 +106,8 @@ class Portfolio:
                    for p in self.pairs}
         plan = []
         for p in self.pairs:
+            if only is not None and p not in only:
+                continue
             tw, cw = float(target_w.get(p, 0.0)), cur_w[p]
             holding = long_w[p] > 1e-4 or short_w[p] > 1e-4
             hedged = long_w[p] > 1e-4 and short_w[p] > 1e-4

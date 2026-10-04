@@ -27,11 +27,12 @@ OUT = HERE / ".cache" / "replay"
 
 
 def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
-           tag: str) -> dict:
+           tag: str, guard: str = "full") -> dict:
     base = OUT / tag
     shutil.rmtree(base, ignore_errors=True)
     cfg = load_config(HERE / "config.yaml")
-    cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, allow_short=allow_short)
+    cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, allow_short=allow_short,
+               activity_guard=guard)
     cap = float(cfg["capital_cap_usd"])
     pairs = cfg["universe"]
     hours = c.index[-24 * days:]
@@ -89,6 +90,10 @@ def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
     shorts_opened = sum(1 for o in orders if o["action"] == "OPEN_SHORT")
     fallbacks = sum(1 for o in orders if o["action"] == "MARKET_FALLBACK")
     targets = [d for d in read("decisions") if d.get("event") == "targets"]
+    guard_recs = [d for d in read("decisions") if d.get("event") == "rebalance"
+                  and "minimal_guard" in d.get("reason", "")]
+    guard_days = {d["time"][:10] for d in guard_recs}
+    max_guard_pairs = max((len({x["pair"] for x in d["plan"]}) for d in guard_recs), default=0)
     pnl = ex.equity() - eq0
     return {"tag": tag, "start": start, "end": hours[-1], "orders": len(orders),
             "errors": errors, "active": f"{len(days_with_orders & all_days)}/{len(all_days)}",
@@ -96,7 +101,8 @@ def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
             "cap": cap, "pnl": pnl, "pnl_pct_of_cap": pnl / cap, "fees": ex.fees_paid,
             "shorts_opened": shorts_opened, "market_fallbacks": fallbacks,
             "target_updates": len(targets), "kill": kill_check, "calls": ex.calls,
-            "stale_canceled": stale_canceled}
+            "stale_canceled": stale_canceled, "guard": guard, "guard_days": len(guard_days),
+            "guard_recs": len(guard_recs), "max_guard_pairs": max_guard_pairs}
 
 
 def main() -> int:
@@ -106,8 +112,14 @@ def main() -> int:
     c = load_closes()
     ok = True
     for r in (replay(c, a.days, True, kill_day=20, tag="s3v2_shorts_on"),
-              replay(c, 7, False, kill_day=None, tag="s3v2_shorts_off")):
-        print(f"\n== {r['tag']}: {r['start']:%Y-%m-%d %H:%M} -> {r['end']:%Y-%m-%d %H:%M} UTC")
+              replay(c, 7, False, kill_day=None, tag="s3v2_shorts_off"),
+              replay(c, a.days, True, kill_day=None, tag="s3v2_guard_minimal", guard="minimal"),
+              replay(c, a.days, True, kill_day=None, tag="s3v2_guard_off", guard="off")):
+        print(f"\n== {r['tag']} (activity_guard={r['guard']}): {r['start']:%Y-%m-%d %H:%M} -> "
+              f"{r['end']:%Y-%m-%d %H:%M} UTC")
+        if r["guard"] == "minimal":
+            print(f"   minimal guard fired on {r['guard_days']} days ({r['guard_recs']} times), "
+                  f"max pairs per guard trade {r['max_guard_pairs']}")
         print(f"   orders {r['orders']} (market fallbacks {r['market_fallbacks']}, shorts opened "
               f"{r['shorts_opened']}), target updates {r['target_updates']}, errors {len(r['errors'])}")
         print(f"   active days {r['active']}  inactive: {r['inactive_days'] or 'none'}")
@@ -123,15 +135,21 @@ def main() -> int:
         checks = {
             "0 errors": not r["errors"],
             "within cap (<=110% incl. drift)": r["max_gross"] <= r["cap"] * 1.10,
-            "trade every day": not r["inactive_days"],
+            "trade every day": (not r["inactive_days"]) if r["guard"] != "off" else True,
             "stale pending order canceled at startup": r["stale_canceled"],
         }
         if r["kill"]:
             checks["KILL flattens in 1 poll (dust only)"] = r["kill"]["flat_after_1_poll"]
             checks["KILL stays flat (idle)"] = r["kill"]["flat_at_removal"]
             checks["resumes after KILL"] = r["kill"]["gross_end"] > 100
-        if r["tag"].endswith("off"):
+        if r["tag"] == "s3v2_shorts_off":
             checks["no shorts when allow_short=false"] = r["shorts_opened"] == 0
+        if r["guard"] == "minimal":
+            checks["minimal guard: <= 1 per day, one pair"] = (r["guard_recs"] == r["guard_days"]
+                                                               and r["max_guard_pairs"] <= 1)
+        if r["guard"] == "off":
+            print(f"   [info] guard off: {len(r['inactive_days'])} inactive days "
+                  f"(why the competition needs a guard)")
         for name, passed in checks.items():
             print(f"   [{'PASS' if passed else 'FAIL'}] {name}")
             ok &= passed

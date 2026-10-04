@@ -80,6 +80,10 @@ class StrategyBot:
         self.bars = bars
         self.max_cycles = max_cycles
         self.dry = bool(cfg.get("dry_run", True))
+        g = cfg.get("activity_guard", "full")
+        self.guard_mode = {True: "full", False: "off"}.get(g, str(g)) if isinstance(g, bool) else str(g)
+        if self.guard_mode not in ("off", "full", "minimal"):
+            raise ValueError(f"activity_guard must be off|full|minimal, got {g!r}")
         self.strategy = get_strategy(cfg["strategy"]["name"])
         self.pairs: list[str] = []
         self.target: dict[str, float] | None = None
@@ -123,6 +127,7 @@ class StrategyBot:
         self.logs.write("decisions", {
             "event": "start", "pairs": self.pairs, "dropped": dropped, "dry_run": self.dry,
             "strategy": cfg["strategy"], "allow_short": cfg["allow_short"],
+            "activity_guard": self.guard_mode,
             "capital_cap_usd": cfg.get("capital_cap_usd"), "bars": len(self.bars.close),
             "last_bar": str(self.bars.close.index[-1]) if len(self.bars.close) else None,
             "key": mask_key(getattr(c, "api_key", "")), "key_label": getattr(c, "key_label", None)})
@@ -175,13 +180,17 @@ class StrategyBot:
             "brake": self.brake, "mult": self.mult})
         hour = now.floor("h")
         daily = hour.hour == int(self.cfg["rebalance_hour_utc"])
-        guard = (hour.hour == int(self.cfg["activity_guard_hour_utc"])
+        mode = self.guard_mode
+        guard = (mode != "off" and hour.hour == int(self.cfg["activity_guard_hour_utc"])
                  and self.last_trade_day != str(now.date()))
         if daily or self.target is None:
             self.compute_targets("daily" if daily else "first start")
-        band = float(self.cfg["guard_band"] if guard else self.cfg["band"])
-        why = f"{reason}{' +activity_guard' if guard else ''} brake={self.brake}"
-        n = self.port.rebalance({p: w * self.mult for p, w in self.target.items()}, tick, band, why)
+        band = float(self.cfg["guard_band"] if (guard and mode == "full") else self.cfg["band"])
+        why = f"{reason}{f' +activity_guard({mode})' if guard else ''} brake={self.brake}"
+        eff = {p: w * self.mult for p, w in self.target.items()}
+        n = self.port.rebalance(eff, tick, band, why)
+        if guard and mode == "minimal" and n == 0:
+            n = self.minimal_guard_trade(eff, tick, why)
         if n:
             self.last_action = {"time": str(now), "orders": n, "reason": why, "dry_run": self.dry}
             if not self.dry:  # dry-run orders must not satisfy the live activity guard
@@ -190,6 +199,24 @@ class StrategyBot:
         log.info("step %s: equity=%.2f sizing=%.2f mult=%s (%s) band=%.2f orders=%d",
                  reason, equity, sizing, self.mult, self.brake, band, n)
         return n
+
+    def minimal_guard_trade(self, eff: dict[str, float], tick: dict[str, Any], why: str) -> int:
+        """activity_guard: minimal. One trade on the pair furthest from its target, sized
+        min(gap, guard_max_frac of sizing equity) but at least 1.5 x MiniOrder. Tested in
+        strategy_lab (guard_minimal): same returns as no guard, every day active."""
+        snap = self.port.last_snapshot
+        sizing = snap.get("sizing_equity") or 0.0
+        cur = snap.get("weights") or {}
+        gaps = {p: eff.get(p, 0.0) - cur.get(p, 0.0) for p in self.pairs}
+        p = max(gaps, key=lambda k: abs(gaps[k]))
+        if abs(gaps[p]) <= 1e-9 or sizing <= 0:
+            log.info("minimal guard: every pair exactly on target; no trade possible")
+            return 0
+        mini = float(self.port.info[p]["MiniOrder"])
+        size = max(min(abs(gaps[p]), float(self.cfg.get("guard_max_frac", 0.02))), 1.5 * mini / sizing)
+        tw = cur.get(p, 0.0) + (size if gaps[p] > 0 else -size)
+        log.info("minimal guard: %s gap %+.4f -> trade toward target, size %.4f of equity", p, gaps[p], size)
+        return self.port.rebalance({p: tw}, tick, 0.0, f"{why} minimal_guard {p}", only={p})
 
     def poll(self) -> None:
         """One ticker call; on a completed hour (or a new KILL file) run a decision step."""
