@@ -1,0 +1,85 @@
+# Declared runs. ALL variants are listed here BEFORE any results are seen; each has a
+# trial number. runs/trials.json counts every executed run; the leaderboard uses the
+# count to flag results that look too good for the number of things we tried.
+#
+#   python -m lab.runner variants.yaml                 # run everything
+#   python -m lab.runner variants.yaml --only guard_off,guard_minimal
+#
+# Decided a priori (2026-10-05, before running): parameter and universe variants (groups
+# params / universe) are applied on top of the `minimal` activity guard, because it
+# changes the strategy's path least while still meeting the one-trade-per-day rule.
+# Their comparison baseline is guard_minimal (trial 3).
+
+declared_trials: 26
+
+defaults:
+  strategy: s3v2
+  universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT,
+                                  ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}
+  start: "2020-02-15"
+  band: 0.06
+  brake: true
+  allow_short: true
+  activity_guard: full          # live strategy_bot behaviour
+  params: {horizons: [24, 72, 168, 336], vol_win: 336, regime_win: 336, target_vol: 0.40,
+           short_scale_bull: 0.5, max_w: 0.30, btc_pair: BTCUSDT}
+
+runs:
+  # ---- group: guard (step 2) ------------------------------------------------------
+  - {name: s3v2_base, trial: 1, group: guard, note: "live config (brake on, 1pp guard)"}
+  - {name: guard_off, trial: 2, group: guard, activity_guard: "off"}
+  - {name: guard_minimal, trial: 3, group: guard, activity_guard: minimal,
+     note: "one trade/day on pair furthest from target, size min(gap, 2% equity)"}
+  - {name: guard_band_edge, trial: 4, group: guard, activity_guard: band_edge,
+     note: "one pair (closest to its band edge) fully rebalanced"}
+  # ---- group: benchmarks ----------------------------------------------------------
+  - {name: hold_btc, trial: 5, group: bench, strategy: hold_btc, brake: false, activity_guard: "off"}
+  - {name: hold_ew10, trial: 6, group: bench, strategy: hold_ew, brake: false, activity_guard: "off"}
+  # ---- group: params (step 4), on the minimal guard ----------------------------------
+  - {name: p_brake_off, trial: 7, group: params, activity_guard: minimal, brake: false}
+  - {name: p_shorts_off, trial: 8, group: params, activity_guard: minimal, allow_short: false}
+  - {name: p_tv06, trial: 9, group: params, activity_guard: minimal, params: {target_vol: 0.6}}
+  - {name: p_tv08, trial: 10, group: params, activity_guard: minimal, params: {target_vol: 0.8}}
+  - {name: p_band04, trial: 11, group: params, activity_guard: minimal, band: 0.04}
+  - {name: p_band08, trial: 12, group: params, activity_guard: minimal, band: 0.08}
+  - {name: p_horizons_long, trial: 13, group: params, activity_guard: minimal,
+     params: {horizons: [72, 168, 336, 720]}, note: "needs 721 bars; lookback 800 ok"}
+  # ---- group: universe (step 3), on the minimal guard --------------------------------
+  - {name: u_roostoo65, trial: 14, group: universe, activity_guard: minimal,
+     universe: {type: roostoo_all}}
+  - {name: u_roostoo65_div10, trial: 15, group: universe, activity_guard: minimal, strategy: s3v2x,
+     universe: {type: roostoo_all}, params: {n_divisor: 10}}
+  - {name: u_top10, trial: 16, group: universe, activity_guard: minimal,
+     universe: {type: top_volume, n: 10, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_top20, trial: 17, group: universe, activity_guard: minimal,
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_top20_div10, trial: 18, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {n_divisor: 10},
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_top30, trial: 19, group: universe, activity_guard: minimal,
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_top30_div10, trial: 20, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {n_divisor: 10},
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_kadoo20, trial: 21, group: universe, activity_guard: minimal,
+     note: "rank on all Binance USDT, trade the Roostoo intersection",
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6,
+                rank_pool: all, trade: roostoo}}
+  - {name: u_kadoo20_div10, trial: 22, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {n_divisor: 10},
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6,
+                rank_pool: all, trade: roostoo}}
+  - {name: u_kadoo30, trial: 23, group: universe, activity_guard: minimal,
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6,
+                rank_pool: all, trade: roostoo}}
+  - {name: u_kadoo30_div10, trial: 24, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {n_divisor: 10},
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6,
+                rank_pool: all, trade: roostoo}}
+  - {name: u_top20_div10_band04, trial: 25, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {n_divisor: 10}, band: 0.04,
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: u_paxg_park, trial: 26, group: universe, activity_guard: minimal, strategy: s3v2x,
+     params: {parking_asset: PAXGUSDT},
+     universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT,
+                                     DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, PAXGUSDT]}}

@@ -1,0 +1,13 @@
+{
+ "total_runs": 14,
+ "distinct": [
+  "guard_band_edge",
+  "guard_minimal",
+  "guard_off",
+  "hold_btc",
+  "hold_ew10",
+  "p_shorts_off",
+  "s3v2_base"
+ ],
+ "updated": "2026-10-04 16:31 UTC"
+}

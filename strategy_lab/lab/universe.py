@@ -2,11 +2,16 @@
 
 Spec (run config `universe:`):
   {type: list, assets: [BTCUSDT, ETHUSDT, ...]}
-  {type: top_volume, n: 20, lookback_days: 30, rank_pool: all|roostoo, trade: all|roostoo}
-      Each rebalance day, rank assets by mean daily quote volume over the previous
-      `lookback_days` complete days (no look-ahead), among `rank_pool`, take the top n,
-      then keep only those in `trade`. Example: rank_pool=all, trade=roostoo is
-      "rank on all Binance pairs, trade the Roostoo intersection".
+  {type: roostoo_all}           all Roostoo crypto pairs that have Binance history
+  {type: top_volume, n: 20, lookback_days: 30, rank_pool: all|roostoo, trade: all|roostoo,
+   reselect: daily|monthly, min_history_days: 60, min_quote_volume_usd: 5e6}
+      On each selection day (every day, or the first day of each month), rank assets by
+      mean daily quote volume over the previous `lookback_days` complete days (point in
+      time, no look-ahead) among `rank_pool`, after the liquidity filter (mean daily
+      volume >= min_quote_volume_usd; klines carry no spread, so volume is the liquidity
+      proxy) and history filter; take the top n, then keep only those in `trade`.
+      rank_pool=all, trade=roostoo is kadoo69's "rank on all Binance pairs, trade the
+      Roostoo intersection".
 Always excluded from top_volume: tokenised stocks / non-crypto (config `exclude_assets`),
 and assets with fewer than `min_history_days` of history (default 30).
 """
@@ -55,6 +60,11 @@ class Universe:
         excl = CFG["data"].get("exclude_assets_regex")
         self._excl = re.compile(excl) if excl else None
         self._daily_members: pd.Series | None = None
+        if self.type == "roostoo_all":
+            have = set(_daily()["close"].columns)
+            self._list = sorted(a for a in self._roostoo if a in have)
+        else:
+            self._list = list(spec.get("assets", []))
 
     def specs(self) -> dict[str, dict]:
         return self._roostoo
@@ -73,19 +83,26 @@ class Universe:
         hist = close[cols].notna().cumsum()
         mean_qv = qv.rolling(int(s.get("lookback_days", 30)), min_periods=1).mean().shift(1)
         ok = (hist.shift(1) >= int(s.get("min_history_days", 30))) & close[cols].notna()
+        ok &= mean_qv >= float(s.get("min_quote_volume_usd", 0))
         days = mean_qv.loc[start.floor("D") - pd.Timedelta(days=1):end.floor("D") if end else None].index
         out = {}
+        monthly = s.get("reselect", "daily") == "monthly"
+        cur_month, cur = None, []
         for day in days:
+            if monthly and (day.year, day.month) == cur_month:
+                out[day] = cur
+                continue
             row = mean_qv.loc[day].where(ok.loc[day])
             top = list(row.dropna().sort_values(ascending=False).index[: int(s["n"])])
             if s.get("trade", "all") == "roostoo":
                 top = [a for a in top if "~" not in a and a in self._roostoo]
             out[day] = top
+            cur_month, cur = (day.year, day.month), top
         return pd.Series(out)
 
     def members(self, ts: pd.Timestamp, assets: list[str], alive) -> list[str]:
-        if self.type == "list":
-            return [a for a, ok in zip(assets, alive) if ok and a in self.spec["assets"]]
+        if self.type in ("list", "roostoo_all"):
+            return [a for a, ok in zip(assets, alive) if ok and a in self._list]
         day = ts.floor("D")
         mem = self._daily_members.get(day, []) if self._daily_members is not None else []
         alive_set = {a for a, ok in zip(assets, alive) if ok}
@@ -97,8 +114,8 @@ class Universe:
 
     # ----- data --------------------------------------------------------- #
     def load_closes(self, start: pd.Timestamp, end: pd.Timestamp | None) -> pd.DataFrame:
-        if self.type == "list":
-            assets = list(self.spec["assets"])
+        if self.type in ("list", "roostoo_all"):
+            assets = list(self._list)
         else:
             self._daily_members = self._rank_table(start, end)
             assets = sorted({a for m in self._daily_members for a in m} | {self.btc_asset})

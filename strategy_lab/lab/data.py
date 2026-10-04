@@ -263,7 +263,11 @@ def load_close(assets: list[str], start: str | None = None, end: str | None = No
         full = pd.date_range(s.index[0], s.index[-1], freq="1h", tz="UTC")
         cols[a] = s.reindex(full).ffill()
     close = pd.DataFrame(cols)
-    idx = pd.date_range(close.index.min(), close.index.max(), freq="1h", tz="UTC")
+    # End at the last hour that every still-trading asset has (symbols downloaded minutes
+    # apart can end on different hours); assets that ended > 3 days earlier are delisted.
+    lasts = pd.Series({a: s.index[-1] for a, s in cols.items()})
+    current = lasts[lasts >= lasts.max() - pd.Timedelta(days=3)]
+    idx = pd.date_range(close.index.min(), current.min(), freq="1h", tz="UTC")
     close = close.reindex(idx)
     if start:
         close = close.loc[pd.Timestamp(start, tz="UTC"):]

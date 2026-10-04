@@ -49,9 +49,10 @@ class RunConfig:
     rebalance_hour_utc: int = 0
     rebalance_every_h: int = 24
     band: float = 0.06
-    activity_guard: bool = True
+    activity_guard: str = "full"     # off | full (1pp band, live bot) | minimal | band_edge
     guard_hour_utc: int = 20
-    guard_band: float = 0.01
+    guard_band: float = 0.01        # 'full' mode band
+    guard_max_frac: float = 0.02    # 'minimal' mode: max trade size, fraction of equity
     allow_short: bool = True
     brake: bool = True
     dd_soft: float = -0.04
@@ -71,6 +72,10 @@ class RunConfig:
         if extra:
             raise ValueError(f"unknown run settings: {sorted(extra)}")
         cfg = cls(**d)
+        if isinstance(cfg.activity_guard, bool):  # back-compat: True -> live behaviour
+            cfg.activity_guard = "full" if cfg.activity_guard else "off"
+        if cfg.activity_guard not in ("off", "full", "minimal", "band_edge"):
+            raise ValueError(f"activity_guard must be off|full|minimal|band_edge, got {cfg.activity_guard!r}")
         cfg.costs = {**LAB["costs"], **(d.get("costs") or {})}
         return cfg
 
@@ -103,6 +108,7 @@ class Backtest:
         rc, c = self.rc, self.closes
         t0 = time.time()
         assets = list(c.columns)
+        self.assets_ = assets
         A = len(assets)
         px_all = c.values
         alive_all = ~np.isnan(px_all)
@@ -136,7 +142,9 @@ class Backtest:
 
         for k, i in enumerate(range(i0, i1)):
             ts = idx[i]
-            p = np.where(alive_all[i], px_all[i], last_px[i])
+            # price: live close, else last close (delisted), else 0 (not listed yet; no
+            # position can exist and the asset is masked from trading)
+            p = np.nan_to_num(np.where(alive_all[i], px_all[i], last_px[i]), nan=0.0)
             fees = turnover = 0.0
             ntr = 0
             # 1) forced exit of delisted assets (no more prices) at the last price
@@ -187,11 +195,11 @@ class Backtest:
             g = np.abs(tgt).sum()
             if g > 1:
                 tgt = tgt / g
-            # 5) band check + per-leg plan (strategy_bot portfolio.py)
+            # 5) band check + per-leg plan (strategy_bot portfolio.py), then activity guard
             sizing = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
-            guard = (exact and rc.activity_guard and ts.hour == rc.guard_hour_utc
-                     and last_trade_day != ts.date())
-            band = rc.guard_band if guard else rc.band
+            guard_hour = (exact and rc.activity_guard != "off" and ts.hour == rc.guard_hour_utc
+                          and last_trade_day != ts.date())
+            band = rc.guard_band if (guard_hour and rc.activity_guard == "full") else rc.band
             lw = lu * p / sizing
             sw = su * p / sizing
             cw = lw - sw
@@ -200,68 +208,26 @@ class Backtest:
             trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
             trade &= alive_all[i]
             if trade.any():
-                plan_red, plan_inc = [], []
-                for j in np.where(trade)[0]:
-                    tw = tgt[j]
-                    if lw[j] > max(tw, 0):
-                        plan_red.append(("SELL", j, (lw[j] - max(tw, 0)) * sizing))
-                    if sw[j] > max(-tw, 0):
-                        plan_red.append(("COVER", j, (sw[j] - max(-tw, 0)) * sizing))
-                    if tw > 0 and tw > lw[j]:
-                        plan_inc.append(("BUY", j, (tw - lw[j]) * sizing))
-                    if tw < 0 and -tw > sw[j]:
-                        plan_inc.append(("SHORT", j, (-tw - sw[j]) * sizing))
-                for act, j, usd in plan_red + plan_inc:
-                    pj = p[j]
-                    ap = amount_precision(assets[j], pj, self.specs) if exact else None
-                    q = usd / pj
-                    if exact:
-                        q = floor_qty(q, ap)
-                    if act == "SELL":
-                        q = min(q, lu[j])
-                        if q <= 0 or (exact and q * pj <= mini):
-                            continue
-                        cash, f, tv = self._close_long(j, q, pj, cash, spot_fee, slip, lu)
-                    elif act == "COVER":
-                        q = min(q, su[j])
-                        if q <= 0 or (exact and q * pj <= mini and q < su[j]):
-                            continue
-                        cash, f, tv = self._close_short(j, q, pj, cash, sfee, slip, su, coll, entry)
-                    elif act == "BUY":
-                        buy_px = pj * (1 + slip)
-                        q = min(q, cash / (buy_px * (1 + spot_fee)))
-                        if exact:
-                            q = floor_qty(q, ap)
-                        if q <= 0 or (exact and q * pj <= mini):
-                            continue
-                        cost = q * buy_px
-                        f = cost * spot_fee
-                        cash -= cost + f
-                        lu[j] += q
-                        tv = cost
-                    else:  # SHORT: collateral sized so collateral + fee fits
-                        sell_px = pj * (1 - slip)
-                        if exact:
-                            q = floor_qty(min(usd / 1.001, cash / (1 + sfee)) / sell_px, ap)
-                        else:
-                            q = min(q, cash / (sell_px * (1 + sfee)))
-                        if q <= 0 or (exact and q * sell_px < max(1.0, mini)):
-                            continue
-                        new_coll = q * sell_px
-                        f = new_coll * sfee
-                        if new_coll + f > cash + 1e-9:
-                            continue
-                        cash -= new_coll + f
-                        tot = su[j] + q
-                        entry[j] = (entry[j] * su[j] + sell_px * q) / tot
-                        su[j] = tot
-                        coll[j] += new_coll
-                        tv = new_coll
-                    fees += f
-                    turnover += tv
-                    ntr += 1
-                if ntr:
-                    last_trade_day = ts.date()
+                cash, f, tv, n = self._execute({j: tgt[j] for j in np.where(trade)[0]}, lw, sw, sizing,
+                                               p, cash, lu, su, entry, coll, spot_fee, sfee, slip,
+                                               mini, exact)
+                fees, turnover, ntr = fees + f, turnover + tv, ntr + n
+            if guard_hour and ntr == 0 and rc.activity_guard in ("minimal", "band_edge"):
+                # one trade on the pair furthest from target (= closest to crossing its band,
+                # since the band is the same for every pair)
+                gap = np.where(alive_all[i], tgt - cw, 0.0)
+                j = int(np.argmax(np.abs(gap)))
+                if abs(gap[j]) > 1e-9:
+                    if rc.activity_guard == "minimal":
+                        size = max(min(abs(gap[j]), rc.guard_max_frac), 1.5 * mini / sizing)
+                        tw_j = cw[j] + np.sign(gap[j]) * size
+                    else:
+                        tw_j = tgt[j]
+                    cash, f, tv, n = self._execute({j: tw_j}, lw, sw, sizing, p, cash, lu, su,
+                                                   entry, coll, spot_fee, sfee, slip, mini, exact)
+                    fees, turnover, ntr = fees + f, turnover + tv, ntr + n
+            if ntr:
+                last_trade_day = ts.date()
             n_trades_total += ntr
             short_val = coll + su * (entry - p)
             eq_after = cash + float(np.dot(lu, p)) + float(short_val.sum())
@@ -281,6 +247,74 @@ class Backtest:
                 "trades_total": n_trades_total}
 
     # ------------------------------------------------------------------ #
+    def _execute(self, plan: dict[int, float], lw, sw, sizing, p, cash, lu, su, entry, coll,
+                 spot_fee, sfee, slip, mini, exact):
+        """Move each pair j to weight plan[j]: per-leg, reductions before increases.
+        Returns (cash, fees, turnover, n_trades)."""
+        assets = self.assets_
+        plan_red, plan_inc = [], []
+        for j, tw in plan.items():
+            if lw[j] > max(tw, 0):
+                plan_red.append(("SELL", j, (lw[j] - max(tw, 0)) * sizing))
+            if sw[j] > max(-tw, 0):
+                plan_red.append(("COVER", j, (sw[j] - max(-tw, 0)) * sizing))
+            if tw > 0 and tw > lw[j]:
+                plan_inc.append(("BUY", j, (tw - lw[j]) * sizing))
+            if tw < 0 and -tw > sw[j]:
+                plan_inc.append(("SHORT", j, (-tw - sw[j]) * sizing))
+        fees = turnover = 0.0
+        n = 0
+        for act, j, usd in plan_red + plan_inc:
+            pj = p[j]
+            ap = amount_precision(assets[j], pj, self.specs) if exact else None
+            q = usd / pj
+            if exact:
+                q = floor_qty(q, ap)
+            if act == "SELL":
+                q = min(q, lu[j])
+                if q <= 0 or (exact and q * pj <= mini):
+                    continue
+                cash, f, tv = self._close_long(j, q, pj, cash, spot_fee, slip, lu)
+            elif act == "COVER":
+                q = min(q, su[j])
+                if q <= 0 or (exact and q * pj <= mini and q < su[j]):
+                    continue
+                cash, f, tv = self._close_short(j, q, pj, cash, sfee, slip, su, coll, entry)
+            elif act == "BUY":
+                buy_px = pj * (1 + slip)
+                q = min(q, cash / (buy_px * (1 + spot_fee)))
+                if exact:
+                    q = floor_qty(q, ap)
+                if q <= 0 or (exact and q * pj <= mini):
+                    continue
+                cost = q * buy_px
+                f = cost * spot_fee
+                cash -= cost + f
+                lu[j] += q
+                tv = cost
+            else:  # SHORT: collateral sized so collateral + fee fits
+                sell_px = pj * (1 - slip)
+                if exact:
+                    q = floor_qty(min(usd / 1.001, cash / (1 + sfee)) / sell_px, ap)
+                else:
+                    q = min(q, cash / (sell_px * (1 + sfee)))
+                if q <= 0 or (exact and q * sell_px < max(1.0, mini)):
+                    continue
+                new_coll = q * sell_px
+                f = new_coll * sfee
+                if new_coll + f > cash + 1e-9:
+                    continue
+                cash -= new_coll + f
+                tot = su[j] + q
+                entry[j] = (entry[j] * su[j] + sell_px * q) / tot
+                su[j] = tot
+                coll[j] += new_coll
+                tv = new_coll
+            fees += f
+            turnover += tv
+            n += 1
+        return cash, fees, turnover, n
+
     def _last_sched(self, i: int) -> int:
         """Index of the latest scheduled rebalance bar <= i (for the first target)."""
         rc, idx = self.rc, self.closes.index
