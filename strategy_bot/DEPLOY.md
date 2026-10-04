@@ -74,16 +74,33 @@ Check the output for:
 - `targets (first start): {...}` and `[DRY RUN] ...` order lines
 - `Errors in last 24h: 0`
 
-## 6. Unattended run with tmux
+## 6. Unattended run with tmux (one-line commands)
 
-First stop `pipeline_bot` if it runs on the same key: `tmux attach -t bot`, then Ctrl+C.
+Session Manager drops after about 30 s idle, so every step below is a single command that returns immediately. You never need to stay attached. Run `sudo su - ec2-user` first.
 
+**a) Stop pipeline_bot** (same key). This sends Ctrl+C, so it finishes its cycle and exits:
 ```bash
-tmux new -s strategy
-cd ~/Trading_Competition/strategy_bot && source .venv/bin/activate
-python bot.py --live            # or set dry_run: false in config.yaml and run: python bot.py
-# detach: Ctrl+B then D      reattach: tmux attach -t strategy
+tmux send-keys -t bot C-c; sleep 15; tmux kill-session -t bot 2>/dev/null; pgrep -af "pipeline_bot|bot.py" || echo "no bot running"
 ```
+
+**b) Start strategy_bot LIVE, detached** (the one-liner):
+```bash
+tmux new-session -d -s strategy -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --live'
+```
+
+**c) Check it** (about 90 s later, after the bootstrap and first rebalance):
+```bash
+tmux ls; cd /home/ec2-user/Trading_Competition/strategy_bot && .venv/bin/python status.py; tail -n 20 logs/bot.log
+```
+
+**Stop gracefully:**
+```bash
+tmux send-keys -t strategy C-c
+```
+
+Optional: `tmux attach -t strategy` to watch live (detach with Ctrl+B then D). If the session drops while attached, the bot keeps running.
+
+If the bot process exits, the tmux session closes with it. `status.py` will then show a stale heartbeat, and `logs/bot.log` keeps the reason. The drawdown brake is ON (`dd_soft -4%`, `dd_hard -7%` in `config.yaml`).
 
 ## 7. systemd (auto-restart on crash and reboot)
 

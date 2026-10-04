@@ -29,7 +29,7 @@ entry_order: limit         # limit at our side of the touch (0.05% maker), marke
 limit_wait_s: 300          # cancel unfilled limit after 5 min, MARKET the remainder
 limit_poll_s: 15
 
-# --- risk ---
+# --- risk (drawdown brake ON; to be revisited vs kadoo69's finding) ---
 dd_soft: -0.04             # equity vs rolling 14-day peak: halve exposure
 dd_hard: -0.07             # go flat for cooloff_h, then reset the peak
 cooloff_h: 24
