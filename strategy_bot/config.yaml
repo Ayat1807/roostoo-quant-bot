@@ -16,6 +16,9 @@ strategy:
   short_scale_bull: 0.5          # shorts at half size while BTC > its 14-day mean
   max_w: 0.30                    # per-asset weight cap
   btc_pair: BTC/USD
+  vol_method: ewma               # EWMA vol (strategy_lab block 2: e_ewma_vol, passed the final exam)
+  ewma_halflife: 168             # hours (7 days)
+  ewma_window: 800               # hourly returns used (= lab backtest lookback); "std" = old 14d vol
 
 allow_short: true          # false: negative weights become 0 (fallback if /v6 is blocked)
 capital_cap_usd: 3000      # size as if equity = min(actual, cap); null = full equity

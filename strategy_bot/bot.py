@@ -175,7 +175,8 @@ class StrategyBot:
                "allow_short": self.cfg["allow_short"],
                "raw": {p: round(w, 6) for p, w in raw.items()},
                "target": {p: round(w, 6) for p, w in tgt.items()},
-               "gross": round(sum(abs(w) for w in tgt.values()), 6)}
+               "gross": round(sum(abs(w) for w in tgt.values()), 6),
+               "fingerprint": self._fingerprint()}
         self.logs.write("decisions", rec)
         write_json_atomic(self.targets_file, {**rec, "target": tgt, "computed_at": self.target_time,
                                               "fingerprint": self._fingerprint()})
@@ -184,8 +185,9 @@ class StrategyBot:
 
     def restore_targets(self, slot: pd.Timestamp) -> bool:
         """Reuse the targets saved for `slot` (a restart must not move them mid-day).
-        Source: state/targets.json; if that file does not exist yet (first restart after
-        this feature shipped), the latest 'daily' targets event in logs/decisions.jsonl."""
+        Source: state/targets.json; if that file does not exist, the latest 'daily' targets
+        event in logs/decisions.jsonl with the same config fingerprint. Any change to the
+        strategy config (e.g. vol_method std -> ewma), allow_short or pairs -> fresh targets."""
         saved, source = None, "state/targets.json"
         if self.targets_file.exists():
             try:
@@ -230,7 +232,7 @@ class StrategyBot:
                 except ValueError:
                     continue
                 if (d.get("event") == "targets" and d.get("reason") == "daily"
-                        and d.get("strategy") == self.strategy.name
+                        and d.get("fingerprint") == self._fingerprint()   # same config (e.g. vol_method)
                         and bool(d.get("allow_short")) == bool(self.cfg["allow_short"])
                         and set(d.get("target", {})) == set(self.pairs)
                         and slot <= pd.Timestamp(d["time"]) < slot + pd.Timedelta(days=1)):

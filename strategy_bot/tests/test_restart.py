@@ -141,11 +141,31 @@ def test_restore_from_log_and_config_change(c: pd.DataFrame) -> bool:
     cfg2["strategy"] = {**cfg2["strategy"], "target_vol": 0.6}
     s.restart(t1 + pd.Timedelta(minutes=5), cfg2)
     rec2 = [d for d in s.read("decisions") if d.get("event") == "targets"][-1]
+    # vol_method switch (std -> ewma, the 2026-10-05 adoption): fresh targets once, then restored
+    cfg_std = make_cfg()
+    cfg_std["strategy"] = {**cfg_std["strategy"], "vol_method": "std"}
+    cfg_ewma = make_cfg()
+    s.restart(t1 + pd.Timedelta(minutes=10), cfg_std)
+    s.restart(t1 + pd.Timedelta(minutes=15), cfg_ewma)
+    r_switch = [d for d in s.read("decisions") if d.get("event") == "targets"][-1]
+    t_switch = dict(s.bot.target)
+    s.restart(t1 + pd.Timedelta(minutes=20), cfg_ewma)
+    r_again = [d for d in s.read("decisions") if d.get("event") == "targets"][-1]
+    t_again = dict(s.bot.target)
+    (s.base / "state" / "targets.json").unlink()            # log fallback must not restore std targets
+    s.restart(t1 + pd.Timedelta(minutes=25), cfg_ewma)
+    r_log = [d for d in s.read("decisions") if d.get("event") == "targets"][-1]
     print(f"\n== restore fallback (daily targets logged at {daily['time'][:16]}) and config change")
     return report({
         "no targets.json: restored from logs/decisions.jsonl, 0 orders, targets.json rewritten": ok_log,
         "strategy config changed: saved targets ignored, computed fresh ('first start')":
             rec2["reason"] == "first start",
+        "vol_method std -> ewma: fresh targets once, restored on the next restart":
+            r_switch["reason"] == "first start" and r_again["reason"] == "restored"
+            and round_t(t_again) == round_t(t_switch),
+        "log fallback restores only same-config targets (00:00 ewma daily, not the std ones)":
+            r_log["reason"] == "restored" and r_log["source"] == "logs/decisions.jsonl"
+            and max(abs(s.bot.target[p] - daily["target"][p]) for p in s.bot.target) < 1e-6,
     })
 
 
