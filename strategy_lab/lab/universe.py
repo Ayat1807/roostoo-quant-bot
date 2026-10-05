@@ -113,10 +113,11 @@ class Universe:
         return m
 
     # ----- data --------------------------------------------------------- #
-    def load_closes(self, start: pd.Timestamp, end: pd.Timestamp | None) -> pd.DataFrame:
+    def load_closes(self, start: pd.Timestamp, end: pd.Timestamp | None,
+                    interval: str = "1h") -> pd.DataFrame:
         if self.type in ("list", "roostoo_all"):
             assets = list(self._list)
         else:
             self._daily_members = self._rank_table(start, end)
             assets = sorted({a for m in self._daily_members for a in m} | {self.btc_asset})
-        return load_close(assets, str(start), str(end) if end else None)
+        return load_close(assets, str(start), str(end) if end else None, interval)

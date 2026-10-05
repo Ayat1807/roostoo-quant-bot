@@ -1,7 +1,8 @@
-"""Binance spot 1h kline cache (all USDT pairs since `data.start`, delisted included).
+"""Binance spot kline cache (all USDT pairs since `data.start`, delisted included).
 
     python -m lab.data update                 # download / top up everything (resumable)
     python -m lab.data update --symbols BTCUSDT,ETHUSDT
+    python -m lab.data update --interval 30m --symbols ...   # 30m bars (MFT runs)
     python -m lab.data info
 
 Sources:
@@ -18,7 +19,7 @@ Data hygiene:
 * Excluded: leveraged tokens and stablecoin/fiat bases (config/lab.yaml).
 
 Storage (.cache/, git-ignored): klines/<SYM>.pkl (hourly close float64 + quote volume
-float32), klines/<SYM>.months.json (manifest of downloaded months), daily.pkl (daily
+float32; 30m bars in klines_30m/), klines/<SYM>.months.json (manifest of downloaded months), daily.pkl (daily
 close and quote-volume panels for ranking and features).
 """
 
@@ -45,10 +46,17 @@ S3 = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
 VISION = "https://data.binance.vision"
 REST_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
 HOUR_MS = 3_600_000
+INTERVAL_MS = {"1h": HOUR_MS, "30m": HOUR_MS // 2}
+FREQ = {"1h": "1h", "30m": "30min"}
 
 CFG = load_config()
 CACHE = ROOT / CFG["data"]["cache_dir"]
 KL = CACHE / "klines"
+
+
+def kl_dir(interval: str = "1h") -> Path:
+    return KL if interval == "1h" else CACHE / f"klines_{interval}"
+
 _session = threading.local()
 
 
@@ -87,12 +95,12 @@ def _s3_prefixes(prefix: str) -> list[str]:
         marker = re.findall(r"<NextMarker>(.*?)</NextMarker>", r.text)[-1]
 
 
-def _s3_months(sym: str) -> list[str]:
+def _s3_months(sym: str, interval: str = "1h") -> list[str]:
     keys, marker = [], ""
-    prefix = f"data/spot/monthly/klines/{sym}/1h/"
+    prefix = f"data/spot/monthly/klines/{sym}/{interval}/"
     while True:
         r = _get(S3, {"prefix": prefix, "marker": marker})
-        keys += re.findall(r"<Key>[^<]*?-1h-(\d{4}-\d{2})\.zip</Key>", r.text)
+        keys += re.findall(r"<Key>[^<]*?-" + interval + r"-(\d{4}-\d{2})\.zip</Key>", r.text)
         if "<IsTruncated>true</IsTruncated>" not in r.text:
             return sorted(set(keys))
         marker = re.findall(r"<Key>([^<]*)</Key>", r.text)[-1]
@@ -137,8 +145,8 @@ def _parse(rows: pd.DataFrame) -> pd.DataFrame:
     return out[~out.index.duplicated(keep="last")]
 
 
-def _month(sym: str, ym: str) -> pd.DataFrame | None:
-    r = _get(f"{VISION}/data/spot/monthly/klines/{sym}/1h/{sym}-1h-{ym}.zip")
+def _month(sym: str, ym: str, interval: str = "1h") -> pd.DataFrame | None:
+    r = _get(f"{VISION}/data/spot/monthly/klines/{sym}/{interval}/{sym}-{interval}-{ym}.zip")
     if r.status_code == 404:
         return None
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
@@ -147,13 +155,14 @@ def _month(sym: str, ym: str) -> pd.DataFrame | None:
     return _parse(raw)
 
 
-def _rest_tail(sym: str, start_ms: int) -> pd.DataFrame | None:
-    now_hour = int(time.time() * 1000) // HOUR_MS * HOUR_MS
+def _rest_tail(sym: str, start_ms: int, interval: str = "1h") -> pd.DataFrame | None:
+    bar = INTERVAL_MS[interval]
+    now_hour = int(time.time() * 1000) // bar * bar
     rows, s = [], start_ms
     while s < now_hour:
         for host in REST_HOSTS:
             try:
-                k = _get(f"{host}/api/v3/klines", {"symbol": sym, "interval": "1h",
+                k = _get(f"{host}/api/v3/klines", {"symbol": sym, "interval": interval,
                                                    "startTime": s, "limit": 1000}).json()
                 break
             except (requests.RequestException, ValueError):
@@ -161,24 +170,25 @@ def _rest_tail(sym: str, start_ms: int) -> pd.DataFrame | None:
         if not k or not isinstance(k, list):
             break
         rows += k
-        s = int(k[-1][0]) + HOUR_MS
+        s = int(k[-1][0]) + bar
     if not rows:
         return None
     df = _parse(pd.DataFrame(rows))
     return df[df.index < pd.Timestamp(now_hour, unit="ms", tz="UTC")]  # completed bars only
 
 
-def update_symbol(sym: str, status: str | None) -> tuple[str, int, str]:
+def update_symbol(sym: str, status: str | None, interval: str = "1h") -> tuple[str, int, str]:
     """Download missing months + REST tail for one symbol. Returns (sym, rows, note)."""
-    KL.mkdir(parents=True, exist_ok=True)
-    path, man_path = KL / f"{sym}.pkl", KL / f"{sym}.months.json"
+    kl = kl_dir(interval)
+    kl.mkdir(parents=True, exist_ok=True)
+    path, man_path = kl / f"{sym}.pkl", kl / f"{sym}.months.json"
     done = set(json.loads(man_path.read_text())) if man_path.exists() else set()
     df = pd.read_pickle(path) if path.exists() else None
-    months = [m for m in _s3_months(sym) if m >= CFG["data"]["start"]]
+    months = [m for m in _s3_months(sym, interval) if m >= CFG["data"]["start"]]
     new = [m for m in months if m not in done]
     parts = [df] if df is not None else []
     for ym in new:
-        m = _month(sym, ym)
+        m = _month(sym, ym, interval)
         if m is not None and len(m):
             parts.append(m)
         done.add(ym)
@@ -189,13 +199,13 @@ def update_symbol(sym: str, status: str | None) -> tuple[str, int, str]:
     if status == "TRADING":
         last_month_end = (pd.Timestamp(max(months) + "-01", tz="UTC") + pd.offsets.MonthBegin(1)
                           if months else pd.Timestamp(CFG["data"]["start"] + "-01", tz="UTC"))
-        start = max(last_month_end, df.index[-1] + pd.Timedelta(hours=1)) if df is not None and len(df) \
+        start = max(last_month_end, df.index[-1] + pd.Timedelta(milliseconds=INTERVAL_MS[interval])) if df is not None and len(df) \
             else last_month_end
-        tail = _rest_tail(sym, int(start.timestamp() * 1000))
+        tail = _rest_tail(sym, int(start.timestamp() * 1000), interval)
         if tail is not None and len(tail):
             df = pd.concat([df, tail]) if df is not None else tail
             df = df[~df.index.duplicated(keep="last")].sort_index()
-            note += f", +{len(tail)}h REST"
+            note += f", +{len(tail)} bars REST"
     if df is None or not len(df):
         return sym, 0, note + " (no data since start)"
     df.to_pickle(path)
@@ -203,14 +213,14 @@ def update_symbol(sym: str, status: str | None) -> tuple[str, int, str]:
     return sym, len(df), note
 
 
-def update(symbols: list[str] | None = None, workers: int = 16) -> None:
+def update(symbols: list[str] | None = None, workers: int = 16, interval: str = "1h") -> None:
     t0 = time.time()
     status = trading_symbols()
     syms = symbols or list_symbols()
     print(f"{len(syms)} symbols to check ({sum(status.get(s) == 'TRADING' for s in syms)} trading)")
     done = 0
     with ThreadPoolExecutor(workers) as ex:
-        futs = {ex.submit(update_symbol, s, status.get(s)): s for s in syms}
+        futs = {ex.submit(update_symbol, s, status.get(s), interval): s for s in syms}
         for f in as_completed(futs):
             done += 1
             try:
@@ -219,7 +229,8 @@ def update(symbols: list[str] | None = None, workers: int = 16) -> None:
                     print(f"  [{done}/{len(syms)}] {sym}: {n} rows ({note})  {time.time()-t0:.0f}s")
             except Exception as exc:
                 print(f"  FAILED {futs[f]}: {exc}")
-    build_daily()
+    if interval == "1h":
+        build_daily()
     print(f"done in {time.time()-t0:.0f}s")
 
 
@@ -242,32 +253,33 @@ def cached_symbols() -> list[str]:
     return sorted(p.stem for p in KL.glob("*.pkl"))
 
 
-def load_symbol(sym: str) -> dict[str, pd.DataFrame]:
+def load_symbol(sym: str, interval: str = "1h") -> dict[str, pd.DataFrame]:
     """All segments of one cached symbol (base name -> frame)."""
-    df = pd.read_pickle(KL / f"{sym}.pkl")
+    df = pd.read_pickle(kl_dir(interval) / f"{sym}.pkl")
     return {name: df.loc[seg.index] for name, seg in _segments(sym, df["close"]).items()}
 
 
-def load_close(assets: list[str], start: str | None = None, end: str | None = None) -> pd.DataFrame:
-    """Hourly close matrix (UTC), columns = assets ('BTCUSDT' or 'LUNAUSDT~2').
+def load_close(assets: list[str], start: str | None = None, end: str | None = None,
+               interval: str = "1h") -> pd.DataFrame:
+    """Close matrix (UTC, hourly or `interval` bars), columns = assets ('BTCUSDT' or 'LUNAUSDT~2').
 
     Each asset is forward-filled only inside its own live range (listing -> last bar), so
-    NaN before listing and after delisting. Index = contiguous hours."""
+    NaN before listing and after delisting. Index = contiguous bars."""
     cols = {}
     for a in assets:
         base = a.split("~")[0]
-        seg = load_symbol(base).get(a)
+        seg = load_symbol(base, interval).get(a)
         if seg is None:
             raise KeyError(f"{a} not in cache")
         s = seg["close"]
-        full = pd.date_range(s.index[0], s.index[-1], freq="1h", tz="UTC")
+        full = pd.date_range(s.index[0], s.index[-1], freq=FREQ[interval], tz="UTC")
         cols[a] = s.reindex(full).ffill()
     close = pd.DataFrame(cols)
     # End at the last hour that every still-trading asset has (symbols downloaded minutes
     # apart can end on different hours); assets that ended > 3 days earlier are delisted.
     lasts = pd.Series({a: s.index[-1] for a, s in cols.items()})
     current = lasts[lasts >= lasts.max() - pd.Timedelta(days=3)]
-    idx = pd.date_range(close.index.min(), current.min(), freq="1h", tz="UTC")
+    idx = pd.date_range(close.index.min(), current.min(), freq=FREQ[interval], tz="UTC")
     close = close.reindex(idx)
     if start:
         close = close.loc[pd.Timestamp(start, tz="UTC"):]
@@ -314,9 +326,10 @@ def main() -> int:
     ap.add_argument("cmd", choices=["update", "info", "daily"])
     ap.add_argument("--symbols", help="comma-separated, default: all")
     ap.add_argument("--workers", type=int, default=16)
+    ap.add_argument("--interval", default="1h", choices=sorted(INTERVAL_MS))
     a = ap.parse_args()
     if a.cmd == "update":
-        update(a.symbols.split(",") if a.symbols else None, a.workers)
+        update(a.symbols.split(",") if a.symbols else None, a.workers, a.interval)
     elif a.cmd == "daily":
         build_daily()
     else:

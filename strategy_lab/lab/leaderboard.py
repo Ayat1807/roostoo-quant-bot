@@ -32,7 +32,7 @@ from lab.runner import load_hourly
 N01 = NormalDist()
 EULER = 0.5772156649
 BASELINES = {"guard": "s3v2_base", "params": "guard_minimal", "universe": "guard_minimal",
-             "bench": "s3v2_base"}
+             "bench": "s3v2_base", "mft": "guard_minimal"}
 
 
 def deflated_sharpe(r: pd.Series, n_trials: int, sr_var_trials: float) -> tuple[float, float]:
@@ -64,7 +64,7 @@ def collect() -> pd.DataFrame:
             "w_median_comp": w.get("median_composite"), "w_median_ret": w.get("median_return"),
             "w_pct_pos": w.get("pct_positive"), "w_worst": w.get("worst_return"), "w_worst_dd": w.get("worst_dd"),
             "w_active": w.get("median_active_days"), "w_all_active": w.get("pct_windows_all_days_active"),
-            "fees_yr": a.get("fees_per_year_pct_equity"), "corr_s3v2": sc.get("corr_daily_vs_s3v2"),
+            "fees_yr": a.get("fees_per_year_pct_equity"), "trades_day": a.get("trades_per_day"), "corr_s3v2": sc.get("corr_daily_vs_s3v2"),
             "note": m.get("note") or ""})
     return pd.DataFrame(rows)
 
@@ -122,12 +122,12 @@ def main() -> int:
          f"is about **{se_ann:.2f}**. The luck threshold for the best of {n_trials} trials (DSR SR*) is about "
          f"**{sr0_ann:.2f}** annualised above zero. Differences smaller than these are not evidence.\n",
          "| # | run | group | OOS ret | OOS Sharpe | OOS maxDD | IS Sharpe | full Sharpe | 14d med comp | "
-         "14d med ret | 14d % pos | 14d worst | 14/14 active | fees/yr | corr s3v2 | DSR | flags |",
-         "|" + "---|" * 17]
+         "14d med ret | 14d % pos | 14d worst | 14/14 active | trades/day | fees/yr | corr s3v2 | DSR | flags |",
+         "|" + "---|" * 18]
     for i, r in df.iterrows():
         L.append(f"| {i + 1} | {r.run} | {r.group} | {r.oos_ret:+.1%} | {r.oos_sharpe:.2f} | {r.oos_mdd:+.1%} | "
                  f"{r.is_sharpe:.2f} | {r.full_sharpe:.2f} | {r.w_median_comp:.2f} | {r.w_median_ret:+.2%} | "
-                 f"{r.w_pct_pos:.0%} | {r.w_worst:+.1%} | {r.w_all_active:.0%} | {r.fees_yr:.1%} | "
+                 f"{r.w_pct_pos:.0%} | {r.w_worst:+.1%} | {r.w_all_active:.0%} | {r.trades_day:.1f} | {r.fees_yr:.1%} | "
                  f"{'' if pd.isna(r.corr_s3v2) else f'{r.corr_s3v2:.2f}'} | "
                  f"{'' if pd.isna(r.dsr) else f'{r.dsr:.2f}'} | {r['flags']} |")
     rec = (ROOT / "reports" / "recommendation.md")
@@ -136,7 +136,7 @@ def main() -> int:
     (ROOT / "leaderboard.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print("\n".join(L[:6]))
     print(df[["run", "group", "oos_ret", "oos_sharpe", "oos_mdd", "is_sharpe", "w_median_comp", "w_pct_pos",
-              "w_all_active", "dsr", "flags"]].round(3).to_string())
+              "w_all_active", "trades_day", "fees_yr", "dsr", "flags"]].round(3).to_string())
     return 0
 
 

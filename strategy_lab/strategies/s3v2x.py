@@ -5,6 +5,8 @@
   parking_asset: e.g. PAXGUSDT. Capital not allocated by the signal (1 - gross) is put
              into this asset (x parking_frac) instead of USD. It is excluded from the
              signal and the vol/N computation. PAXG = tokenised gold, listed on Roostoo.
+  bars_per_year: vol annualisation; 8760 for hourly bars (live), 17520 for 30m bars
+             (s3v2_fast: horizons/vol_win/regime_win are then counted in 30m bars).
 Verified equal to s3v2 with defaults by tests/test_strategies.py.
 """
 
@@ -17,7 +19,8 @@ import pandas as pd
 
 from lab.strategies import Strategy, live
 
-DEFAULTS = {**live.s3v2.DEFAULTS, "n_divisor": None, "parking_asset": None, "parking_frac": 1.0}
+DEFAULTS = {**live.s3v2.DEFAULTS, "n_divisor": None, "parking_asset": None, "parking_frac": 1.0,
+            "bars_per_year": 24 * 365}
 
 
 class S3v2x(Strategy):
@@ -31,10 +34,10 @@ class S3v2x(Strategy):
         horizons = tuple(p["horizons"])
         need = max(max(horizons), int(p["vol_win"]), int(p["regime_win"])) + 1
         if len(c) < need:
-            raise ValueError(f"need {need} hourly bars, have {len(c)}")
+            raise ValueError(f"need {need} bars, have {len(c)}")
         last = c.iloc[-1]
         sig = sum(np.sign(last / c.iloc[-1 - h] - 1) for h in horizons) / len(horizons)
-        rv = c.pct_change().iloc[-int(p["vol_win"]):].std() * np.sqrt(24 * 365)
+        rv = c.pct_change().iloc[-int(p["vol_win"]):].std() * np.sqrt(float(p["bars_per_year"]))
         n = int(p["n_divisor"]) if p["n_divisor"] else len(c.columns)
         raw = sig * (float(p["target_vol"]) / rv) / n
         btc = c[p["btc_pair"]]

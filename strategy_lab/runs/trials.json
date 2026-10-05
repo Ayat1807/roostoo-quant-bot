@@ -1,11 +1,18 @@
 {
- "total_runs": 33,
+ "total_runs": 40,
  "distinct": [
   "guard_band_edge",
   "guard_minimal",
   "guard_off",
   "hold_btc",
   "hold_ew10",
+  "mft_breakout_10",
+  "mft_breakout_10_b01",
+  "mft_breakout_top20",
+  "mft_breakout_top20_b01",
+  "mft_breakout_top30",
+  "mft_breakout_top30_b01",
+  "mft_s3v2_fast",
   "p_band04",
   "p_band08",
   "p_brake_off",
@@ -28,5 +35,5 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-04 16:38 UTC"
+ "updated": "2026-10-05 06:10 UTC"
 }

@@ -10,7 +10,7 @@
 # changes the strategy's path least while still meeting the one-trade-per-day rule.
 # Their comparison baseline is guard_minimal (trial 3).
 
-declared_trials: 26
+declared_trials: 33
 
 defaults:
   strategy: s3v2
@@ -83,3 +83,32 @@ runs:
      params: {parking_asset: PAXGUSDT},
      universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT,
                                      DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, PAXGUSDT]}}
+  # ---- group: mft (team request 2026-10-05), declared before running ------------------
+  # 30m bars, targets recomputed every bar (rebalance_every_h 0.5), band 0.06, minimal
+  # guard, brake on. The team's original MFT spec message was not available, so these
+  # definitions were fixed here a priori and are not tuned after seeing results.
+  # Baseline: guard_minimal (the live config).
+  - {name: mft_s3v2_fast, trial: 27, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: s3v2x, params: {bars_per_year: 17520},
+     note: "s3v2 maths on 30m bars: horizons 24/72/168/336 bars = 12h/36h/3.5d/7d; shorts on"}
+  - {name: mft_breakout_10, trial: 28, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false,
+     note: "long-only Donchian: in > 96-bar high, out < 48-bar low; w = min(0.3, 0.4/vol)/10"}
+  - {name: mft_breakout_top20, trial: 29, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false,
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: mft_breakout_top30, trial: 30, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false,
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  # Declared after trials 28-30 ran: their per-coin weight (max 0.30/10 = 3%) can never
+  # cross the 6pp band, so entries only happened via the 2% guard trade (gross ~1%).
+  # Mechanical fix only: band 0.01 (< per-coin weight; = live guard_band). Nothing else
+  # changed. 28-30 stay on the leaderboard; these count as 3 more trials.
+  - {name: mft_breakout_10_b01, trial: 31, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
+     activity_guard: minimal, strategy: breakout, allow_short: false}
+  - {name: mft_breakout_top20_b01, trial: 32, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
+     activity_guard: minimal, strategy: breakout, allow_short: false,
+     universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
+  - {name: mft_breakout_top30_b01, trial: 33, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
+     activity_guard: minimal, strategy: breakout, allow_short: false,
+     universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}

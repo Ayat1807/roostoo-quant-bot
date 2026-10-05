@@ -51,7 +51,7 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict)
     t0 = time.time()
     s = {k: v for k, v in spec.items() if k not in ("trial", "note", "group")}
     s["name"] = name
-    key = json.dumps(s.get("universe"), sort_keys=True) + str(s.get("start")) + str(s.get("end"))
+    key = json.dumps(s.get("universe"), sort_keys=True) + str(s.get("start")) + str(s.get("end")) + str(s.get("bar"))
     res = run(s, closes_cache.get(key))
     h = res["hourly"]
     HCACHE.mkdir(parents=True, exist_ok=True)

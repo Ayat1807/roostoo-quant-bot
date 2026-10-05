@@ -50,13 +50,14 @@ The strategy is discovered automatically; no registration is needed in the lab. 
 | `strategy`, `params` | strategy name and its parameters |
 | `universe` | `{type: list, assets: [...]}`, `{type: roostoo_all}`, or `{type: top_volume, n, reselect: monthly, min_history_days, min_quote_volume_usd, rank_pool: all\|roostoo, trade: all\|roostoo}` |
 | `band`, `activity_guard` (`off\|full\|minimal\|band_edge`), `brake`, `allow_short`, `capital_cap_usd` | the live bot's rules |
+| `bar` (`1h\|30m`), `rebalance_every_h` | bar size and target cadence. For 30m runs, first download the data with `python -m lab.data update --interval 30m --symbols ...`. Results are resampled to hourly before scoring. |
 | `start` / `end` | the backtest window; the strategy sees 800 bars of history before `start` |
 
 ## How it works
 
 | module | role |
 |---|---|
-| `lab/data.py` | Binance monthly zips (data.binance.vision), delisted coins included, plus a REST tail. Handles microsecond timestamps from 2025 and splits reused tickers (LUNA → LUNA~2). |
+| `lab/data.py` | Binance monthly zips (data.binance.vision), 1h (all pairs) and 30m (on request), delisted coins included, plus a REST tail. Handles microsecond timestamps from 2025 and splits reused tickers (LUNA → LUNA~2). |
 | `lab/roostoo.py` | Roostoo's crypto list, precisions and MiniOrder |
 | `lab/universe.py` | point-in-time universes; 68 Binance tokenized stocks excluded |
 | `lab/strategies.py` | loads the **live** `strategy_bot/strategies` package and `strategy_lab/strategies/*.py` |

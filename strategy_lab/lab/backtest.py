@@ -17,6 +17,12 @@ Roostoo's precision for all 10 S3v2 coins).
 Timing: the decision at bar t uses closes <= t and fills at close[t] (+/- slippage), like
 research/engine.py; the bot does the same a few seconds after the bar closes.
 
+bar="30m" (MFT runs) simulates on 30-minute bars: the strategy sees 30m closes and may
+re-target every `rebalance_every_h` (e.g. 0.5); clock-time rules stay in hours (14-day
+peak, 24h cool-off, 00:00 targets, 20:00 guard). The output is resampled to hourly
+(equity at the hour's last bar, fees/turnover/trades summed) so the scorecard,
+leaderboard and analogs treat every run identically.
+
 engine_mode=True switches to the reference research engine's simplifications (no
 rounding, no MiniOrder, no guard, exit threshold 1e-9) to verify reproduction exactly.
 """
@@ -47,7 +53,8 @@ class RunConfig:
     start: str = "2020-01-01"
     end: str | None = None
     rebalance_hour_utc: int = 0
-    rebalance_every_h: int = 24
+    rebalance_every_h: float = 24
+    bar: str = "1h"                  # 1h | 30m
     band: float = 0.06
     activity_guard: str = "full"     # off | full (1pp band, live bot) | minimal | band_edge
     guard_hour_utc: int = 20
@@ -76,6 +83,8 @@ class RunConfig:
             cfg.activity_guard = "full" if cfg.activity_guard else "off"
         if cfg.activity_guard not in ("off", "full", "minimal", "band_edge"):
             raise ValueError(f"activity_guard must be off|full|minimal|band_edge, got {cfg.activity_guard!r}")
+        if cfg.bar not in ("1h", "30m"):
+            raise ValueError(f"bar must be 1h|30m, got {cfg.bar!r}")
         cfg.costs = {**LAB["costs"], **(d.get("costs") or {})}
         return cfg
 
@@ -96,10 +105,11 @@ class Backtest:
         self.rc = rc
         self.strategy = get_strategy(rc.strategy)
         self.universe = Universe(rc.universe)
-        warm = pd.Timedelta(hours=rc.lookback_bars + 24)
+        self.bph = 2 if rc.bar == "30m" else 1        # bars per hour
+        warm = pd.Timedelta(hours=rc.lookback_bars / self.bph + 24)
         start = pd.Timestamp(rc.start, tz="UTC")
         end = pd.Timestamp(rc.end, tz="UTC") if rc.end else None
-        self.closes = closes if closes is not None else self.universe.load_closes(start - warm, end)
+        self.closes = closes if closes is not None else self.universe.load_closes(start - warm, end, rc.bar)
         self.start, self.end = start, end
         self.specs = self.universe.specs()
 
@@ -161,19 +171,19 @@ class Backtest:
             # 3) drawdown brake (engine/risk.py semantics)
             mult = 1.0
             if rc.brake:
-                lo = min(max(peak_floor - i0, k - rc.peak_days * 24), k)
+                lo = min(max(peak_floor - i0, k - rc.peak_days * 24 * self.bph), k)
                 dd = eq / eq_hist[lo:k + 1].max() - 1
                 if k < flat_until:
                     mult = 0.0
                 elif dd < rc.dd_hard:
                     mult = 0.0
-                    flat_until = k + rc.cooloff_h
-                    peak_floor = i0 + k + rc.cooloff_h
+                    flat_until = k + rc.cooloff_h * self.bph
+                    peak_floor = i0 + k + rc.cooloff_h * self.bph
                 elif dd < rc.dd_soft:
                     mult = 0.5
             # 4) targets: on schedule, or at the first bar
             hours_since = (ts - self.start) / pd.Timedelta(hours=1)
-            sched = ts.hour == rc.rebalance_hour_utc if rc.rebalance_every_h == 24 \
+            sched = (ts.hour == rc.rebalance_hour_utc and ts.minute == 0) if rc.rebalance_every_h == 24 \
                 else hours_since % rc.rebalance_every_h == 0
             if target is None or sched:
                 ti = i if (sched or target is not None) else self._last_sched(i)
@@ -197,7 +207,7 @@ class Backtest:
                 tgt = tgt / g
             # 5) band check + per-leg plan (strategy_bot portfolio.py), then activity guard
             sizing = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
-            guard_hour = (exact and rc.activity_guard != "off" and ts.hour == rc.guard_hour_utc
+            guard_hour = (exact and rc.activity_guard != "off" and ts.hour == rc.guard_hour_utc and ts.minute == 0
                           and last_trade_day != ts.date())
             band = rc.guard_band if (guard_hour and rc.activity_guard == "full") else rc.band
             lw = lu * p / sizing
@@ -242,6 +252,11 @@ class Backtest:
             rec["trades"][k] = ntr
             rec["mult"][k] = mult
         hourly = pd.DataFrame(rec, index=idx[i0:i1])
+        if self.bph > 1:
+            g = hourly.resample("1h")
+            hourly = pd.concat([g[["equity", "cash", "long", "short", "gross"]].last(),
+                                g[["turnover", "fees", "trades"]].sum(), g[["mult"]].min()],
+                               axis=1)[list(rec)]
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
                 "trades_total": n_trades_total}
@@ -318,8 +333,8 @@ class Backtest:
     def _last_sched(self, i: int) -> int:
         """Index of the latest scheduled rebalance bar <= i (for the first target)."""
         rc, idx = self.rc, self.closes.index
-        for j in range(i, max(-1, i - 24 * 7), -1):
-            if rc.rebalance_every_h != 24 or idx[j].hour == rc.rebalance_hour_utc:
+        for j in range(i, max(-1, i - 24 * 7 * self.bph), -1):
+            if rc.rebalance_every_h != 24 or (idx[j].hour == rc.rebalance_hour_utc and idx[j].minute == 0):
                 return j
         return i
 
