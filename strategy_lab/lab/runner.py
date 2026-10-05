@@ -55,7 +55,19 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
     s = {k: v for k, v in spec.items() if k not in ("trial", "note", "group")}
     s["name"] = name
     if "combo" in s:     # core + satellite sub-books (lab/combine.py)
-        cb = s["combo"]
+        cb = dict(s["combo"])
+        if "satellite_from" in cb:      # declared rule, e.g. block 3 "best of i" by OOS P(>= +10%)
+            from lab.b3 import IS_END, OOS0, OOS_END, windows, wstats
+            score = {}
+            for n in cb["satellite_from"]:
+                h = load_hourly(n)
+                if h is None:
+                    raise RuntimeError(f"{name}: run {n} first")
+                score[n] = (wstats(windows(h, OOS0, OOS_END)).get("p10", -1),
+                            wstats(windows(h, None, IS_END)).get("p10", -1))
+            cb["satellite"] = max(score, key=lambda n: score[n])
+            cb["resolved_scores"] = {n: list(v) for n, v in score.items()}
+            print(f"  {name}: satellite resolved by rule {cb.get('rule')} -> {cb['satellite']} {score}")
         core, sat = load_hourly(cb["core"]), load_hourly(cb["satellite"])
         if core is None or sat is None:
             raise RuntimeError(f"{name}: run {cb['core']} and {cb['satellite']} first")

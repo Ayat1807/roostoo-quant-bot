@@ -123,8 +123,9 @@ class Universe:
         d = _daily()
         close, qv = d["close"], d["quote_volume"]
         stocks = set(stock_tokens())
+        core = set(ROOSTOO_10) if s.get("exclude_core", True) else set()
         pool = [a for a in close.columns if "~" not in a and a in self._roostoo
-                and a not in set(ROOSTOO_10) and a not in stocks]
+                and a not in core and a not in stocks]
         close, qv = close[pool], qv[pool]
         min_hist = int(s.get("min_history_days", 90))
         hist = close.notna().cumsum()

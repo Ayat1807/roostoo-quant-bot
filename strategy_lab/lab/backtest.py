@@ -73,6 +73,7 @@ class RunConfig:
     lookback_bars: int = LAB["backtest"]["lookback_bars"]
     costs: dict[str, float] = field(default_factory=lambda: dict(LAB["costs"]))
     engine_mode: bool = False
+    execution: str = "band"         # band (hourly band checks) | scheduled (trade fully only at refresh)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -85,6 +86,8 @@ class RunConfig:
             cfg.activity_guard = "full" if cfg.activity_guard else "off"
         if cfg.activity_guard not in ("off", "full", "minimal", "band_edge"):
             raise ValueError(f"activity_guard must be off|full|minimal|band_edge, got {cfg.activity_guard!r}")
+        if cfg.execution not in ("band", "scheduled"):
+            raise ValueError(f"execution must be band|scheduled, got {cfg.execution!r}")
         if cfg.bar not in BPH:
             raise ValueError(f"bar must be one of {sorted(BPH)}, got {cfg.bar!r}")
         cfg.costs = {**LAB["costs"], **(d.get("costs") or {})}
@@ -151,6 +154,7 @@ class Backtest:
         flat_until, peak_floor = -1, i0
         eq_hist = np.empty(i1 - i0)
         last_trade_day = None
+        sched_mult = None           # scheduled execution: multiplier at the last scheduled trade
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
                                                "turnover", "fees", "trades", "mult")}
         targets_log: list[dict[str, Any]] = []
@@ -231,7 +235,15 @@ class Backtest:
             cw = lw - sw
             holding = (lw > exit_eps) | (sw > exit_eps)
             hedged = (lw > exit_eps) & (sw > exit_eps)
-            trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
+            if rc.execution == "scheduled":
+                # strategy_bot sleeve execution "scheduled": move fully to target at each refresh
+                # (and when the brake / KILL multiplier changes); no trades in between
+                due = sched or sched_mult is None or mult != sched_mult
+                trade = ((np.abs(tgt - cw) > 1e-9) | hedged) if due else np.zeros(A, dtype=bool)
+                if due:
+                    sched_mult = mult
+            else:
+                trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
             trade &= alive_all[i]
             if trade.any():
                 cash, f, tv, n = self._execute({j: tgt[j] for j in np.where(trade)[0]}, lw, sw, sizing,

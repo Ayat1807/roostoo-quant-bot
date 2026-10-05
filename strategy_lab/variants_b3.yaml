@@ -1,0 +1,87 @@
+# Research block 3: competition objective (team request 2026-10-06). ALL trials declared here
+# BEFORE any run; trial counter continues (207-247, 41 new; global declared 206 + 41 = 247).
+#
+# PROTOCOL (fixed before running)
+# * Runs go to the latest data, but are JUDGED ONLY on data to 2026-06-30, in both halves:
+#   IS = start (2020-02-15) -> 2024-12-31, OOS = 2025-01-01 -> 2026-06-30. Jul 1 -> Oct 4 2026
+#   (block-2 holdout, already spent) is reported as INFORMATIONAL ONLY, never a gate.
+# * Primary metric: P(14d return >= +10%) and P(>= +8%) over rolling 14-day windows (daily step).
+# * Constraints, each half: P(14d <= -10%) <= 10% AND worst 14d >= -20%.
+# * Selection: highest OOS P(>= +10%) among runs meeting both constraints in both halves (ties:
+#   higher IS P(>= +10%)). If none: s3v2e_tv06 on core10 if it qualifies, else s3v2e on core10.
+#   If the winner is a regime switch or uses alt10 / core+alt (or xsmom / combos), it is
+#   implemented in strategy_bot behind config flags with tests, not deployed.
+# * Universes: core10 = live 10 coins; alt10 = ZEC NEAR SUI LTC UNI AAVE TAO ENA HBAR TRX
+#   (each enters when its Binance history starts; BTC is loaded as the regime input only, never
+#   traded, for s3v2-based and regime runs); core+alt = both (20 coins) sized as N=10
+#   (n_divisor 10), gross <= 1; tm10 = the teammate's ZEC PAXG POL ICP TRX LISTA STO CAKE TUT SOL.
+# * s3v2e = s3v2 with EWMA vol (halflife 168h), the live config since 47bb53d.
+# * xsmom runs: execution "scheduled" (trade fully at the 14:00 UTC bar decision only, as the
+#   strategy_bot sleeve), long only, brake on, activity guard off (the bot's minimal guard only
+#   works on band sleeves); lookback 2000 bars (= the bot).
+# * j (liquidity guard): Roostoo spread / 24h volume history does not exist, so the guard is
+#   applied as of today: LISTA ($0.23M) and STO ($0.25M) fail the $1M floor -> tm10 minus both.
+# * k "best of i": the i run with the highest OOS P(>= +10%) (ties: IS), resolved automatically
+#   by the runner from data to 2026-06-30 (combo.satellite_from).
+# * Selection-bias check for h: xsmom on tm10 also reported for 2023-01 -> 2025-09 (before the
+#   teammate's sample), flagged as the out-of-sample test of the universe choice.
+
+declared_trials: 41
+trial_offset: 206
+baseline: b3_s3v2e_core10
+
+defaults:
+  strategy: s3v2x
+  start: "2020-02-15"
+  band: 0.06
+  brake: true
+  allow_short: true
+  activity_guard: minimal
+  params: {horizons: [24, 72, 168, 336], vol_win: 336, regime_win: 336, target_vol: 0.40,
+           short_scale_bull: 0.5, max_w: 0.30, btc_pair: BTCUSDT}
+
+runs:
+  # ---- a-g on core10, alt10, core+alt ------------------------------------------------
+  - {name: b3_s3v2_core10, trial: 207, group: a, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, params: {}}
+  - {name: b3_s3v2e_core10, trial: 208, group: a, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, params: {vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c2h_core10, trial: 209, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, check_every_h: 2, params: {vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c4h_core10, trial: 210, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, check_every_h: 4, params: {vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_r12_core10, trial: 211, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, rebalance_every_h: 12, params: {vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_tranched_core10, trial: 212, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, strategy: s3v2_tranched, rebalance_every_h: 6, params: {vol_method: ewma, ewma_halflife: 168, tranches: 4, spacing_bars: 6}}
+  - {name: b3_s3v2e_tv06_core10, trial: 213, group: c, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, params: {vol_method: ewma, ewma_halflife: 168, target_vol: 0.6}}
+  - {name: b3_s3v2e_tv08_w04_core10, trial: 214, group: d, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, params: {vol_method: ewma, ewma_halflife: 168, target_vol: 0.8, max_w: 0.4}}
+  - {name: b3_donchian_core10, trial: 215, group: e, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, strategy: donchian_long, lookback_bars: 10000, params: {n_divisor: 10}}
+  - {name: b3_regime_core10, trial: 216, group: f, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {base_tv: 0.6}}
+  - {name: b3_regime_cons_core10, trial: 217, group: g, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {base_tv: 0.4}}
+  - {name: b3_s3v2_alt10, trial: 218, group: a, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, params: {no_trade: [BTCUSDT], n_divisor: 10}}
+  - {name: b3_s3v2e_alt10, trial: 219, group: a, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c2h_alt10, trial: 220, group: b, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, check_every_h: 2, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c4h_alt10, trial: 221, group: b, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, check_every_h: 4, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_r12_alt10, trial: 222, group: b, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, rebalance_every_h: 12, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_tranched_alt10, trial: 223, group: b, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, strategy: s3v2_tranched, rebalance_every_h: 6, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168, tranches: 4, spacing_bars: 6}}
+  - {name: b3_s3v2e_tv06_alt10, trial: 224, group: c, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168, target_vol: 0.6}}
+  - {name: b3_s3v2e_tv08_w04_alt10, trial: 225, group: d, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, params: {no_trade: [BTCUSDT], n_divisor: 10, vol_method: ewma, ewma_halflife: 168, target_vol: 0.8, max_w: 0.4}}
+  - {name: b3_donchian_alt10, trial: 226, group: e, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: donchian_long, lookback_bars: 10000, params: {n_divisor: 10}}
+  - {name: b3_regime_alt10, trial: 227, group: f, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {no_trade: [BTCUSDT], n_divisor: 10, base_tv: 0.6}}
+  - {name: b3_regime_cons_alt10, trial: 228, group: g, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT, BTCUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {no_trade: [BTCUSDT], n_divisor: 10, base_tv: 0.4}}
+  - {name: b3_s3v2_coreplusalt, trial: 229, group: a, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, params: {n_divisor: 10}}
+  - {name: b3_s3v2e_coreplusalt, trial: 230, group: a, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c2h_coreplusalt, trial: 231, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, check_every_h: 2, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_c4h_coreplusalt, trial: 232, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, check_every_h: 4, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_r12_coreplusalt, trial: 233, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, rebalance_every_h: 12, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168}}
+  - {name: b3_s3v2e_tranched_coreplusalt, trial: 234, group: b, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: s3v2_tranched, rebalance_every_h: 6, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168, tranches: 4, spacing_bars: 6}}
+  - {name: b3_s3v2e_tv06_coreplusalt, trial: 235, group: c, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168, target_vol: 0.6}}
+  - {name: b3_s3v2e_tv08_w04_coreplusalt, trial: 236, group: d, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, params: {n_divisor: 10, vol_method: ewma, ewma_halflife: 168, target_vol: 0.8, max_w: 0.4}}
+  - {name: b3_donchian_coreplusalt, trial: 237, group: e, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: donchian_long, lookback_bars: 10000, params: {n_divisor: 10}}
+  - {name: b3_regime_coreplusalt, trial: 238, group: f, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {n_divisor: 10, base_tv: 0.6}}
+  - {name: b3_regime_cons_coreplusalt, trial: 239, group: g, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT, ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: regime_switch, lookback_bars: 9600, params: {n_divisor: 10, base_tv: 0.4}}
+  # ---- h-j: xsmom --------------------------------------------------------------------
+  - {name: b3_xsmom_tm10, trial: 240, group: h, universe: {type: list, assets: [ZECUSDT, PAXGUSDT, POLUSDT, ICPUSDT, TRXUSDT, LISTAUSDT, STOUSDT, CAKEUSDT, TUTUSDT, SOLUSDT]}, strategy: xsmom, execution: scheduled, rebalance_hour_utc: 14, lookback_bars: 2000, activity_guard: 'off', allow_short: false, params: {}}
+  - {name: b3_xsmom_core10, trial: 241, group: i, universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}, strategy: xsmom, execution: scheduled, rebalance_hour_utc: 14, lookback_bars: 2000, activity_guard: 'off', allow_short: false, params: {}}
+  - {name: b3_xsmom_alt10, trial: 242, group: i, universe: {type: list, assets: [ZECUSDT, NEARUSDT, SUIUSDT, LTCUSDT, UNIUSDT, AAVEUSDT, TAOUSDT, ENAUSDT, HBARUSDT, TRXUSDT]}, strategy: xsmom, execution: scheduled, rebalance_hour_utc: 14, lookback_bars: 2000, activity_guard: 'off', allow_short: false, params: {}}
+  - {name: b3_xsmom_r1, trial: 243, group: i, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false}, strategy: xsmom, execution: scheduled, rebalance_hour_utc: 14, lookback_bars: 2000, activity_guard: 'off', allow_short: false, params: {}}
+  - {name: b3_xsmom_tm10_liq, trial: 244, group: j, universe: {type: list, assets: [ZECUSDT, PAXGUSDT, POLUSDT, ICPUSDT, TRXUSDT, CAKEUSDT, TUTUSDT, SOLUSDT]}, strategy: xsmom, execution: scheduled, rebalance_hour_utc: 14, lookback_bars: 2000, activity_guard: 'off', allow_short: false, params: {}}
+  # ---- k: combos (sleeves: separate books, no rebalancing between them) ------------
+  - {name: b3_c50_s3v2e_xsmom_tm10, trial: 245, group: k, combo: {core: b3_s3v2e_core10, satellite: b3_xsmom_tm10, sat_share: 0.5}}
+  - {name: b3_c30_s3v2e_xsmom_tm10, trial: 246, group: k, combo: {core: b3_s3v2e_core10, satellite: b3_xsmom_tm10, sat_share: 0.3}, note: 70/30}
+  - {name: b3_c50_s3v2e_xsmom_besti, trial: 247, group: k, combo: {core: b3_s3v2e_core10, satellite_from: [b3_xsmom_core10, b3_xsmom_alt10, b3_xsmom_r1], rule: oos_p10, sat_share: 0.5}}

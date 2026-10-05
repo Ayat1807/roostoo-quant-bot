@@ -9,6 +9,8 @@
              clip(t, -tstat_cap, tstat_cap) / tstat_cap (s3v2_smooth).
   vol_method: "std" (live: std of the last vol_win bar returns) or "ewma" (EWMA std,
              halflife ewma_halflife bars; s3v2_ewma_vol).
+  no_trade:  list of columns used as signal inputs only (e.g. BTCUSDT as the regime filter
+             on a universe without BTC): their weight is set to 0 after sizing.
   bars_per_year: vol annualisation; 8760 for hourly bars (live), 17520 for 30m bars
              (s3v2_fast: horizons/vol_win/regime_win are then counted in 30m bars).
 Verified equal to s3v2 with defaults by tests/test_strategies.py.
@@ -25,7 +27,8 @@ from lab.strategies import Strategy, live
 
 DEFAULTS = {**live.s3v2.DEFAULTS, "n_divisor": None, "parking_asset": None, "parking_frac": 1.0,
             "bars_per_year": 24 * 365, "signal": "sign", "tstat_cap": 2.0,
-            "vol_method": "std", "ewma_halflife": 168}
+            "vol_method": "std", "ewma_halflife": 168,
+            "no_trade": []}
 
 
 class S3v2x(Strategy):
@@ -63,6 +66,9 @@ class S3v2x(Strategy):
         if g > 1:
             raw = raw / g
         w = raw.reindex(closes.columns).fillna(0.0)
+        for a in p["no_trade"] or []:
+            if a in w.index:
+                w[a] = 0.0
         if park and park in closes.columns and pd.notna(closes[park].iloc[-1]):
             w[park] = float(p["parking_frac"]) * max(0.0, 1.0 - float(raw.abs().sum()))
         return self.check({k: float(v) for k, v in w.items()})
