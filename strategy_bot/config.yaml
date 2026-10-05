@@ -29,8 +29,9 @@ activity_guard_hour_utc: 20
 #   minimal = ONE trade on the pair furthest from target, size min(gap, guard_max_frac)
 #   off     = no guard (fails the one-trade-per-day rule on ~5 of 14 days)
 # strategy_lab (2020-2026): minimal = best Sharpe, every day active; full adds +-20pp/yr
-# path variance. Team decision pending; the live bot keeps `full` until then.
-activity_guard: full
+# path variance. Team decision 2026-10-05: minimal. No artificial round trip when the book
+# is flat and all targets are 0 (KILL / hard brake stop): those days may stay inactive.
+activity_guard: minimal
 guard_band: 0.01           # used by `full`
 guard_max_frac: 0.02       # used by `minimal`: max trade size as a fraction of sizing equity
 entry_order: limit         # limit at our side of the touch (0.05% maker), market fallback

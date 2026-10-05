@@ -27,10 +27,11 @@ OUT = HERE / ".cache" / "replay"
 
 
 def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
-           tag: str, guard: str = "full") -> dict:
+           tag: str, guard: str | None = None) -> dict:
     base = OUT / tag
     shutil.rmtree(base, ignore_errors=True)
     cfg = load_config(HERE / "config.yaml")
+    guard = guard or cfg["activity_guard"]          # default: the live config
     cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, allow_short=allow_short,
                activity_guard=guard)
     cap = float(cfg["capital_cap_usd"])
@@ -113,7 +114,7 @@ def main() -> int:
     ok = True
     for r in (replay(c, a.days, True, kill_day=20, tag="s3v2_shorts_on"),
               replay(c, 7, False, kill_day=None, tag="s3v2_shorts_off"),
-              replay(c, a.days, True, kill_day=None, tag="s3v2_guard_minimal", guard="minimal"),
+              replay(c, a.days, True, kill_day=None, tag="s3v2_guard_full", guard="full"),
               replay(c, a.days, True, kill_day=None, tag="s3v2_guard_off", guard="off")):
         print(f"\n== {r['tag']} (activity_guard={r['guard']}): {r['start']:%Y-%m-%d %H:%M} -> "
               f"{r['end']:%Y-%m-%d %H:%M} UTC")
