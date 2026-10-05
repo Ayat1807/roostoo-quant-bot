@@ -6,31 +6,31 @@ Strategy `s3v2x`; universe `{'type': 'list', 'assets': ['BTCUSDT', 'ETHUSDT', 'S
 
 | period | window | return | ann | Sharpe | Sortino | max DD | Calmar | composite |
 |---|---|---|---|---|---|---|---|---|
-| full | 2020-02-15 → 2026-06-30 | +238.91% | +21.09% | 1.28 | 1.90 | -16.43% | 1.28 | 1.53 |
-| in_sample | 2020-02-15 → 2024-12-31 | +140.39% | +19.68% | 1.22 | 1.82 | -16.43% | 1.20 | 1.45 |
-| out_of_sample | 2025-01-01 → 2026-06-30 | +41.02% | +25.84% | 1.45 | 2.14 | -12.80% | 2.02 | 1.90 |
-| oos_12m_ref | 2025-10-01 → 2026-06-30 | +22.40% | +31.03% | 1.56 | 2.32 | -12.80% | 2.42 | 2.12 |
+| full | 2020-02-15 → 2026-06-30 | +260.82% | +22.29% | 1.33 | 1.97 | -15.47% | 1.44 | 1.62 |
+| in_sample | 2020-02-15 → 2024-12-31 | +190.87% | +24.45% | 1.44 | 2.15 | -14.15% | 1.73 | 1.81 |
+| out_of_sample | 2025-01-01 → 2026-06-30 | +24.13% | +15.55% | 0.97 | 1.42 | -15.47% | 1.00 | 1.16 |
+| oos_12m_ref | 2025-10-01 → 2026-06-30 | +9.13% | +12.39% | 0.73 | 1.09 | -15.47% | 0.80 | 0.89 |
 
 ## Rolling 14-day windows (competition horizon)
 
 | period | windows | median ret | % positive | worst ret | worst DD | median composite | median active days /14 | % windows 14/14 active |
 |---|---|---|---|---|---|---|---|---|
-| full | 2314 | -0.15% | 46% | -5.64% | -6.95% | -1.26 | 14 | 100% |
-| out_of_sample | 532 | -0.23% | 47% | -4.70% | -5.38% | -1.67 | 14 | 100% |
-| in_sample | 1768 | -0.12% | 46% | -5.64% | -6.95% | -0.89 | 14 | 100% |
+| full | 2314 | -0.08% | 48% | -5.19% | -6.90% | -0.63 | 14 | 99% |
+| out_of_sample | 532 | -0.34% | 43% | -5.19% | -5.37% | -2.59 | 14 | 100% |
+| in_sample | 1768 | -0.01% | 49% | -4.60% | -6.90% | -0.06 | 14 | 99% |
 
 ## By BTC regime (daily returns, full period)
 
 | regime | days | share | mean daily | hit rate | ann. Sharpe | cum. return |
 |---|---|---|---|---|---|---|
-| shock | 170 | 7% | +0.239% | 55% | 3.17 | +47.49% |
-| bull | 659 | 28% | +0.090% | 52% | 2.51 | +77.96% |
-| bear | 399 | 17% | +0.066% | 49% | 1.65 | +28.41% |
-| chop | 1099 | 47% | +0.006% | 43% | 0.14 | +3.06% |
+| shock | 170 | 7% | +0.305% | 57% | 4.10 | +65.05% |
+| bull | 659 | 28% | +0.090% | 50% | 2.59 | +78.36% |
+| bear | 399 | 17% | +0.065% | 45% | 1.63 | +28.29% |
+| chop | 1099 | 47% | +0.002% | 41% | 0.04 | -2.12% |
 
 ## Turnover, fees, activity
 
-- trades: 5493 (2.36/day); active days 100%
-- turnover 50.1x equity/year; fees 5.01% of equity/year ($31,792 total)
-- average gross exposure 0.18; brake active 12.9% of hours
-- correlation of daily returns with s3v2 baseline: 0.90
+- trades: 6481 (2.78/day); active days 100%
+- turnover 64.1x equity/year; fees 6.41% of equity/year ($45,354 total)
+- average gross exposure 0.18; brake active 10.9% of hours
+- correlation of daily returns with s3v2 baseline: 0.87

@@ -1,0 +1,167 @@
+{
+ "name": "c30_r2_rs_gated",
+ "group": "C",
+ "note": null,
+ "trial": 116,
+ "spec": {
+  "name": "c30_r2_rs_gated",
+  "combo": {
+   "core": "b2_core",
+   "satellite": "b_r2_rs_gated",
+   "sat_share": 0.3
+  }
+ },
+ "runtime_s": 3.2,
+ "assets_loaded": 0,
+ "scorecard": {
+  "periods": {
+   "full": {
+    "return": 0.9483322570355324,
+    "ann_ret": 0.11023826635273482,
+    "vol": 0.13580394722823808,
+    "sharpe": 0.8379250648061196,
+    "sortino": 1.1936260334746498,
+    "mdd": -0.16999919448160827,
+    "calmar": 0.648463462952827,
+    "composite": 0.9233669717175439,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2026-06-30 23:00:00+00:00"
+   },
+   "in_sample": {
+    "return": 0.5510376051375103,
+    "ann_ret": 0.09407055289810495,
+    "vol": 0.13051177066981812,
+    "sharpe": 0.7540985250515971,
+    "sortino": 1.0715038798518273,
+    "mdd": -0.16999919448160827,
+    "calmar": 0.5533588155224005,
+    "composite": 0.8208387541129302,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2024-12-31 23:00:00+00:00"
+   },
+   "out_of_sample": {
+    "return": 0.25718266062100903,
+    "ann_ret": 0.16534014507133654,
+    "vol": 0.15180593324217487,
+    "sharpe": 1.0838479733376805,
+    "sortino": 1.5535258546100952,
+    "mdd": -0.1313489437287062,
+    "calmar": 1.2587854944066945,
+    "composite": 1.3242003821673505,
+    "start": "2025-01-01 00:00:00+00:00",
+    "end": "2026-06-30 23:00:00+00:00"
+   },
+   "oos_12m_ref": {
+    "return": 0.11749764788037487,
+    "ann_ret": 0.16015334837803663,
+    "vol": 0.1600038095726509,
+    "sharpe": 1.0083979747023413,
+    "sortino": 1.4618536773765718,
+    "mdd": -0.1313489437287062,
+    "calmar": 1.219296812228839,
+    "composite": 1.2530499070299828,
+    "start": "2025-10-01 00:00:00+00:00",
+    "end": "2026-06-30 23:00:00+00:00"
+   }
+  },
+  "rolling_14d": {
+   "full": {
+    "n_windows": 2314,
+    "median_return": -0.0019420207891874819,
+    "pct_positive": 0.43301642178046673,
+    "worst_return": -0.06820501194606166,
+    "best_return": 0.1769274347456138,
+    "worst_dd": -0.07385163093883218,
+    "median_dd": -0.020902517787055874,
+    "median_composite": -1.698940472302287,
+    "mean_composite": 4.038647187657554,
+    "median_sharpe": -0.7407772890750803,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   },
+   "out_of_sample": {
+    "n_windows": 532,
+    "median_return": -0.0017123827344540654,
+    "pct_positive": 0.45864661654135336,
+    "worst_return": -0.06820501194606166,
+    "best_return": 0.1769274347456138,
+    "worst_dd": -0.07385163093883218,
+    "median_dd": -0.023551633331973076,
+    "median_composite": -1.0992238840505026,
+    "mean_composite": 4.270912962240053,
+    "median_sharpe": -0.4662222333573973,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   },
+   "in_sample": {
+    "n_windows": 1768,
+    "median_return": -0.0019027635709681912,
+    "pct_positive": 0.4287330316742081,
+    "worst_return": -0.059634579231080176,
+    "best_return": 0.11856926584346095,
+    "worst_dd": -0.06330813451456241,
+    "median_dd": -0.02012726680861554,
+    "median_composite": -1.8223179373620462,
+    "mean_composite": 4.067079500774748,
+    "median_sharpe": -0.7864871096396526,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   }
+  },
+  "regimes": {
+   "shock": {
+    "days": 170,
+    "share_days": 0.0730554361839278,
+    "mean_daily": 0.0015905250240934993,
+    "hit_rate": 0.5764705882352941,
+    "ann_sharpe": 2.817760321737472,
+    "cum_return": 0.2975233771577257
+   },
+   "bull": {
+    "days": 659,
+    "share_days": 0.2831972496776966,
+    "mean_daily": 0.0008101160932009665,
+    "hit_rate": 0.5295902883156297,
+    "ann_sharpe": 2.3064609555777804,
+    "cum_return": 0.6801748751044272
+   },
+   "bear": {
+    "days": 399,
+    "share_days": 0.17146540610227762,
+    "mean_daily": 0.00015609183813789862,
+    "hit_rate": 0.47368421052631576,
+    "ann_sharpe": 0.49175748094080707,
+    "cum_return": 0.05647690491559465
+   },
+   "chop": {
+    "days": 1099,
+    "share_days": 0.472281908036098,
+    "mean_daily": -0.00011091441364169876,
+    "hit_rate": 0.44131028207461326,
+    "ann_sharpe": -0.31137907499419015,
+    "cum_return": -0.13673511363744695
+   }
+  },
+  "regime_share_oos": {
+   "chop": 0.609,
+   "bull": 0.178,
+   "bear": 0.17,
+   "shock": 0.044
+  },
+  "activity": {
+   "trades_total": 5480,
+   "trades_per_day": 2.3539518900343643,
+   "active_day_share": 1.0,
+   "turnover_per_year_x_equity": 36.34536142730743,
+   "fees_total_usd": 16642.20274528239,
+   "fees_per_year_pct_equity": 0.036345361427307425,
+   "avg_gross_exposure": 0.16074822024210175,
+   "time_brake_active": 0.10783576746849943
+  },
+  "corr_daily_vs_s3v2": 0.9528571316969722
+ },
+ "last_targets": null
+}
