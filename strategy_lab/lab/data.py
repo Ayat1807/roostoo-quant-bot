@@ -46,8 +46,8 @@ S3 = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
 VISION = "https://data.binance.vision"
 REST_HOSTS = ("https://data-api.binance.vision", "https://api.binance.com")
 HOUR_MS = 3_600_000
-INTERVAL_MS = {"1h": HOUR_MS, "30m": HOUR_MS // 2}
-FREQ = {"1h": "1h", "30m": "30min"}
+INTERVAL_MS = {"1h": HOUR_MS, "30m": HOUR_MS // 2, "15m": HOUR_MS // 4}
+FREQ = {"1h": "1h", "30m": "30min", "15m": "15min"}
 
 CFG = load_config()
 CACHE = ROOT / CFG["data"]["cache_dir"]
@@ -260,20 +260,21 @@ def load_symbol(sym: str, interval: str = "1h") -> dict[str, pd.DataFrame]:
 
 
 def load_close(assets: list[str], start: str | None = None, end: str | None = None,
-               interval: str = "1h") -> pd.DataFrame:
+               interval: str = "1h", field: str = "close") -> pd.DataFrame:
     """Close matrix (UTC, hourly or `interval` bars), columns = assets ('BTCUSDT' or 'LUNAUSDT~2').
 
     Each asset is forward-filled only inside its own live range (listing -> last bar), so
-    NaN before listing and after delisting. Index = contiguous bars."""
+    NaN before listing and after delisting. Index = contiguous bars.
+    field="quote_volume" returns volume on the same grid (gaps -> 0)."""
     cols = {}
     for a in assets:
         base = a.split("~")[0]
         seg = load_symbol(base, interval).get(a)
         if seg is None:
             raise KeyError(f"{a} not in cache")
-        s = seg["close"]
+        s = seg[field].astype("float64")
         full = pd.date_range(s.index[0], s.index[-1], freq=FREQ[interval], tz="UTC")
-        cols[a] = s.reindex(full).ffill()
+        cols[a] = s.reindex(full).ffill() if field == "close" else s.reindex(full).fillna(0.0)
     close = pd.DataFrame(cols)
     # End at the last hour that every still-trading asset has (symbols downloaded minutes
     # apart can end on different hours); assets that ended > 3 days earlier are delisted.

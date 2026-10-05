@@ -49,10 +49,23 @@ def deflated_sharpe(r: pd.Series, n_trials: int, sr_var_trials: float) -> tuple[
     return N01.cdf(z), sr0
 
 
-def collect() -> pd.DataFrame:
+def declared_total() -> int:
+    """Global trial counter: declared trials across every variants*.yaml file."""
+    return sum(int((yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("declared_trials", 0))
+               for f in sorted(ROOT.glob("variants*.yaml")))
+
+
+def block_runs(file: str) -> set[str]:
+    f = ROOT / file
+    return {r["name"] for r in yaml.safe_load(f.read_text(encoding="utf-8"))["runs"]} if f.exists() else set()
+
+
+def collect(only: set[str] | None = None, exclude: set[str] | None = None) -> pd.DataFrame:
     rows = []
     for p in sorted((ROOT / "runs").glob("*/result.json")):
         m = json.loads(p.read_text())
+        if (only is not None and m["name"] not in only) or (exclude and m["name"] in exclude):
+            continue
         sc = m["scorecard"]
         oos, full, isp = (sc["periods"].get(k, {}) for k in ("out_of_sample", "full", "in_sample"))
         w = sc["rolling_14d"].get("out_of_sample", {})
@@ -70,10 +83,9 @@ def collect() -> pd.DataFrame:
 
 
 def main() -> int:
-    doc = yaml.safe_load((ROOT / "variants.yaml").read_text(encoding="utf-8"))
-    n_trials = int(doc.get("declared_trials", len(doc["runs"])))
+    n_trials = declared_total()
     ledger = json.loads((ROOT / "runs" / "trials.json").read_text())
-    df = collect()
+    df = collect(exclude=block_runs("variants_b2.yaml"))   # block 2: OOS ends 2026-06-30 (leaderboard_b2.md)
     strat = df[df.group != "bench"]
     yrs_oos = None
     # cross-trial variance of per-period (hourly) OOS Sharpe, for the DSR threshold
@@ -114,7 +126,8 @@ def main() -> int:
 
     L = ["# strategy_lab leaderboard\n",
          f"_Generated {pd.Timestamp.now(tz='UTC'):%Y-%m-%d %H:%M} UTC from runs/*/result.json. "
-         f"Declared trials: {n_trials} (executed runs incl. re-runs: {ledger['total_runs']}). "
+         f"Declared trials (all blocks): {n_trials} (executed runs incl. re-runs: {ledger['total_runs']}). "
+         f"Research block 2 runs are in leaderboard_b2.md. "
          f"Out-of-sample = 2025-01-01 -> {pd.Timestamp.now(tz='UTC'):%Y-%m-%d} ({yrs_oos:.2f} years)._\n",
          "Ranked by **OOS rolling 14-day windows** (the competition horizon): median composite "
          "(0.4 Sortino + 0.3 Sharpe + 0.3 Calmar), then % of windows positive.\n",

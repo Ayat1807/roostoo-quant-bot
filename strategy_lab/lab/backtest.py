@@ -42,6 +42,7 @@ from lab.strategies import get_strategy
 from lab.universe import Universe
 
 LAB = load_config()
+BPH = {"15m": 4, "30m": 2, "1h": 1}   # bars per hour
 
 
 @dataclass
@@ -54,7 +55,8 @@ class RunConfig:
     end: str | None = None
     rebalance_hour_utc: int = 0
     rebalance_every_h: float = 24
-    bar: str = "1h"                  # 1h | 30m
+    bar: str = "1h"                  # 15m | 30m | 1h
+    check_every_h: int = 1          # band checks / trades / brake only every N hours (2h, 4h cadence)
     band: float = 0.06
     activity_guard: str = "full"     # off | full (1pp band, live bot) | minimal | band_edge
     guard_hour_utc: int = 20
@@ -83,8 +85,8 @@ class RunConfig:
             cfg.activity_guard = "full" if cfg.activity_guard else "off"
         if cfg.activity_guard not in ("off", "full", "minimal", "band_edge"):
             raise ValueError(f"activity_guard must be off|full|minimal|band_edge, got {cfg.activity_guard!r}")
-        if cfg.bar not in ("1h", "30m"):
-            raise ValueError(f"bar must be 1h|30m, got {cfg.bar!r}")
+        if cfg.bar not in BPH:
+            raise ValueError(f"bar must be one of {sorted(BPH)}, got {cfg.bar!r}")
         cfg.costs = {**LAB["costs"], **(d.get("costs") or {})}
         return cfg
 
@@ -105,11 +107,15 @@ class Backtest:
         self.rc = rc
         self.strategy = get_strategy(rc.strategy)
         self.universe = Universe(rc.universe)
-        self.bph = 2 if rc.bar == "30m" else 1        # bars per hour
+        self.bph = BPH[rc.bar]
         warm = pd.Timedelta(hours=rc.lookback_bars / self.bph + 24)
         start = pd.Timestamp(rc.start, tz="UTC")
         end = pd.Timestamp(rc.end, tz="UTC") if rc.end else None
         self.closes = closes if closes is not None else self.universe.load_closes(start - warm, end, rc.bar)
+        self.volume = None
+        if getattr(self.strategy, "needs_volume", False):   # e.g. breakout volume confirmation
+            self.volume = self.universe.load_closes(start - warm, end, rc.bar, field="quote_volume") \
+                .reindex(index=self.closes.index, columns=self.closes.columns).fillna(0.0)
         self.start, self.end = start, end
         self.specs = self.universe.specs()
 
@@ -149,6 +155,7 @@ class Backtest:
                                                "turnover", "fees", "trades", "mult")}
         targets_log: list[dict[str, Any]] = []
         n_trades_total = 0
+        mult = 1.0
 
         for k, i in enumerate(range(i0, i1)):
             ts = idx[i]
@@ -169,6 +176,10 @@ class Backtest:
             eq = cash + float(np.dot(lu, p)) + float(short_val.sum())
             eq_hist[k] = eq
             # 3) drawdown brake (engine/risk.py semantics)
+            is_check = rc.check_every_h <= 1 or (ts.minute == 0 and ts.hour % rc.check_every_h == 0)
+            if not is_check:      # between checks: hold; record mark-to-market only
+                self._record(rec, k, eq, cash, lu, su, p, 0.0, 0.0, 0, mult)
+                continue
             mult = 1.0
             if rc.brake:
                 lo = min(max(peak_floor - i0, k - rc.peak_days * 24 * self.bph), k)
@@ -192,7 +203,9 @@ class Backtest:
                 if members:
                     window = c.iloc[max(0, ti - rc.lookback_bars + 1):ti + 1][members]
                     try:
-                        w = self.strategy.target_weights(window, bp)
+                        bpw = bp if self.volume is None else {
+                            **bp, "_volume": self.volume.iloc[max(0, ti - rc.lookback_bars + 1):ti + 1][members]}
+                        w = self.strategy.target_weights(window, bpw)
                     except ValueError:  # not enough history yet
                         w = {}
                     for a, v in w.items():
@@ -240,17 +253,8 @@ class Backtest:
                 last_trade_day = ts.date()
             n_trades_total += ntr
             short_val = coll + su * (entry - p)
-            eq_after = cash + float(np.dot(lu, p)) + float(short_val.sum())
-            rec["equity"][k] = eq_after
-            eq_hist[k] = eq_after
-            rec["cash"][k] = cash
-            rec["long"][k] = float(np.dot(lu, p))
-            rec["short"][k] = float((su * p).sum())
-            rec["gross"][k] = (rec["long"][k] + rec["short"][k]) / max(eq_after, 1e-9)
-            rec["turnover"][k] = turnover
-            rec["fees"][k] = fees
-            rec["trades"][k] = ntr
-            rec["mult"][k] = mult
+            eq_hist[k] = cash + float(np.dot(lu, p)) + float(short_val.sum())
+            self._record(rec, k, eq_hist[k], cash, lu, su, p, turnover, fees, ntr, mult)
         hourly = pd.DataFrame(rec, index=idx[i0:i1])
         if self.bph > 1:
             g = hourly.resample("1h")
@@ -329,6 +333,18 @@ class Backtest:
             turnover += tv
             n += 1
         return cash, fees, turnover, n
+
+    @staticmethod
+    def _record(rec, k, eq, cash, lu, su, p, turnover, fees, ntr, mult) -> None:
+        rec["equity"][k] = eq
+        rec["cash"][k] = cash
+        rec["long"][k] = float(np.dot(lu, p))
+        rec["short"][k] = float((su * p).sum())
+        rec["gross"][k] = (rec["long"][k] + rec["short"][k]) / max(eq, 1e-9)
+        rec["turnover"][k] = turnover
+        rec["fees"][k] = fees
+        rec["trades"][k] = ntr
+        rec["mult"][k] = mult
 
     def _last_sched(self, i: int) -> int:
         """Index of the latest scheduled rebalance bar <= i (for the first target)."""

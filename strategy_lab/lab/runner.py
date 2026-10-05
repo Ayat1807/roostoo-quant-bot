@@ -2,6 +2,7 @@
 
     python -m lab.runner variants.yaml                   # every declared run
     python -m lab.runner variants.yaml --only s3v2_base,guard_off
+    python -m lab.runner variants_b2.yaml --group D,E      # research block 2 (baseline b2_core)
 
 Outputs per run (runs/<name>/, committed): result.json (spec + scorecard), summary.md,
 equity_daily.csv. The hourly curve is kept in .cache/runs/<name>.pkl (git-ignored) for
@@ -23,6 +24,7 @@ import yaml
 
 from lab import ROOT
 from lab.backtest import run
+from lab.combine import combine_hourly
 from lab.data import load_close
 from lab.scorecard import scorecard, to_markdown
 
@@ -47,16 +49,25 @@ def bump_trials(names: list[str]) -> dict[str, Any]:
     return led
 
 
-def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict) -> dict[str, Any]:
+def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
+            baseline: str = BASELINE) -> dict[str, Any]:
     t0 = time.time()
     s = {k: v for k, v in spec.items() if k not in ("trial", "note", "group")}
     s["name"] = name
-    key = json.dumps(s.get("universe"), sort_keys=True) + str(s.get("start")) + str(s.get("end")) + str(s.get("bar"))
-    res = run(s, closes_cache.get(key))
-    h = res["hourly"]
+    if "combo" in s:     # core + satellite sub-books (lab/combine.py)
+        cb = s["combo"]
+        core, sat = load_hourly(cb["core"]), load_hourly(cb["satellite"])
+        if core is None or sat is None:
+            raise RuntimeError(f"{name}: run {cb['core']} and {cb['satellite']} first")
+        s = {"name": name, "combo": cb}
+        h = combine_hourly(core, sat, float(cb["sat_share"]))
+        res = {"assets": [], "targets": []}
+    else:
+        res = run(s, closes_cache.get(None))
+        h = res["hourly"]
     HCACHE.mkdir(parents=True, exist_ok=True)
     h.to_pickle(HCACHE / f"{name}.pkl")
-    base = load_hourly(BASELINE) if name != BASELINE else None
+    base = load_hourly(baseline) if name != baseline else None
     sc = scorecard(h, btc, base)
     out_dir = RUNS / name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -74,25 +85,32 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", type=Path)
     ap.add_argument("--only", help="comma-separated run names")
+    ap.add_argument("--group", help="comma-separated groups (e.g. D,E)")
     a = ap.parse_args()
     doc = yaml.safe_load(a.file.read_text(encoding="utf-8"))
     defaults = doc.get("defaults", {})
+    baseline = doc.get("baseline", BASELINE)
     runs = doc["runs"]
     names = [r["name"] for r in runs]
     if a.only:
         want = a.only.split(",")
         runs = [r for r in runs if r["name"] in want]
-    # baseline first so correlations are available
-    runs.sort(key=lambda r: r["name"] != BASELINE)
+    if a.group:
+        groups = a.group.split(",")
+        runs = [r for r in runs if r.get("group") in groups]
+    # baseline first (correlations, R4), then strategies, then combos (need both books)
+    runs.sort(key=lambda r: (r["name"] != baseline, "combo" in r))
     btc = load_close(["BTCUSDT"])["BTCUSDT"]
-    led = bump_trials([r["name"] for r in runs])
+    led = bump_trials([r["name"] for r in runs if r.get("trial") is not None])
     print(f"{len(runs)} runs ({len(names)} declared; trial ledger total {led['total_runs']})")
     cache: dict = {}
     for r in runs:
         spec = {**defaults, **{k: v for k, v in r.items() if k != "name"}}
         if "params" in defaults and "params" in r:
             spec["params"] = {**defaults["params"], **r["params"]}
-        m = execute(r["name"], spec, btc, cache)
+        if "combo" in r:
+            spec = {k: v for k, v in r.items() if k != "name"}
+        m = execute(r["name"], spec, btc, cache, baseline)
         sc = m["scorecard"]
         oos, w = sc["periods"].get("out_of_sample", {}), sc["rolling_14d"].get("out_of_sample", {})
         print(f"  {r['name']:<32} OOS {oos.get('return', 0):+7.2%} SR {oos.get('sharpe', 0):5.2f} "

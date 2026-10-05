@@ -1,0 +1,179 @@
+# Research block 2 (team request 2026-10-05). ALL trials are declared here BEFORE any run.
+# Goal: maximise 14-day returns without overfitting. Live bot untouched.
+#
+# PROTOCOL (fixed before running)
+# * Holdout: 2026-07-01 -> latest data is the FINAL EXAM. Every run below ends 2026-06-30
+#   23:00 UTC. The exam is run once, at the end, by `python -m lab.final_exam` (writes
+#   runs/final_exam.lock and refuses to run twice).
+# * Periods: in-sample 2020-02-15 -> 2024-12-31, OOS 2025-01-01 -> 2026-06-30.
+# * Baseline = b2_core: the live config (s3v2, 1h, daily 00:00 targets, band 0.06, minimal
+#   guard, brake on, shorts on, 10 coins), same window. Not a new trial (= trial 3).
+# * "Beats live" = IS Sharpe > baseline IS Sharpe AND OOS Sharpe > baseline OOS Sharpe AND
+#   OOS rolling-14d median composite >= baseline's. Only core replacements (D, E) and
+#   core+satellite combos (C) are candidates; standalone satellites (B) are inputs to C.
+# * Final exam (candidates that beat live only): pass = exam return >= baseline exam return
+#   AND exam max drawdown no worse than baseline's by more than 5pp. Adopt only if both.
+# * Trial counter: trials 34-131 (98 new); global declared trials = 33 + 98 = 131.
+#   The leaderboard's luck threshold (DSR) uses 131.
+# * Satellite spread rule "<= 5 bps": Binance klines carry no spread, so it is proxied by
+#   liquidity (30d mean daily volume >= $10M); today's Roostoo spreads of selected coins are
+#   reported separately. Satellite pool = Roostoo's current crypto list (survivorship bias:
+#   coins delisted from Roostoo are missing; flagged in the report).
+# * Frequency sweep D: horizons fixed in calendar time (1/3/7/14 d; vol and regime windows
+#   14 d). 15m and 30m use real 15m / 30m Binance bars; 2h and 4h use hourly bars with band
+#   checks, trades and brake checks only every 2 / 4 hours (check_every_h).
+
+declared_trials: 98
+trial_offset: 33
+baseline: b2_core
+
+defaults:
+  strategy: s3v2x
+  universe: {type: list, assets: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT,
+                                  ADAUSDT, DOGEUSDT, AVAXUSDT, LINKUSDT, DOTUSDT]}
+  start: "2020-02-15"
+  end: "2026-06-30 23:00"
+  band: 0.06
+  brake: true
+  allow_short: true
+  activity_guard: minimal
+  params: {horizons: [24, 72, 168, 336], vol_win: 336, regime_win: 336, target_vol: 0.40,
+           short_scale_bull: 0.5, max_w: 0.30, btc_pair: BTCUSDT}
+
+runs:
+  - {name: b2_core, group: base, strategy: s3v2, note: "baseline = live config (trial 3 re-run to 2026-06-30)"}
+  # ---- D: frequency sweep (bar or check cadence x target refresh) -------------------
+  - {name: d_15m_r24h, trial: 34, group: D, rebalance_every_h: 24, bar: 15m, lookback_bars: 1400, params: {horizons: [96, 288, 672, 1344], vol_win: 1344, regime_win: 1344, bars_per_year: 35040}}
+  - {name: d_15m_r12h, trial: 35, group: D, rebalance_every_h: 12, bar: 15m, lookback_bars: 1400, params: {horizons: [96, 288, 672, 1344], vol_win: 1344, regime_win: 1344, bars_per_year: 35040}}
+  - {name: d_15m_r6h, trial: 36, group: D, rebalance_every_h: 6, bar: 15m, lookback_bars: 1400, params: {horizons: [96, 288, 672, 1344], vol_win: 1344, regime_win: 1344, bars_per_year: 35040}}
+  - {name: d_30m_r24h, trial: 37, group: D, rebalance_every_h: 24, bar: 30m, lookback_bars: 800, params: {horizons: [48, 144, 336, 672], vol_win: 672, regime_win: 672, bars_per_year: 17520}}
+  - {name: d_30m_r12h, trial: 38, group: D, rebalance_every_h: 12, bar: 30m, lookback_bars: 800, params: {horizons: [48, 144, 336, 672], vol_win: 672, regime_win: 672, bars_per_year: 17520}}
+  - {name: d_30m_r6h, trial: 39, group: D, rebalance_every_h: 6, bar: 30m, lookback_bars: 800, params: {horizons: [48, 144, 336, 672], vol_win: 672, regime_win: 672, bars_per_year: 17520}}
+  - {name: d_1h_r12h, trial: 40, group: D, rebalance_every_h: 12}
+  - {name: d_1h_r6h, trial: 41, group: D, rebalance_every_h: 6}
+  - {name: d_2h_r24h, trial: 42, group: D, rebalance_every_h: 24, check_every_h: 2}
+  - {name: d_2h_r12h, trial: 43, group: D, rebalance_every_h: 12, check_every_h: 2}
+  - {name: d_2h_r6h, trial: 44, group: D, rebalance_every_h: 6, check_every_h: 2}
+  - {name: d_4h_r24h, trial: 45, group: D, rebalance_every_h: 24, check_every_h: 4}
+  - {name: d_4h_r12h, trial: 46, group: D, rebalance_every_h: 12, check_every_h: 4}
+  - {name: d_4h_r6h, trial: 47, group: D, rebalance_every_h: 6, check_every_h: 4}
+  # ---- E: own improvements (1h bars) ------------------------------------------------
+  - {name: e_tranched, trial: 48, group: E, strategy: s3v2_tranched, rebalance_every_h: 6, params: {tranches: 4, spacing_bars: 6}, note: '4 sub-books refreshed at 00/06/12/18 UTC, averaged'}
+  - {name: e_smooth, trial: 49, group: E, params: {signal: tstat, tstat_cap: 2.0}, note: capped t-stat per horizon (|t|<=2) instead of sign}
+  - {name: e_ewma_vol, trial: 50, group: E, params: {vol_method: ewma, ewma_halflife: 168}, note: 'EWMA vol, halflife 7d'}
+  # ---- B: satellites, standalone books (long-only, own capital) ---------------------
+  # Universe: satellite rule R1-R4 (lab/universe.py), monthly, point-in-time, Roostoo-listed,
+  # ex core 10 and stocks; R5 crash guard ON unless the name ends _noR5. Strategies:
+  # strategies/satellite.py (k=4, target_vol 0.8 per coin, cap 10% of total equity).
+  # Book rules: band 0.02 (positions are 5-25% of the book), no activity guard (the core
+  # trades daily), loss limit -8% from the book's 14-day peak -> flat 14 days.
+  # gate alt_rally = hold positions only when the frozen alt_rally flag was on yesterday.
+  - {name: b_r1_bo, trial: 51, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r1_bo_gated, trial: 52, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r1_tr, trial: 53, group: B, strategy: sat_trend, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r1_tr_gated, trial: 54, group: B, strategy: sat_trend, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r1_rs, trial: 55, group: B, strategy: sat_rs, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r1_rs_gated, trial: 56, group: B, strategy: sat_rs, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r2_bo, trial: 57, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r2_bo_gated, trial: 58, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r2_tr, trial: 59, group: B, strategy: sat_trend, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r2_tr_gated, trial: 60, group: B, strategy: sat_trend, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r2_rs, trial: 61, group: B, strategy: sat_rs, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r2_rs_gated, trial: 62, group: B, strategy: sat_rs, universe: {type: satellite, rule: R2, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r3_bo, trial: 63, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r3_bo_gated, trial: 64, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r3_tr, trial: 65, group: B, strategy: sat_trend, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r3_tr_gated, trial: 66, group: B, strategy: sat_trend, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r3_rs, trial: 67, group: B, strategy: sat_rs, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r3_rs_gated, trial: 68, group: B, strategy: sat_rs, universe: {type: satellite, rule: R3, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r4_bo, trial: 69, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r4_bo_gated, trial: 70, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r4_tr, trial: 71, group: B, strategy: sat_trend, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r4_tr_gated, trial: 72, group: B, strategy: sat_trend, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r4_rs, trial: 73, group: B, strategy: sat_rs, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r4_rs_gated, trial: 74, group: B, strategy: sat_rs, universe: {type: satellite, rule: R4, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: true, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {gate: alt_rally, target_vol: 0.8}}
+  - {name: b_r1_bo_noR5, trial: 75, group: B, strategy: sat_breakout, rebalance_every_h: 4, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: false, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off',
+  initial_equity: 10000, brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r1_tr_noR5, trial: 76, group: B, strategy: sat_trend, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: false, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  - {name: b_r1_rs_noR5, trial: 77, group: B, strategy: sat_rs, universe: {type: satellite, rule: R1, n_liquid: 15, k: 5, min_history_days: 90, min_quote_volume_usd: 10000000.0, vol_band: [0.5, 1.3], crash_guard: false, core_run: b2_core}, allow_short: false, band: 0.02, activity_guard: 'off', initial_equity: 10000,
+  brake: true, dd_soft: -0.99, dd_hard: -0.08, cooloff_h: 336, peak_days: 14, params: {target_vol: 0.8}}
+  # ---- C: core (b2_core) + satellite sub-books, no rebalancing between books --------
+  - {name: c20_r1_bo, trial: 78, group: C, combo: {core: b2_core, satellite: b_r1_bo, sat_share: 0.2}}
+  - {name: c20_r1_bo_gated, trial: 79, group: C, combo: {core: b2_core, satellite: b_r1_bo_gated, sat_share: 0.2}}
+  - {name: c20_r1_tr, trial: 80, group: C, combo: {core: b2_core, satellite: b_r1_tr, sat_share: 0.2}}
+  - {name: c20_r1_tr_gated, trial: 81, group: C, combo: {core: b2_core, satellite: b_r1_tr_gated, sat_share: 0.2}}
+  - {name: c20_r1_rs, trial: 82, group: C, combo: {core: b2_core, satellite: b_r1_rs, sat_share: 0.2}}
+  - {name: c20_r1_rs_gated, trial: 83, group: C, combo: {core: b2_core, satellite: b_r1_rs_gated, sat_share: 0.2}}
+  - {name: c20_r2_bo, trial: 84, group: C, combo: {core: b2_core, satellite: b_r2_bo, sat_share: 0.2}}
+  - {name: c20_r2_bo_gated, trial: 85, group: C, combo: {core: b2_core, satellite: b_r2_bo_gated, sat_share: 0.2}}
+  - {name: c20_r2_tr, trial: 86, group: C, combo: {core: b2_core, satellite: b_r2_tr, sat_share: 0.2}}
+  - {name: c20_r2_tr_gated, trial: 87, group: C, combo: {core: b2_core, satellite: b_r2_tr_gated, sat_share: 0.2}}
+  - {name: c20_r2_rs, trial: 88, group: C, combo: {core: b2_core, satellite: b_r2_rs, sat_share: 0.2}}
+  - {name: c20_r2_rs_gated, trial: 89, group: C, combo: {core: b2_core, satellite: b_r2_rs_gated, sat_share: 0.2}}
+  - {name: c20_r3_bo, trial: 90, group: C, combo: {core: b2_core, satellite: b_r3_bo, sat_share: 0.2}}
+  - {name: c20_r3_bo_gated, trial: 91, group: C, combo: {core: b2_core, satellite: b_r3_bo_gated, sat_share: 0.2}}
+  - {name: c20_r3_tr, trial: 92, group: C, combo: {core: b2_core, satellite: b_r3_tr, sat_share: 0.2}}
+  - {name: c20_r3_tr_gated, trial: 93, group: C, combo: {core: b2_core, satellite: b_r3_tr_gated, sat_share: 0.2}}
+  - {name: c20_r3_rs, trial: 94, group: C, combo: {core: b2_core, satellite: b_r3_rs, sat_share: 0.2}}
+  - {name: c20_r3_rs_gated, trial: 95, group: C, combo: {core: b2_core, satellite: b_r3_rs_gated, sat_share: 0.2}}
+  - {name: c20_r4_bo, trial: 96, group: C, combo: {core: b2_core, satellite: b_r4_bo, sat_share: 0.2}}
+  - {name: c20_r4_bo_gated, trial: 97, group: C, combo: {core: b2_core, satellite: b_r4_bo_gated, sat_share: 0.2}}
+  - {name: c20_r4_tr, trial: 98, group: C, combo: {core: b2_core, satellite: b_r4_tr, sat_share: 0.2}}
+  - {name: c20_r4_tr_gated, trial: 99, group: C, combo: {core: b2_core, satellite: b_r4_tr_gated, sat_share: 0.2}}
+  - {name: c20_r4_rs, trial: 100, group: C, combo: {core: b2_core, satellite: b_r4_rs, sat_share: 0.2}}
+  - {name: c20_r4_rs_gated, trial: 101, group: C, combo: {core: b2_core, satellite: b_r4_rs_gated, sat_share: 0.2}}
+  - {name: c20_r1_bo_noR5, trial: 102, group: C, combo: {core: b2_core, satellite: b_r1_bo_noR5, sat_share: 0.2}}
+  - {name: c20_r1_tr_noR5, trial: 103, group: C, combo: {core: b2_core, satellite: b_r1_tr_noR5, sat_share: 0.2}}
+  - {name: c20_r1_rs_noR5, trial: 104, group: C, combo: {core: b2_core, satellite: b_r1_rs_noR5, sat_share: 0.2}}
+  - {name: c30_r1_bo, trial: 105, group: C, combo: {core: b2_core, satellite: b_r1_bo, sat_share: 0.3}}
+  - {name: c30_r1_bo_gated, trial: 106, group: C, combo: {core: b2_core, satellite: b_r1_bo_gated, sat_share: 0.3}}
+  - {name: c30_r1_tr, trial: 107, group: C, combo: {core: b2_core, satellite: b_r1_tr, sat_share: 0.3}}
+  - {name: c30_r1_tr_gated, trial: 108, group: C, combo: {core: b2_core, satellite: b_r1_tr_gated, sat_share: 0.3}}
+  - {name: c30_r1_rs, trial: 109, group: C, combo: {core: b2_core, satellite: b_r1_rs, sat_share: 0.3}}
+  - {name: c30_r1_rs_gated, trial: 110, group: C, combo: {core: b2_core, satellite: b_r1_rs_gated, sat_share: 0.3}}
+  - {name: c30_r2_bo, trial: 111, group: C, combo: {core: b2_core, satellite: b_r2_bo, sat_share: 0.3}}
+  - {name: c30_r2_bo_gated, trial: 112, group: C, combo: {core: b2_core, satellite: b_r2_bo_gated, sat_share: 0.3}}
+  - {name: c30_r2_tr, trial: 113, group: C, combo: {core: b2_core, satellite: b_r2_tr, sat_share: 0.3}}
+  - {name: c30_r2_tr_gated, trial: 114, group: C, combo: {core: b2_core, satellite: b_r2_tr_gated, sat_share: 0.3}}
+  - {name: c30_r2_rs, trial: 115, group: C, combo: {core: b2_core, satellite: b_r2_rs, sat_share: 0.3}}
+  - {name: c30_r2_rs_gated, trial: 116, group: C, combo: {core: b2_core, satellite: b_r2_rs_gated, sat_share: 0.3}}
+  - {name: c30_r3_bo, trial: 117, group: C, combo: {core: b2_core, satellite: b_r3_bo, sat_share: 0.3}}
+  - {name: c30_r3_bo_gated, trial: 118, group: C, combo: {core: b2_core, satellite: b_r3_bo_gated, sat_share: 0.3}}
+  - {name: c30_r3_tr, trial: 119, group: C, combo: {core: b2_core, satellite: b_r3_tr, sat_share: 0.3}}
+  - {name: c30_r3_tr_gated, trial: 120, group: C, combo: {core: b2_core, satellite: b_r3_tr_gated, sat_share: 0.3}}
+  - {name: c30_r3_rs, trial: 121, group: C, combo: {core: b2_core, satellite: b_r3_rs, sat_share: 0.3}}
+  - {name: c30_r3_rs_gated, trial: 122, group: C, combo: {core: b2_core, satellite: b_r3_rs_gated, sat_share: 0.3}}
+  - {name: c30_r4_bo, trial: 123, group: C, combo: {core: b2_core, satellite: b_r4_bo, sat_share: 0.3}}
+  - {name: c30_r4_bo_gated, trial: 124, group: C, combo: {core: b2_core, satellite: b_r4_bo_gated, sat_share: 0.3}}
+  - {name: c30_r4_tr, trial: 125, group: C, combo: {core: b2_core, satellite: b_r4_tr, sat_share: 0.3}}
+  - {name: c30_r4_tr_gated, trial: 126, group: C, combo: {core: b2_core, satellite: b_r4_tr_gated, sat_share: 0.3}}
+  - {name: c30_r4_rs, trial: 127, group: C, combo: {core: b2_core, satellite: b_r4_rs, sat_share: 0.3}}
+  - {name: c30_r4_rs_gated, trial: 128, group: C, combo: {core: b2_core, satellite: b_r4_rs_gated, sat_share: 0.3}}
+  - {name: c30_r1_bo_noR5, trial: 129, group: C, combo: {core: b2_core, satellite: b_r1_bo_noR5, sat_share: 0.3}}
+  - {name: c30_r1_tr_noR5, trial: 130, group: C, combo: {core: b2_core, satellite: b_r1_tr_noR5, sat_share: 0.3}}
+  - {name: c30_r1_rs_noR5, trial: 131, group: C, combo: {core: b2_core, satellite: b_r1_rs_noR5, sat_share: 0.3}}

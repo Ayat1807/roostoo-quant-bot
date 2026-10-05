@@ -21,10 +21,13 @@ from lab.universe import ROOSTOO_10
 
 def main() -> int:
     c = load_close(ROOSTOO_10 + ["PAXGUSDT"], "2025-01-01")
+    vol = load_close(ROOSTOO_10, "2025-01-01", field="quote_volume").reindex(c.index).fillna(0.0)
     ok = True
     params = {"btc_pair": "BTCUSDT"}
     for name, (cls, origin) in sorted(registry().items()):
-        w = get_strategy(name).target_weights(c[ROOSTOO_10].iloc[-800:], params)
+        st = get_strategy(name)
+        extra = {"_volume": vol.iloc[-800:]} if getattr(st, "needs_volume", False) else {}
+        w = st.target_weights(c[ROOSTOO_10].iloc[-800:], {**params, **extra})
         g = sum(abs(v) for v in w.values())
         good = g <= 1 + 1e-9 and set(w) == set(ROOSTOO_10)
         ok &= good
