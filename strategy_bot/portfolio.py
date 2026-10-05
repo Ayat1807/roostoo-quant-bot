@@ -14,7 +14,9 @@ Changes vs the reference, each for a live-API fact or a safety rule:
     (pending orders on that pair), cancel it if found, log, and let the next hourly
     cycle re-read the account.
   * Quantities are floored with Decimal (no float artefacts like 0.29*100=28.999...).
-  * Every order request and full response goes to logs/orders.jsonl.
+  * Every order request and full response goes to logs/orders.jsonl. A limit order that
+    rests and fills later (during the wait, or racing the cancel) gets its own
+    LIMIT_LATE_FILL record with the final query response (fill price, commission).
 """
 
 from __future__ import annotations
@@ -249,23 +251,50 @@ class Portfolio:
         px = round(bid if side == "BUY" else ask, pp)  # rest at our side of the book (maker)
         before = self._coin_qty(pair)
         o = self._place("LIMIT", pair, side, qty, "LIMIT", px)
-        deadline = time.time() + self.limit_wait_s
+        rested = o.get("Status") == "PENDING"
+        t_placed = time.time()
+        deadline = t_placed + self.limit_wait_s
         while o.get("Status") == "PENDING" and time.time() < deadline:
             self.sleep(self.poll_s)
             m = (self.c.query_order(order_id=o["OrderID"]).get("OrderMatched") or [None])[0]
             o = m or o
         if o.get("Status") == "PENDING":
-            self.c.cancel_order(order_id=o["OrderID"])
+            try:
+                self.c.cancel_order(order_id=o["OrderID"])
+            except RoostooAPIError as exc:  # e.g. it filled a moment ago: check below
+                self.logs.error(f"cancel:{pair}:{o['OrderID']}", exc)
+            # the order may have filled between the last query and the cancel
+            final = (self.c.query_order(order_id=o["OrderID"]).get("OrderMatched") or [o])[0]
             filled = min(abs(self._coin_qty(pair) - before), qty)
             ap = int(self.info[pair]["AmountPrecision"])
             rest = floor_to(qty - filled, ap)
             if side == "SELL":  # never sell more than we actually hold now
                 rest = min(rest, floor_to(self._free_qty(pair), ap))
             self.logs.write("orders", {"action": "LIMIT_TIMEOUT", "pair": pair, "order_id": o["OrderID"],
-                                       "qty": qty, "filled": filled, "rest": rest, "dry_run": False})
+                                       "qty": qty, "filled": filled, "rest": rest,
+                                       "final_status": final.get("Status"), "dry_run": False})
+            log.info("LIMIT_TIMEOUT %s %s order %s: filled %s of %s while resting, final status %s, "
+                     "market remainder %s", side, pair, o["OrderID"], filled, qty, final.get("Status"), rest)
+            if final.get("Status") == "FILLED":
+                self._log_late_fill(pair, side, final, t_placed, "filled before cancel took effect")
             if rest * ref > mini:
                 self._place("MARKET_FALLBACK", pair, side, rest, "MARKET")
+        elif rested:
+            self._log_late_fill(pair, side, o, t_placed, "filled while resting")
         return True
+
+    def _log_late_fill(self, pair: str, side: str, o: dict[str, Any], t_placed: float, how: str) -> None:
+        """A limit order that rested (PENDING at placement) and filled later: the placement
+        record in orders.jsonl still says PENDING, so record the fill separately."""
+        rec = {"action": "LIMIT_LATE_FILL", "pair": pair, "side": side, "order_id": o.get("OrderID"),
+               "status": o.get("Status"), "how": how, "filled_qty": o.get("FilledQuantity"),
+               "avg_price": o.get("FilledAverPrice"), "commission": o.get("CommissionChargeValue"),
+               "role": o.get("Role"), "waited_s": round(time.time() - t_placed, 1),
+               "response": o, "dry_run": False}
+        self.logs.write("orders", rec)
+        log.info("LIMIT_LATE_FILL %s %s order %s (%s): qty %s @ %s, fee %s, after %.0fs", side, pair,
+                 o.get("OrderID"), how, o.get("FilledQuantity"), o.get("FilledAverPrice"),
+                 o.get("CommissionChargeValue"), rec["waited_s"])
 
     def _free_qty(self, pair: str) -> float:
         return num(extract_wallet(self.c.balance()).get(pair.split("/")[0], {}), "Free")

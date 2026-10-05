@@ -163,6 +163,26 @@ class MockRoostoo:
         return {"Success": True, "OrderMatched": [{k: v for k, v in o.items() if not k.startswith("_")}
                                                   for o in found]}
 
+    def fill_pending(self, order_id: int) -> None:
+        """Simulate a resting limit order filling later at its limit price (maker)."""
+        o = self.orders[int(order_id)]
+        if o["Status"] != "PENDING":
+            return
+        coin = o["Pair"].split("/")[0]
+        q, px = o["Quantity"], o["Price"]
+        fee = q * px * self.maker
+        if o["Side"] == "BUY":
+            self.usd_lock -= o["_locked"]
+            self.usd += o["_locked"] - (q * px + fee)
+            self.coins[coin] += q
+        else:
+            self.locked[coin] -= q
+            self.usd += q * px - fee
+        self.fees_paid += fee
+        self.n_orders += 1
+        o.update(Status="FILLED", FilledQuantity=q, FilledAverPrice=px, CommissionChargeValue=fee,
+                 CommissionPercent=self.maker)
+
     def cancel_order(self, order_id: Any = None, pair: str | None = None) -> dict[str, Any]:
         self._count("cancel_order")
         if (order_id is None) == (pair is None):

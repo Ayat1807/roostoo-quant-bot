@@ -16,14 +16,14 @@ The instance setup (IAM role, deploy key, tmux basics) is the same as for pipeli
 
 | When | What |
 |---|---|
-| Startup | Clock sync. exchangeInfo check. Universe check: each pair must be crypto, `CanTrade`, and have live ticker data; pairs that fail are dropped and logged. 800 h of Binance closes are seeded per pair, or loaded from `state/bars.csv` with any missing hours topped up. Stale pending orders are cancelled. Then targets are computed and the first rebalance runs. |
+| Startup | Clock sync. exchangeInfo check. Universe check: each pair must be crypto, `CanTrade`, and have live ticker data; pairs that fail are dropped and logged. 800 h of Binance closes are seeded per pair, or loaded from `state/bars.csv` with any missing hours topped up. Stale pending orders are cancelled. Then the targets of the most recent 00:00 UTC slot are restored from `state/targets.json` (computed fresh only if none exist for that slot, or the strategy config changed), and the first rebalance runs. |
 | Every 60 s | One `ticker` call for all pairs, which updates the hourly bars. The heartbeat is written. |
 | Each completed hour | An account snapshot (SpotWallet plus short positions), the drawdown brake, then a rebalance of every pair whose weight is more than 6 pp off target, or whose target is 0 while we still hold it. Reductions go first, then increases. |
 | 00:00 UTC daily | S3v2 target weights are recomputed, and the full vector is logged. |
 | 20:00 UTC | If nothing has traded today, the bot rebalances with a 1 pp band (activity guard). |
 | Any time | A `KILL` file makes the bot flatten within one poll, then idle while the file exists. |
 
-Orders are placed as a LIMIT at our side of the touch (maker 0.05%). After 5 minutes the bot cancels and sends a MARKET order for the remainder. Shorts go through `/v6` with collateral. A timed-out order request is never resent: the bot looks the order up and cancels it, and the next hour re-reads the account.
+Orders are placed as a LIMIT at our side of the touch (maker 0.05%). After 5 minutes the bot cancels and sends a MARKET order for the remainder. A limit that rests and fills later is logged as `LIMIT_LATE_FILL` (fill price and fee) in `orders.jsonl` and `bot.log`; a cancelled one as `LIMIT_TIMEOUT` with what had filled. Shorts go through `/v6` with collateral. A timed-out order request is never resent: the bot looks the order up and cancels it, and the next hour re-reads the account.
 
 ## 2. Key settings (`config.yaml`)
 
@@ -71,7 +71,7 @@ python status.py
 Check the output for:
 - `universe (10): ...`, with no `dropping` warnings unless expected
 - `bars loaded: ~800 rows x 10 pairs`
-- `targets (first start): {...}` and `[DRY RUN] ...` order lines
+- `targets computed: first start (slot ...)` on a first start, or `targets restored from 00:00 (...)` on a restart the same day, and `[DRY RUN] ...` order lines
 - `Errors in last 24h: 0`
 
 ## 6. Unattended run with tmux (one-line commands)
@@ -162,7 +162,7 @@ sudo systemctl restart strategy-bot        # or in tmux: Ctrl+C, wait for "stopp
 .venv/bin/python status.py
 ```
 
-Restarts are safe. State lives in `state/`: bars, the risk brake's peak and cool-off, and the last trade day. The account itself is always re-read from the exchange. Stale pending orders are cancelled on start.
+Restarts are safe. State lives in `state/`: bars, the risk brake's peak and cool-off, the last trade day, and today's targets (`targets.json`; a mid-day restart reuses the 00:00 targets instead of recomputing, so a redeploy causes no extra trades). The first restart after this feature ships restores today's 00:00 targets from `logs/decisions.jsonl`. The account itself is always re-read from the exchange. Stale pending orders are cancelled on start.
 
 ## 11. Adding a strategy (teammates)
 

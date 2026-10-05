@@ -3,7 +3,9 @@
 Loop (port of the reference bot/main.py, on pipeline_bot's infrastructure):
   every poll_s (60 s): one ticker call for all pairs -> hourly bar store
   each completed hour: account snapshot -> drawdown brake -> band rebalance toward target
-  daily at rebalance_hour_utc (and at first start): recompute target weights
+  daily at rebalance_hour_utc: recompute target weights, persisted to state/targets.json
+  restart: reuse the targets of the most recent rebalance slot (00:00 UTC) if they exist
+    for the same strategy config; compute fresh ones only if none exist for that slot
   activity guard: if nothing traded today by activity_guard_hour_utc, use guard_band
   KILL file: flatten within one poll, then idle while it exists
 
@@ -88,12 +90,14 @@ class StrategyBot:
         self.pairs: list[str] = []
         self.target: dict[str, float] | None = None
         self.target_time: str | None = None
+        self.target_slot: str | None = None      # rebalance slot the targets belong to
         self.mult, self.brake = 1.0, ""
         self.cycle = 0
         self.stop_requested = False
         self.kill_handled = False
         self.last_action: dict[str, Any] | None = None
         self.state_file = self.state_dir / "bot_state.json"
+        self.targets_file = self.state_dir / "targets.json"
         st = json.loads(self.state_file.read_text()) if self.state_file.exists() else {}
         self.last_trade_day: str | None = st.get("last_trade_day")
 
@@ -151,18 +155,87 @@ class StrategyBot:
 
     # ----- strategy -------------------------------------------------------- #
 
-    def compute_targets(self, reason: str) -> None:
+    def rebalance_slot(self, now: pd.Timestamp) -> pd.Timestamp:
+        """Most recent scheduled target time <= now (today's 00:00 UTC by default)."""
+        slot = now.floor("D") + pd.Timedelta(hours=int(self.cfg["rebalance_hour_utc"]))
+        return slot if slot <= now else slot - pd.Timedelta(days=1)
+
+    def _fingerprint(self) -> dict[str, Any]:
+        """Settings that change the targets: a mismatch means saved targets are stale."""
+        return {"strategy": self.cfg["strategy"], "allow_short": bool(self.cfg["allow_short"]),
+                "pairs": sorted(self.pairs)}
+
+    def compute_targets(self, reason: str, slot: pd.Timestamp) -> None:
         closes = self.bars.close[self.pairs]
         raw = self.strategy.target_weights(closes, self.cfg["strategy"])
         tgt = raw if self.cfg["allow_short"] else {p: max(w, 0.0) for p, w in raw.items()}
-        self.target, self.target_time = tgt, str(self.clock())
-        self.logs.write("decisions", {
-            "event": "targets", "reason": reason, "strategy": self.strategy.name,
-            "bar_time": str(closes.index[-1]), "allow_short": self.cfg["allow_short"],
-            "raw": {p: round(w, 6) for p, w in raw.items()},
-            "target": {p: round(w, 6) for p, w in tgt.items()},
-            "gross": round(sum(abs(w) for w in tgt.values()), 6)})
-        log.info("targets (%s): %s", reason, {p: round(w, 3) for p, w in tgt.items() if w})
+        self.target, self.target_time, self.target_slot = tgt, str(self.clock()), str(slot)
+        rec = {"event": "targets", "reason": reason, "strategy": self.strategy.name,
+               "slot": str(slot), "bar_time": str(closes.index[-1]),
+               "allow_short": self.cfg["allow_short"],
+               "raw": {p: round(w, 6) for p, w in raw.items()},
+               "target": {p: round(w, 6) for p, w in tgt.items()},
+               "gross": round(sum(abs(w) for w in tgt.values()), 6)}
+        self.logs.write("decisions", rec)
+        write_json_atomic(self.targets_file, {**rec, "target": tgt, "computed_at": self.target_time,
+                                              "fingerprint": self._fingerprint()})
+        log.info("targets computed: %s (slot %s): %s", reason, slot,
+                 {p: round(w, 3) for p, w in tgt.items() if w})
+
+    def restore_targets(self, slot: pd.Timestamp) -> bool:
+        """Reuse the targets saved for `slot` (a restart must not move them mid-day).
+        Source: state/targets.json; if that file does not exist yet (first restart after
+        this feature shipped), the latest 'daily' targets event in logs/decisions.jsonl."""
+        saved, source = None, "state/targets.json"
+        if self.targets_file.exists():
+            try:
+                d = json.loads(self.targets_file.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                self.logs.error("restore_targets", exc)
+                d = None
+            if d and d.get("fingerprint") == self._fingerprint():
+                saved = d
+            elif d:
+                log.warning("saved targets ignored: strategy config / pairs changed since %s",
+                            d.get("computed_at"))
+                return False
+        else:
+            saved, source = self._targets_from_log(slot), "logs/decisions.jsonl"
+        if not saved or pd.Timestamp(saved.get("slot", "1970-01-01T00:00:00+00:00")) != slot:
+            return False
+        tgt = {p: float(saved["target"].get(p, 0.0)) for p in self.pairs}
+        self.target, self.target_time, self.target_slot = tgt, saved.get("computed_at") or saved.get("time"), str(slot)
+        self.logs.write("decisions", {"event": "targets", "reason": "restored", "slot": str(slot),
+                                      "source": source, "computed_at": self.target_time,
+                                      "target": {p: round(w, 6) for p, w in tgt.items()}})
+        log.info("targets restored from %s (computed %s, from %s): %s", f"{slot:%H:%M}",
+                 self.target_time, source, {p: round(w, 3) for p, w in tgt.items() if w})
+        if source != "state/targets.json":
+            write_json_atomic(self.targets_file, {**saved, "target": tgt, "slot": str(slot),
+                                                  "computed_at": self.target_time,
+                                                  "fingerprint": self._fingerprint()})
+        return True
+
+    def _targets_from_log(self, slot: pd.Timestamp) -> dict[str, Any] | None:
+        path = self.log_dir / "decisions.jsonl"
+        if not path.exists():
+            return None
+        found = None
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if '"targets"' not in line or '"daily"' not in line:
+                    continue
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                if (d.get("event") == "targets" and d.get("reason") == "daily"
+                        and d.get("strategy") == self.strategy.name
+                        and bool(d.get("allow_short")) == bool(self.cfg["allow_short"])
+                        and set(d.get("target", {})) == set(self.pairs)
+                        and slot <= pd.Timestamp(d["time"]) < slot + pd.Timedelta(days=1)):
+                    found = {**d, "slot": str(slot), "computed_at": d["time"]}
+        return found
 
     # ----- hourly decision ------------------------------------------------- #
 
@@ -183,8 +256,11 @@ class StrategyBot:
         mode = self.guard_mode
         guard = (mode != "off" and hour.hour == int(self.cfg["activity_guard_hour_utc"])
                  and self.last_trade_day != str(now.date()))
-        if daily or self.target is None:
-            self.compute_targets("daily" if daily else "first start")
+        slot = self.rebalance_slot(now)
+        if self.target is None or (daily and self.target_slot != str(slot)):
+            # first step after a (re)start: reuse this slot's targets if they exist
+            if self.target is not None or not self.restore_targets(slot):
+                self.compute_targets("daily" if daily else "first start", slot)
         band = float(self.cfg["guard_band"] if (guard and mode == "full") else self.cfg["band"])
         why = f"{reason}{f' +activity_guard({mode})' if guard else ''} brake={self.brake}"
         eff = {p: w * self.mult for p, w in self.target.items()}
