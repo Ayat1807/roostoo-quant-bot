@@ -19,6 +19,18 @@ at the previous UTC day's close.
                 sqrt(336)); hold the top k with score > 0; a holding stays while its rank
                 <= 2k and score > 0 (hysteresis).
 Stateless: sticky state is rebuilt by simulating the rule over the window.
+
+Optional literature filters (declared trials; overlays applied at each target refresh: an
+ineligible coin's weight is set to 0, the others are not re-scaled):
+  jump_filter (R6, Lee & Wang 2025): upside-jump variance over the last 168 h = sum of squared
+                hourly returns > 3 sigma (sigma = std of the 504 h before that); the top tercile
+                of members (among coins with any upside jump) is excluded
+  near_high   (R7, Byun et al. 2023): only coins within `near_high` (0.15) of their 90-day high
+                (2160 hourly closes; needs lookback_bars >= 2200)
+  dual        (Singh et al. 2022): own trend score (mean sign of 24/72/168/336 h returns) > 0
+                AND rank <= k by 14-day vol-adjusted return among members
+  riskoff     "vol_breadth" or "fng" (lab/riskoff.py, Kyriazis 2019; Maghyereh & Ziadat 2024):
+                whole satellite flat while the switch was on at the previous day's close
 """
 
 from __future__ import annotations
@@ -31,7 +43,8 @@ import pandas as pd
 
 from lab.strategies import Strategy
 
-COMMON = {"k": 4, "target_vol": 0.8, "cap": 0.5, "gate": None, "vol_bars": 720}
+COMMON = {"k": 4, "target_vol": 0.8, "cap": 0.5, "gate": None, "vol_bars": 720,
+          "jump_filter": False, "near_high": None, "dual": False, "riskoff": None}
 
 
 @lru_cache(maxsize=1)
@@ -42,12 +55,47 @@ def _alt_flag() -> pd.Series:
     return f
 
 
-def gate_open(ts: pd.Timestamp, gate: str | None) -> bool:
+def gate_open(ts: pd.Timestamp, gate: str | None, riskoff: str | None = None) -> bool:
+    if riskoff:
+        from lab.riskoff import riskoff_on
+        if riskoff_on(ts, riskoff):
+            return False
     if not gate:
         return True
     if gate != "alt_rally":
         raise ValueError(f"unknown gate {gate!r}")
     return bool(_alt_flag().get(ts.floor("D") - pd.Timedelta(days=1), False))
+
+
+def eligible(closes: pd.DataFrame, p: dict[str, Any]) -> set[str]:
+    """Coins passing the optional R6 / R7 / dual-momentum filters at the window end."""
+    ok = set(closes.columns)
+    r = closes.pct_change()
+    if p.get("jump_filter"):
+        recent, before = r.iloc[-168:], r.iloc[-672:-168]
+        sig = before.std()
+        jv = ((recent.where(recent > 3 * sig, 0.0)) ** 2).sum()
+        jv = jv[jv > 0].dropna()
+        n_ex = int(np.ceil(len(closes.columns) / 3))
+        ok -= set(jv.sort_values(ascending=False).index[:n_ex])
+    if p.get("near_high"):
+        hi = closes.iloc[-2160:].max()
+        ok -= set(closes.columns[(closes.iloc[-1] / hi - 1) < -float(p["near_high"])])
+    if p.get("dual"):
+        c = closes.dropna(axis=1, how="any")
+        last = c.iloc[-1]
+        trend = sum(np.sign(last / c.iloc[-1 - h] - 1) for h in (24, 72, 168, 336)) / 4
+        rs = (last / c.iloc[-337] - 1) / (c.pct_change().iloc[-336:].std() * np.sqrt(336))
+        top = set(rs.dropna().sort_values(ascending=False).index[: int(p["k"])])
+        ok &= {a for a in c.columns if trend[a] > 0 and a in top}
+    return ok
+
+
+def overlay(w: dict[str, float], closes: pd.DataFrame, p: dict[str, Any]) -> dict[str, float]:
+    if not (p.get("jump_filter") or p.get("near_high") or p.get("dual")):
+        return w
+    ok = eligible(closes, p)
+    return {a: (x if a in ok else 0.0) for a, x in w.items()}
 
 
 def size(held: list[str], closes: pd.DataFrame, p: dict[str, Any]) -> dict[str, float]:
@@ -73,7 +121,7 @@ class SatBreakout(Strategy):
     def target_weights(self, closes: pd.DataFrame, cfg: dict[str, Any]) -> dict[str, float]:
         p = {**COMMON, "entry_bars": 20, "exit_bars": 10, "vol_mult": 1.5, **(cfg or {})}
         flat = {a: 0.0 for a in closes.columns}
-        if not gate_open(closes.index[-1], p["gate"]):
+        if not gate_open(closes.index[-1], p["gate"], p["riskoff"]):
             return self.check(flat)
         vol_in = p.get("_volume")
         if vol_in is None:
@@ -97,7 +145,7 @@ class SatBreakout(Strategy):
                 cand = [j for j in np.argsort(-np.nan_to_num(strength, nan=-np.inf))
                         if j not in held and px[j] > prior_hi[j] and v[t, j] > float(p["vol_mult"]) * vmean[j]]
                 held += cand[: k - len(held)]
-        return self.check(size([cols[j] for j in held], closes, p))
+        return self.check(overlay(size([cols[j] for j in held], closes, p), closes, p))
 
 
 class SatTrend(Strategy):
@@ -105,7 +153,7 @@ class SatTrend(Strategy):
 
     def target_weights(self, closes: pd.DataFrame, cfg: dict[str, Any]) -> dict[str, float]:
         p = {**COMMON, "horizons": [24, 72, 168, 336], **(cfg or {})}
-        if not gate_open(closes.index[-1], p["gate"]):
+        if not gate_open(closes.index[-1], p["gate"], p["riskoff"]):
             return self.check({a: 0.0 for a in closes.columns})
         c = closes.dropna(axis=1, how="any")
         hz = [int(h) for h in p["horizons"]]
@@ -122,7 +170,7 @@ class SatTrend(Strategy):
         g = sum(w.values())
         if g > 1:
             w = {a: x / g for a, x in w.items()}
-        return self.check(w)
+        return self.check(overlay(w, closes, p))
 
 
 class SatRS(Strategy):
@@ -130,7 +178,7 @@ class SatRS(Strategy):
 
     def target_weights(self, closes: pd.DataFrame, cfg: dict[str, Any]) -> dict[str, float]:
         p = {**COMMON, "lookback": 336, **(cfg or {})}
-        if not gate_open(closes.index[-1], p["gate"]):
+        if not gate_open(closes.index[-1], p["gate"], p["riskoff"]):
             return self.check({a: 0.0 for a in closes.columns})
         lb, k = int(p["lookback"]), int(p["k"])
         n = len(closes)
@@ -153,4 +201,4 @@ class SatRS(Strategy):
                     break
                 if a not in held and score[a] > 0:
                     held.append(a)
-        return self.check(size(held, closes, p))
+        return self.check(overlay(size(held, closes, p), closes, p))

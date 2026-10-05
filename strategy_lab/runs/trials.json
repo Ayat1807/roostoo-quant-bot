@@ -1,6 +1,23 @@
 {
- "total_runs": 43,
+ "total_runs": 60,
  "distinct": [
+  "d_15m_r12h",
+  "d_15m_r24h",
+  "d_15m_r6h",
+  "d_1h_r12h",
+  "d_1h_r6h",
+  "d_2h_r12h",
+  "d_2h_r24h",
+  "d_2h_r6h",
+  "d_30m_r12h",
+  "d_30m_r24h",
+  "d_30m_r6h",
+  "d_4h_r12h",
+  "d_4h_r24h",
+  "d_4h_r6h",
+  "e_ewma_vol",
+  "e_smooth",
+  "e_tranched",
   "guard_band_edge",
   "guard_minimal",
   "guard_off",
@@ -35,7 +52,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-05 06:38 UTC",
+ "updated": "2026-10-05 07:40 UTC",
  "corrections": [
   {
    "date": "2026-10-05",

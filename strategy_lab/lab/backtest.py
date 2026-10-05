@@ -176,12 +176,12 @@ class Backtest:
             eq = cash + float(np.dot(lu, p)) + float(short_val.sum())
             eq_hist[k] = eq
             # 3) drawdown brake (engine/risk.py semantics)
+            # between checks (check_every_h > 1): targets still refresh on schedule, but the
+            # brake, band checks and trades wait for the next check bar
             is_check = rc.check_every_h <= 1 or (ts.minute == 0 and ts.hour % rc.check_every_h == 0)
-            if not is_check:      # between checks: hold; record mark-to-market only
-                self._record(rec, k, eq, cash, lu, su, p, 0.0, 0.0, 0, mult)
-                continue
-            mult = 1.0
-            if rc.brake:
+            if is_check:
+                mult = 1.0
+            if rc.brake and is_check:
                 lo = min(max(peak_floor - i0, k - rc.peak_days * 24 * self.bph), k)
                 dd = eq / eq_hist[lo:k + 1].max() - 1
                 if k < flat_until:
@@ -214,6 +214,9 @@ class Backtest:
                 targets_log.append({"time": str(idx[ti]), "members": len(members),
                                     "target": {a: round(float(target[assets.index(a)]), 5)
                                                for a in members if target[assets.index(a)]}})
+            if not is_check:      # hold; record mark-to-market only
+                self._record(rec, k, eq, cash, lu, su, p, 0.0, 0.0, 0, mult)
+                continue
             tgt = target * mult
             g = np.abs(tgt).sum()
             if g > 1:
