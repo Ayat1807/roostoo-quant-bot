@@ -100,15 +100,17 @@ runs:
   - {name: mft_breakout_top30, trial: 30, group: mft, bar: 30m, rebalance_every_h: 0.5,
      activity_guard: minimal, strategy: breakout, allow_short: false,
      universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
-  # Declared after trials 28-30 ran: their per-coin weight (max 0.30/10 = 3%) can never
-  # cross the 6pp band, so entries only happened via the 2% guard trade (gross ~1%).
-  # Mechanical fix only: band 0.01 (< per-coin weight; = live guard_band). Nothing else
-  # changed. 28-30 stay on the leaderboard; these count as 3 more trials.
-  - {name: mft_breakout_10_b01, trial: 31, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
-     activity_guard: minimal, strategy: breakout, allow_short: false}
-  - {name: mft_breakout_top20_b01, trial: 32, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
-     activity_guard: minimal, strategy: breakout, allow_short: false,
+  # Trials 31-33, corrected 2026-10-05 (same trial numbers, see runs/trials.json):
+  # the team's spec is "hold the top 3 in breakout state, equal weight" (~33% each, like
+  # kadoo69's live design). The first 31-33 version used 3%-per-coin vol sizing with band
+  # 0.01 (a workaround for 28-30's band problem) and did not match the spec. Corrected:
+  # top_k 3 (ranked by 48h return), 1/3 each, live band 0.06 (the 0.01 workaround is not
+  # needed at 33% positions). 28-30 (3% sizing, band 0.06) stay as declared.
+  - {name: mft_breakout_10_top3, trial: 31, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false, params: {top_k: 3}}
+  - {name: mft_breakout_top20_top3, trial: 32, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false, params: {top_k: 3},
      universe: {type: top_volume, n: 20, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}
-  - {name: mft_breakout_top30_b01, trial: 33, group: mft, bar: 30m, rebalance_every_h: 0.5, band: 0.01,
-     activity_guard: minimal, strategy: breakout, allow_short: false,
+  - {name: mft_breakout_top30_top3, trial: 33, group: mft, bar: 30m, rebalance_every_h: 0.5,
+     activity_guard: minimal, strategy: breakout, allow_short: false, params: {top_k: 3},
      universe: {type: top_volume, n: 30, reselect: monthly, min_history_days: 60, min_quote_volume_usd: 5.0e+6}}

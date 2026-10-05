@@ -51,6 +51,11 @@ def main() -> int:
     bo = get_strategy("breakout")
     w_up = bo.target_weights(pd.DataFrame({"AUSDT": up, "BUSDT": base}, index=idx).iloc[-800:], {})
     w_dn = bo.target_weights(pd.DataFrame({"AUSDT": down, "BUSDT": base}, index=idx).iloc[-800:], {})
+    w_k = bo.target_weights(c[ROOSTOO_10].iloc[-800:], {"top_k": 3})
+    held = [v for v in w_k.values() if v > 0]
+    good_k = len(held) <= 3 and all(abs(v - 1 / 3) < 1e-12 for v in held)
+    ok &= good_k
+    print(f"[{'PASS' if good_k else 'FAIL'}] breakout top_k=3: {len(held)} positions at 1/3 each")
     good = 0 < w_up["AUSDT"] <= 0.03 + 1e-12 and w_dn["AUSDT"] == 0
     ok &= good
     print(f"[{'PASS' if good else 'FAIL'}] breakout: long after breakout ({w_up['AUSDT']:.3f}, <= 0.30/10), "

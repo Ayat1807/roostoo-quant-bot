@@ -1,5 +1,5 @@
 {
- "total_runs": 40,
+ "total_runs": 43,
  "distinct": [
   "guard_band_edge",
   "guard_minimal",
@@ -7,11 +7,11 @@
   "hold_btc",
   "hold_ew10",
   "mft_breakout_10",
-  "mft_breakout_10_b01",
+  "mft_breakout_10_top3",
   "mft_breakout_top20",
-  "mft_breakout_top20_b01",
+  "mft_breakout_top20_top3",
   "mft_breakout_top30",
-  "mft_breakout_top30_b01",
+  "mft_breakout_top30_top3",
   "mft_s3v2_fast",
   "p_band04",
   "p_band08",
@@ -35,5 +35,26 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-05 06:10 UTC"
+ "updated": "2026-10-05 06:38 UTC",
+ "corrections": [
+  {
+   "date": "2026-10-05",
+   "trials": [
+    31,
+    32,
+    33
+   ],
+   "superseded": [
+    "mft_breakout_10_b01",
+    "mft_breakout_top20_b01",
+    "mft_breakout_top30_b01"
+   ],
+   "replaced_by": [
+    "mft_breakout_10_top3",
+    "mft_breakout_top20_top3",
+    "mft_breakout_top30_top3"
+   ],
+   "reason": "sizing did not match the team spec (hold top 3 equal-weight, ~33% each); first version used 3%-per-coin vol sizing with band 0.01. Same trial numbers; superseded results kept in runs/_superseded/. total_runs still counts every executed run."
+  }
+ ]
 }

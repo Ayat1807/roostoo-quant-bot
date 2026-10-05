@@ -15,21 +15,22 @@
 
 **What to expect over a 14-day competition window** (s3v2 + minimal guard, OOS): median −0.3%, 45% of windows positive, worst about −8%, worst in-window drawdown about −8.5%. S3v2 earns from occasional strong trends (bull Sharpe 2.45, shock days 3.11) and is flat in chop (48% of days). Conditional on today's market state (30 analogs), the mean next-14-day result is +0.45% (53% positive; worst −4.1%), while BTC was positive in only 37% of analogs (the team's 4h study: 32%).
 
-**Known limitation of the minimal guard:** if the book is completely flat *and* every target is 0 (KILL, a hard brake stop, or shorts off with all-negative signals), there is no trade "toward target" to make, so that day stays inactive. The base config was 100% active, but shorts off / target_vol 0.6–0.8 had some such days. Team decision 2026-10-05: no artificial round trip; inactive days under KILL or a hard brake stop are acceptable. **Live since commit a4e5b43:** `activity_guard: minimal`, everything else frozen.
+**Known limitation of the minimal guard:** if the book is completely flat *and* every target is 0 (KILL, a hard brake stop, or shorts off with all-negative signals), there is no trade "toward target" to make, so that day stays inactive. The base config was 100% active, but shorts off / target_vol 0.6–0.8 had some such days. Team decision 2026-10-05: no artificial round trip; inactive days under KILL or a hard brake stop are acceptable. **Live since commit a4e5b43** (restart-safe targets since ecb3461): `activity_guard: minimal`, everything else frozen.
 
 ### MFT variants (30m bars): do not use
 
-All run on 30m bars with targets recomputed every bar, the minimal guard and the brake on. Definitions were fixed in variants.yaml before running. The team's original MFT spec message was not available.
+All run on 30m bars with targets recomputed every bar, the minimal guard and the brake on. Definitions were fixed in variants.yaml before running.
 
-| run | full Sharpe | IS Sharpe | OOS return | OOS Sharpe | OOS max DD | 14d median / % positive | trades/day | fees/yr (% equity) |
-|---|---|---|---|---|---|---|---|---|
-| guard_minimal (live, 1h) | 0.95 | 0.84 | +41.6% | 1.23 | −14.6% | −0.26% / 45% | 2.2 | 4.4% |
-| mft_s3v2_fast | 0.12 | 0.46 | −20.9% | −0.80 | −35.2% | −1.03% / 33% | 7.8 | 19.6% |
-| mft_breakout_10_b01 | 0.79 | 1.12 | −4.7% | −0.25 | −15.9% | −0.38% / 37% | 4.5 | 4.6% |
-| mft_breakout_top20_b01 | −0.00 | 0.11 | −12.6% | −0.38 | −29.3% | −1.31% / 35% | 13.2 | 10.0% |
-| mft_breakout_top30_b01 | −0.11 | 0.06 | −26.3% | −0.66 | −42.2% | −1.99% / 32% | 22.3 | 14.9% |
+| run | full Sharpe | IS Sharpe | OOS return | OOS Sharpe | OOS max DD | 14d median / % positive | avg gross exposure | trades/day | fees/yr (% equity) |
+|---|---|---|---|---|---|---|---|---|---|
+| guard_minimal (live, 1h) | 0.95 | 0.84 | +41.6% | 1.23 | −14.6% | −0.26% / 45% | 0.19 | 2.2 | 4.4% |
+| mft_s3v2_fast | 0.12 | 0.46 | −20.9% | −0.80 | −35.2% | −1.03% / 33% | 0.16 | 7.8 | 19.6% |
+| mft_breakout_10_top3 | −1.04 | −0.70 | −84.7% | −2.34 | −88.0% | −4.92% / 20% | 0.40 | 11.6 | 100% |
+| mft_breakout_top20_top3 | −1.91 | −1.90 | −86.9% | −2.09 | −91.7% | −3.80% / 29% | 0.46 | 13.6 | 140% |
+| mft_breakout_top30_top3 | −1.84 | −2.14 | −82.1% | −0.97 | −89.8% | −5.47% / 32% | 0.55 | 11.8 | 145% |
 
 - **s3v2_fast** (s3v2 with every window counted in 30m bars, so 12h–7d) churns: 4.5× the fees of the live config, and negative in both halves relative to it.
-- **breakout_30m** (long-only Donchian, in above the 48h high, out below the 24h low): on the 10 coins it looks good in-sample (Sharpe 1.12) and fails OOS (−0.25), the typical overfit pattern. On top-20 and top-30 it loses in both halves, with fees growing with the universe. Its one attraction is low correlation with s3v2 (about 0.25–0.30), but that doesn't help when its OOS return is negative. Long-only also often fails the daily-activity rule (the 10-coin version had all 14 days active in only 14% of windows), because a flat book with all-zero targets gives the minimal guard nothing to trade.
-- **Trials 28–30** (the same breakouts with band 0.06) are kept on the leaderboard but are not a fair test. The per-coin weight (at most 3%) can never cross a 6pp band, so they barely traded (gross about 1%).
+- **breakout_30m, team spec** (long-only Donchian: in above the 48h high, out below the 24h low; hold the top 3 in breakout state by 48h return, 1/3 each): it loses everything in every universe and both halves. This is not a bug. On average 3.6 coins are in breakout state and their 48h-return ranking flips constantly, so a new coin enters the top 3 about 5 times a day and each swap moves 33% of equity. That's about 840× equity turnover a year, and fees exceed equity annually.
+  - A "sticky" variant (keep a holding until its own exit signal; fill empty slots by rank) would cut churn sharply. It is not tested: it would be a new declared trial.
+- **Trial history:** trials 28–30 (3% vol sizing, band 0.06) barely traded. The first version of 31–33 (3% sizing, band 0.01) did not match the spec. It was replaced under the same trial numbers (runs/trials.json "corrections"; results in runs/_superseded/).
 - **Engine check:** the 30m backtester matches the 1h one within 0.01pp with the brake off. With the brake on, checking it every 30m instead of hourly changed a 2.7-year s3v2 result from +38% to +82%. The drawdown brake is highly sensitive to when it is evaluated, which is worth knowing for the kadoo69 brake discussion.
