@@ -21,6 +21,21 @@ strategy:
   ewma_window: 800               # hourly returns used (= lab backtest lookback); "std" = old 14d vol
 
 allow_short: true          # false: negative weights become 0 (fallback if /v6 is blocked)
+
+# --- liquidity guard (default on): at each decision, skip pairs whose Roostoo spread is wider than
+#     max_spread_bps or whose 24h volume (ticker UnitTradeValue) is below min_volume_usd; logged ---
+liquidity_guard: {enabled: true, max_spread_bps: 15, min_volume_usd: 1000000}
+
+# --- sleeves (optional; absent = single strategy above). Several strategies in one account, each on
+#     its own virtual book and schedule; orders are netted per coin (see sleeves.py). Example:
+# sleeves:
+#   - {name: s3v2, weight: 0.5, execution: band, decision_hour_utc: 0}   # strategy/universe/band from above
+#   - name: xsmom
+#     weight: 0.5
+#     strategy: {name: xsmom}                       # teammate's 24h cross-sectional momentum
+#     universe: [ZEC/USD, PAXG/USD, POL/USD, ICP/USD, TRX/USD, LISTA/USD, STO/USD, CAKE/USD, TUT/USD, SOL/USD]
+#     execution: scheduled                          # trades fully to target only at its decision
+#     decision_hour_utc: 15                         # decides on the 14:00 UTC bar (completes at 15:00)
 capital_cap_usd: 3000      # size as if equity = min(actual, cap); null = full equity
 
 # --- execution ---

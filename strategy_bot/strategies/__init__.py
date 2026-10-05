@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from .base import Strategy
 from .s3v2 import S3v2
+from .xsmom import XSMom
 
 STRATEGIES: dict[str, type[Strategy]] = {
     S3v2.name: S3v2,
+    XSMom.name: XSMom,
 }
 
 

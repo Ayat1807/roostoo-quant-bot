@@ -170,3 +170,17 @@ Restarts are safe. State lives in `state/`: bars, the risk brake's peak and cool
 2. Register it in `strategies/__init__.py`.
 3. Set `strategy.name: <name>` (plus its params) in `config.yaml`.
 4. Run `python -m tests.test_replay`. Execution, risk, caps and logging are shared and need no changes.
+
+## 11. Sleeves (optional: s3v2 + xsmom in one account)
+
+Uncomment the `sleeves:` block in `config.yaml` to run several strategies on one account, one polling loop:
+
+- **Books:** each sleeve gets `weight` x the capped capital as its own virtual book, persisted in `state/sleeves.json`, and then evolves with its own PnL.
+- **s3v2 (`execution: band`):** keeps the hourly 6pp band checks.
+- **xsmom (`execution: scheduled`):** trades fully to its target only at its 14:00 UTC-bar decision (wall clock about 15:00); there are no drift trades in between.
+- **Netting:** each step's book changes are netted into one order per coin (no ping-pong on shared coins such as SOL). Every order in `orders.jsonl` has a `sleeves` field showing which sleeve caused it.
+- **Account-wide rules:** brake, KILL and the capital cap apply to the whole account.
+- **Restarts:** both sleeves' books and targets are restored. A config change gives that sleeve fresh targets once.
+- **Liquidity guard:** `liquidity_guard` skips illiquid coins at each decision, for example LISTA or STO when their 24h volume on Roostoo is under $1M.
+
+Tests: `python -m tests.test_sleeves` and `python -m tests.test_xsmom_parity`.

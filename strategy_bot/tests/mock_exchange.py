@@ -22,7 +22,11 @@ from roostoo_client import RoostooAPIError
 # Live exchangeInfo values for the universe (from initial_testing/logs/exchange_info.json).
 PREC = {"BTC/USD": (2, 5), "ETH/USD": (2, 4), "SOL/USD": (2, 3), "BNB/USD": (2, 3),
         "XRP/USD": (4, 1), "ADA/USD": (4, 1), "DOGE/USD": (5, 0), "AVAX/USD": (3, 2),
-        "LINK/USD": (3, 2), "DOT/USD": (3, 2)}
+        "LINK/USD": (3, 2), "DOT/USD": (3, 2),
+        # teammate xsmom universe (strategy_lab/data/roostoo_pairs.json, 2026-10)
+        "ZEC/USD": (2, 3), "PAXG/USD": (2, 4), "POL/USD": (5, 1), "ICP/USD": (3, 2),
+        "TRX/USD": (4, 1), "LISTA/USD": (4, 1), "STO/USD": (4, 1), "CAKE/USD": (3, 2),
+        "TUT/USD": (5, 0)}
 
 
 def _decimals(x: Any) -> int:
@@ -48,6 +52,7 @@ class MockRoostoo:
         self.fees_paid, self.n_orders, self.n_limit = 0.0, 0, 0
         self.pending_every = pending_every
         self.calls: dict[str, int] = {}
+        self.vol24: dict[str, float] = {}       # per-pair 24h USD volume override (default 1e9)
 
     # ----- helpers ----------------------------------------------------------- #
     def set_prices(self, prices: dict[str, float]) -> None:
@@ -74,7 +79,9 @@ class MockRoostoo:
     def ticker(self, pair: str | None = None) -> dict[str, Any]:
         self._count("ticker")
         return {"Success": True, "Data": {p: {"LastPrice": self.px[p], "MaxBid": self._bid(p),
-                                              "MinAsk": self._ask(p)} for p in self.pairs}}
+                                              "MinAsk": self._ask(p),
+                                              "UnitTradeValue": self.vol24.get(p, 1e9)}
+                                          for p in self.pairs}}
 
     # ----- account ----------------------------------------------------------- #
     def balance(self) -> dict[str, Any]:

@@ -34,6 +34,7 @@ from infra import JsonlLogs, build_client, setup_logging, utc_iso, write_json_at
 from market_data import BarStore
 from portfolio import Portfolio
 from risk import RiskManager
+from sleeves import SleeveBook, SleeveSpec, apply_fills, decision_slot, desired_units
 from roostoo_client import KeySafetyError, mask_key, num
 from strategies import get_strategy
 
@@ -87,6 +88,19 @@ class StrategyBot:
         if self.guard_mode not in ("off", "full", "minimal"):
             raise ValueError(f"activity_guard must be off|full|minimal, got {g!r}")
         self.strategy = get_strategy(cfg["strategy"]["name"])
+        # sleeves (optional): several strategies on separate virtual books, netted per coin
+        self.sleeve_specs: list[SleeveSpec] | None = None
+        if cfg.get("sleeves"):
+            self.sleeve_specs = [SleeveSpec.from_cfg(d, cfg["strategy"], cfg["universe"], float(cfg["band"]),
+                                                     int(cfg["rebalance_hour_utc"])) for d in cfg["sleeves"]]
+            if sum(s.weight for s in self.sleeve_specs) > 1 + 1e-9:
+                raise ValueError("sleeve weights must sum to <= 1 (gross <= 1)")
+            if len({s.name for s in self.sleeve_specs}) != len(self.sleeve_specs):
+                raise ValueError("sleeve names must be unique")
+        self.sleeve_strats = {s.name: get_strategy(s.strategy["name"]) for s in self.sleeve_specs or []}
+        self.books: dict[str, SleeveBook] = {}
+        self.sleeves_file = self.state_dir / "sleeves.json"
+        self._sleeve_started: set[str] = set()
         self.pairs: list[str] = []
         self.target: dict[str, float] | None = None
         self.target_time: str | None = None
@@ -112,11 +126,22 @@ class StrategyBot:
             raise RuntimeError("exchange reports IsRunning=false")
         info = info_resp["TradePairs"]
         tick = c.ticker()["Data"]
-        self.pairs, dropped = validate_universe(cfg["universe"], info, tick)
+        wanted = list(cfg["universe"])
+        if self.sleeve_specs:
+            wanted = list(dict.fromkeys(p for s in self.sleeve_specs for p in s.universe))
+        self.pairs, dropped = validate_universe(wanted, info, tick)
         for p, why in dropped.items():
             log.warning("universe: dropping %s (%s)", p, why)
-        if cfg["strategy"].get("btc_pair", "BTC/USD") not in self.pairs:
+        need_btc = [s.strategy.get("btc_pair", "BTC/USD") for s in self.sleeve_specs or []
+                    if s.strategy["name"] == "s3v2"] if self.sleeve_specs else [cfg["strategy"].get("btc_pair", "BTC/USD")]
+        if any(b not in self.pairs for b in need_btc):
             raise RuntimeError("BTC/USD (regime filter) failed the universe check")
+        for s in self.sleeve_specs or []:
+            s.universe = [p for p in s.universe if p in self.pairs]
+        if self.sleeve_specs and self.sleeves_file.exists():
+            d = json.loads(self.sleeves_file.read_text(encoding="utf-8"))
+            self.books = {n: SleeveBook.from_json(b) for n, b in d.get("books", {}).items()
+                          if n in {s.name for s in self.sleeve_specs}}
         if self.bars is None:
             self.bars = BarStore(self.pairs, self.state_dir / "bars.csv", self.log_dir / "api_log.jsonl")
             self.bars.load_or_bootstrap(int(cfg["bootstrap_hours"]), self.clock())
@@ -131,6 +156,10 @@ class StrategyBot:
         self.logs.write("decisions", {
             "event": "start", "pairs": self.pairs, "dropped": dropped, "dry_run": self.dry,
             "strategy": cfg["strategy"], "allow_short": cfg["allow_short"],
+            "sleeves": [{"name": s.name, "weight": s.weight, "strategy": s.strategy, "execution": s.execution,
+                         "decision_hour_utc": s.decision_hour_utc, "universe": s.universe}
+                        for s in self.sleeve_specs or []] or None,
+            "liquidity_guard": cfg.get("liquidity_guard"),
             "activity_guard": self.guard_mode,
             "capital_cap_usd": cfg.get("capital_cap_usd"), "bars": len(self.bars.close),
             "last_bar": str(self.bars.close.index[-1]) if len(self.bars.close) else None,
@@ -165,10 +194,44 @@ class StrategyBot:
         return {"strategy": self.cfg["strategy"], "allow_short": bool(self.cfg["allow_short"]),
                 "pairs": sorted(self.pairs)}
 
-    def compute_targets(self, reason: str, slot: pd.Timestamp) -> None:
-        closes = self.bars.close[self.pairs]
-        raw = self.strategy.target_weights(closes, self.cfg["strategy"])
+    def liquidity_skip(self, pairs: list[str], tick: dict[str, Any] | None) -> dict[str, str]:
+        """Liquidity guard (config liquidity_guard, default on): at decision time skip pairs whose
+        Roostoo spread > max_spread_bps or 24h volume (UnitTradeValue) < min_volume_usd."""
+        g = {"enabled": True, "max_spread_bps": 15.0, "min_volume_usd": 1_000_000.0,
+             **(self.cfg.get("liquidity_guard") or {})}
+        if not g["enabled"] or not tick:
+            return {}
+        out = {}
+        for p in pairs:
+            t = tick.get(p, {})
+            bid, ask = num(t, "MaxBid"), num(t, "MinAsk")
+            spread = (ask - bid) / ((ask + bid) / 2) * 1e4 if bid > 0 and ask > 0 else float("inf")
+            vol = num(t, "UnitTradeValue") if "UnitTradeValue" in t else float("inf")
+            if spread > float(g["max_spread_bps"]):
+                out[p] = f"spread {spread:.1f} bps > {g['max_spread_bps']}"
+            elif vol < float(g["min_volume_usd"]):
+                out[p] = f"24h volume ${vol:,.0f} < ${float(g['min_volume_usd']):,.0f}"
+        return out
+
+    def strategy_targets(self, strat: Any, params: dict[str, Any], pairs: list[str],
+                         tick: dict[str, Any] | None, upto: pd.Timestamp | None = None
+                         ) -> tuple[dict[str, float], dict[str, float], dict[str, str]]:
+        """(raw, target, skipped): skipped pairs are removed before the strategy runs (a regime
+        input such as btc_pair stays in the data but gets weight 0)."""
+        skipped = self.liquidity_skip(pairs, tick)
+        keep_input = {params.get("btc_pair")} if params.get("btc_pair") else set()
+        cols = [p for p in pairs if p not in skipped or p in keep_input]
+        closes = self.bars.close[cols] if upto is None else self.bars.close.loc[:upto, cols]
+        raw = strat.target_weights(closes, params)
+        raw = {p: (0.0 if p in skipped else raw.get(p, 0.0)) for p in pairs}
         tgt = raw if self.cfg["allow_short"] else {p: max(w, 0.0) for p, w in raw.items()}
+        if skipped:
+            log.warning("liquidity guard skipped %s", skipped)
+        return raw, tgt, skipped
+
+    def compute_targets(self, reason: str, slot: pd.Timestamp, tick: dict[str, Any] | None = None) -> None:
+        closes = self.bars.close[self.pairs]
+        raw, tgt, skipped = self.strategy_targets(self.strategy, self.cfg["strategy"], self.pairs, tick)
         self.target, self.target_time, self.target_slot = tgt, str(self.clock()), str(slot)
         rec = {"event": "targets", "reason": reason, "strategy": self.strategy.name,
                "slot": str(slot), "bar_time": str(closes.index[-1]),
@@ -176,6 +239,7 @@ class StrategyBot:
                "raw": {p: round(w, 6) for p, w in raw.items()},
                "target": {p: round(w, 6) for p, w in tgt.items()},
                "gross": round(sum(abs(w) for w in tgt.values()), 6),
+               "liquidity_skipped": skipped,
                "fingerprint": self._fingerprint()}
         self.logs.write("decisions", rec)
         write_json_atomic(self.targets_file, {**rec, "target": tgt, "computed_at": self.target_time,
@@ -242,6 +306,8 @@ class StrategyBot:
     # ----- hourly decision ------------------------------------------------- #
 
     def step(self, tick: dict[str, Any], reason: str) -> int:
+        if self.sleeve_specs:
+            return self.step_sleeves(tick, reason)
         now = self.clock()
         equity, sizing, expo, _ = self.port.snapshot(tick)
         self.mult, self.brake = self.risk.scale(now, equity)
@@ -262,7 +328,7 @@ class StrategyBot:
         if self.target is None or (daily and self.target_slot != str(slot)):
             # first step after a (re)start: reuse this slot's targets if they exist
             if self.target is not None or not self.restore_targets(slot):
-                self.compute_targets("daily" if daily else "first start", slot)
+                self.compute_targets("daily" if daily else "first start", slot, tick)
         band = float(self.cfg["guard_band"] if (guard and mode == "full") else self.cfg["band"])
         why = f"{reason}{f' +activity_guard({mode})' if guard else ''} brake={self.brake}"
         eff = {p: w * self.mult for p, w in self.target.items()}
@@ -277,6 +343,179 @@ class StrategyBot:
         log.info("step %s: equity=%.2f sizing=%.2f mult=%s (%s) band=%.2f orders=%d",
                  reason, equity, sizing, self.mult, self.brake, band, n)
         return n
+
+    # ----- sleeves ------------------------------------------------------------ #
+
+    def _sleeve_fp(self, spec: SleeveSpec) -> dict[str, Any]:
+        return {"strategy": spec.strategy, "allow_short": bool(self.cfg["allow_short"]),
+                "universe": sorted(spec.universe), "execution": spec.execution,
+                "decision_hour_utc": spec.decision_hour_utc}
+
+    def _init_books(self, sizing: float, units: dict[str, tuple], px: dict[str, float]) -> None:
+        """First start in sleeve mode: each sleeve gets weight x capped capital. Positions
+        already in the account are assigned to the first sleeve (its band rule then trades
+        them toward its own targets), so nothing is left untracked."""
+        held = {p: u[0] - u[1] for p, u in units.items() if abs(u[0] - u[1]) > 1e-12}
+        for i, spec in enumerate(self.sleeve_specs):
+            if spec.name in self.books:
+                continue
+            cap = spec.weight * sizing
+            if i == 0 and held:
+                self.books[spec.name] = SleeveBook(cash=cap - sum(q * px[p] for p, q in held.items()),
+                                                   units=dict(held))
+            else:
+                self.books[spec.name] = SleeveBook(cash=cap)
+            log.info("sleeve %s: new book, capital %.2f%s", spec.name, cap,
+                     f" (incl. existing holdings {held})" if i == 0 and held else "")
+
+    def _save_books(self) -> None:
+        write_json_atomic(self.sleeves_file, {"time": str(self.clock()),
+                                              "books": {n: b.to_json() for n, b in self.books.items()}})
+
+    def _sleeve_targets(self, spec: SleeveSpec, book: SleeveBook, now: pd.Timestamp,
+                        tick: dict[str, Any]) -> bool:
+        """Refresh the sleeve's targets if due. Returns True if computed now (a decision)."""
+        slot = decision_slot(now, spec.decision_hour_utc)
+        decide = now.floor("h").hour == spec.decision_hour_utc
+        fp = self._sleeve_fp(spec)
+        first = spec.name not in self._sleeve_started
+        self._sleeve_started.add(spec.name)
+        valid = book.target is not None and book.fingerprint == fp and book.slot == str(slot)
+        if valid and first:
+            self.logs.write("decisions", {"event": "targets", "sleeve": spec.name, "reason": "restored",
+                                          "slot": str(slot), "source": "state/sleeves.json",
+                                          "computed_at": book.computed_at, "target": book.target})
+            log.info("sleeve %s: targets restored from %s (computed %s)", spec.name, f"{slot:%H:%M}",
+                     book.computed_at)
+            return False
+        if valid:
+            return False
+        reason = "daily" if decide else ("first start" if first else "config changed")
+        if book.target is not None and book.fingerprint != fp:
+            log.warning("sleeve %s: config changed since %s; fresh targets", spec.name, book.computed_at)
+        # scheduled sleeves always decide on their decision bar (the bar completed at the slot,
+        # e.g. xsmom's 14:00 UTC bar), also on a first start between decisions; band sleeves use
+        # the latest bar like single-strategy mode
+        upto = slot - pd.Timedelta(hours=1) if spec.execution == "scheduled" else None
+        raw, tgt, skipped = self.strategy_targets(self.sleeve_strats[spec.name], spec.strategy,
+                                                  spec.universe, tick, upto)
+        book.target, book.slot, book.computed_at, book.fingerprint = tgt, str(slot), str(now), fp
+        self.logs.write("decisions", {
+            "event": "targets", "sleeve": spec.name, "reason": reason, "strategy": spec.strategy["name"],
+            "slot": str(slot), "bar_time": str(upto if upto is not None else self.bars.close.index[-1]),
+            "target": {p: round(w, 6) for p, w in tgt.items()},
+            "gross": round(sum(abs(w) for w in tgt.values()), 6), "liquidity_skipped": skipped,
+            "fingerprint": fp})
+        log.info("sleeve %s: targets computed: %s (slot %s): %s", spec.name, reason, slot,
+                 {p: round(w, 3) for p, w in tgt.items() if w})
+        return True
+
+    def step_sleeves(self, tick: dict[str, Any], reason: str) -> int:
+        """One decision step in sleeve mode (see sleeves.py)."""
+        now = self.clock()
+        equity, sizing, expo, units = self.port.snapshot(tick)
+        self.mult, self.brake = self.risk.scale(now, equity)
+        snap = self.port.last_snapshot
+        px = {p: num(tick[p], "LastPrice") for p in self.pairs}
+        self._init_books(sizing, units, px)
+        total = sum(b.equity(px) for b in self.books.values())
+        cap = self.cfg.get("capital_cap_usd")
+        scale = min(1.0, float(cap) / total) if cap and total > 0 else 1.0
+        wants: dict[str, dict[str, float]] = {}
+        for spec in self.sleeve_specs:
+            book = self.books[spec.name]
+            decided = self._sleeve_targets(spec, book, now, tick)
+            wants[spec.name] = desired_units(spec, book, px, self.mult, scale, decided)
+        hour = now.floor("h")
+        guard = (self.guard_mode != "off" and hour.hour == int(self.cfg["activity_guard_hour_utc"])
+                 and self.last_trade_day != str(now.date()))
+        n = self._execute_sleeves(wants, units, px, tick, sizing, f"{reason} sleeves brake={self.brake}")
+        if guard and n == 0:
+            n = self._sleeve_guard(wants, px, scale, sizing, units, tick, reason)
+        for spec in self.sleeve_specs:
+            apply_fills(spec, self.books[spec.name], wants[spec.name], px)
+            self.books[spec.name].last_mult = self.mult
+        self._save_books()
+        self.logs.write("equity", {
+            "equity": round(equity, 4), "sizing_equity": round(sizing, 4), "usd": round(snap["usd"], 4),
+            "long_value": round(snap["long_value"], 4), "short_value": round(snap["short_value"], 4),
+            "gross_exposure_usd": round(sum(abs(v) for v in expo.values()), 4),
+            "exposure": {p: round(v, 2) for p, v in expo.items() if v}, "brake": self.brake,
+            "mult": self.mult,
+            "sleeves": {nm: {"equity": round(b.equity(px), 2), "cash": round(b.cash, 2),
+                             "weights": {p: round(w, 4) for p, w in b.weights(px).items() if abs(w) > 1e-6}}
+                        for nm, b in self.books.items()}})
+        self.target = {p: sum(b.units.get(p, 0.0) * px[p] for b in self.books.values()) / total
+                       if total > 0 else 0.0 for p in self.pairs}
+        if n:
+            self.last_action = {"time": str(now), "orders": n, "reason": reason, "dry_run": self.dry}
+            if not self.dry:
+                self.last_trade_day = str(now.date())
+                write_json_atomic(self.state_file, {"last_trade_day": self.last_trade_day})
+        log.info("step %s (sleeves): equity=%.2f sizing=%.2f mult=%s (%s) orders=%d books=%s", reason,
+                 equity, sizing, self.mult, self.brake, n,
+                 {nm: round(b.equity(px), 2) for nm, b in self.books.items()})
+        return n
+
+    def _execute_sleeves(self, wants: dict[str, dict[str, float]], units: dict[str, tuple],
+                         px: dict[str, float], tick: dict[str, Any], sizing: float, why: str) -> int:
+        """Net all sleeves' book changes per pair into one account order per pair."""
+        tags: dict[str, dict[str, float]] = {}
+        total_want: dict[str, float] = {}
+        for nm, want in wants.items():
+            book = self.books[nm]
+            for p in set(want) | set(book.units):
+                w_u = want.get(p, book.units.get(p, 0.0))
+                total_want[p] = total_want.get(p, 0.0) + w_u
+                d = w_u - book.units.get(p, 0.0)
+                if abs(d * px[p]) > 1e-9:
+                    tags.setdefault(p, {})[nm] = round(d * px[p], 2)
+        trade = set(tags)
+        # repair: the account drifted from the books (failed / partial order) beyond a threshold
+        for p in self.pairs:
+            actual = units[p][0] - units[p][1]
+            gap_usd = abs(actual - total_want.get(p, 0.0)) * px[p]
+            if gap_usd > max(2 * float(self.port.info[p]["MiniOrder"]), 0.005 * sizing):
+                trade.add(p)
+                tags.setdefault(p, {})["repair"] = round((total_want.get(p, 0.0) - actual) * px[p], 2)
+        if not trade:
+            return 0
+        target_w = {p: (total_want.get(p, 0.0) * px[p] / sizing if sizing > 0 else 0.0) for p in self.pairs}
+        self.port.order_tags = tags
+        self.logs.write("decisions", {
+            "event": "sleeve_orders", "reason": why,
+            "net_target_usd": {p: round(total_want.get(p, 0.0) * px[p], 2) for p in sorted(trade)},
+            "by_sleeve_usd": {p: tags.get(p, {}) for p in sorted(trade)}})
+        try:
+            return self.port.rebalance(target_w, tick, 0.0, why, only=trade)
+        finally:
+            self.port.order_tags = {}
+
+    def _sleeve_guard(self, wants, px, scale, sizing, units, tick, reason) -> int:
+        """Minimal activity guard in sleeve mode: one trade on the first band sleeve's pair
+        furthest from its target (size min(gap, guard_max_frac) of that sleeve's equity, as the
+        single-strategy guard sizes against its own capital)."""
+        spec = next((s for s in self.sleeve_specs if s.execution == "band"), None)
+        if spec is None:
+            return 0
+        book = self.books[spec.name]
+        eq = book.equity(px) * scale
+        if eq <= 0:
+            return 0
+        tgt = {p: w * self.mult for p, w in (book.target or {}).items()}
+        cur = {p: wants[spec.name].get(p, book.units.get(p, 0.0)) * px[p] / eq for p in spec.universe}
+        gaps = {p: tgt.get(p, 0.0) - cur[p] for p in spec.universe}
+        p = max(gaps, key=lambda k: abs(gaps[k]))
+        if abs(gaps[p]) <= 1e-9:
+            log.info("minimal guard (sleeves): every pair exactly on target; no trade possible")
+            return 0
+        mini = float(self.port.info[p]["MiniOrder"])
+        size = max(min(abs(gaps[p]), float(self.cfg.get("guard_max_frac", 0.02))), 1.5 * mini / eq)
+        wants[spec.name][p] = (cur[p] + (size if gaps[p] > 0 else -size)) * eq / px[p]
+        log.info("minimal guard (sleeves): %s/%s gap %+.4f, trade size %.4f of sleeve", spec.name, p,
+                 gaps[p], size)
+        return self._execute_sleeves(wants, units, px, tick, sizing,
+                                     f"{reason} minimal_guard {spec.name}/{p}")
 
     def minimal_guard_trade(self, eff: dict[str, float], tick: dict[str, Any], why: str) -> int:
         """activity_guard: minimal. One trade on the pair furthest from its target, sized

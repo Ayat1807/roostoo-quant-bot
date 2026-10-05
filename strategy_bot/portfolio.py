@@ -49,6 +49,7 @@ class Portfolio:
         self.cap = capital_cap_usd
         self.poll_s, self.sleep, self.should_stop = poll_s, sleep, should_stop
         self.last_snapshot: dict[str, Any] = {}
+        self.order_tags: dict[str, dict[str, float]] = {}   # sleeve mode: pair -> {sleeve: usd}
 
     # ---------- state ----------
     def _short_positions(self) -> list[dict[str, Any]]:
@@ -302,6 +303,9 @@ class Portfolio:
     def _log_order(self, action: str, request: dict, response: dict | None,
                    error: str | None = None) -> None:
         rec: dict[str, Any] = {"action": action, "request": request, "dry_run": self.dry}
+        tag = self.order_tags.get(request.get("pair"))
+        if tag:
+            rec["sleeves"] = tag      # which sleeve(s) caused this order (USD change per sleeve)
         if response is not None:
             rec["response"] = response
         if error:
