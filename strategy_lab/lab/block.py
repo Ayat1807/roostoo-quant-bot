@@ -157,7 +157,7 @@ def main() -> int:
                      f"{pct(an.get('median'))} / {pct(an.get('p25'))} / {pct(an.get('worst_dd'))} | "
                      f"{'' if pd.isna(r.dsr) else f'{r.dsr:.2f}'} | {'**yes**' if r.beats_live else ''} |")
     # declared literature-filter test: each filtered satellite vs the same satellite without it
-    filt = [n for n in df.index if n.startswith("b_r1_") and n.split("_")[-1] in ("jump", "near", "dual", "rvb", "rfng")]
+    filt = [n for n in df.index if n.startswith("b_") and n.split("_")[-1] in ("jump", "near", "dual", "rvb", "rfng")]
     if filt:
         L += ["", "## Literature filters: does the filter help? (declared test)", "",
               "HELPS = higher median AND higher 25th-percentile 14-day return, with no worse worst drawdown, "
@@ -167,7 +167,7 @@ def main() -> int:
               "|---|---|---|---|---|"]
         trip = lambda c: f"{pct(c.get('median'))} / {pct(c.get('p25'))} / {pct(c.get('worst_dd'))}" if c else "n/a"
         for n in filt:
-            bn = "_".join(n.split("_")[:3])
+            bn = n.rsplit("_", 1)[0]
             if bn not in df.index:
                 continue
             fa, ba, fn, bnn = df.loc[n, "alt"], df.loc[bn, "alt"], df.loc[n, "analog"], df.loc[bn, "analog"]
