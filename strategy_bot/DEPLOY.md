@@ -138,6 +138,8 @@ tail -f logs/equity.jsonl       # hourly equity, sizing equity, long/short value
 tail -f logs/errors.jsonl
 ```
 
+With `sleeves:` in the config, `status.py` shows one block per sleeve (last and next decision, targets, book weights, universe; for R1 the month's list) and the table lists only the active universe plus anything still held. "Actual" is the latest account snapshot plus the fills logged after it, so it is correct right after a decision's orders fill (not only after the next hourly step). It is read-only: no API calls, no writes.
+
 `status.py` exits with code 1 if the heartbeat is stale (older than 2 × (poll + limit wait)) or there were errors in the last 24 h. You can use that exit code in a cron alert.
 
 ## 9. Stop, kill switch, check what is running
