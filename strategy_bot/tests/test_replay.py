@@ -31,6 +31,7 @@ def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
     base = OUT / tag
     shutil.rmtree(base, ignore_errors=True)
     cfg = load_config(HERE / "config.yaml")
+    cfg.pop("sleeves", None)          # single-strategy replay (sleeves: tests/test_sleeves.py)
     guard = guard or cfg["activity_guard"]          # default: the live config
     cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, allow_short=allow_short,
                activity_guard=guard)

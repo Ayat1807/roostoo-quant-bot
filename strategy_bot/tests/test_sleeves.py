@@ -47,15 +47,21 @@ def all_closes() -> pd.DataFrame:
     return df.reindex(pd.date_range(df.index[0], df.index[-1], freq="1h")).ffill()
 
 
-def sleeve_cfg(cap: float | None, guard: str, brake: bool = True) -> dict:
+CONFIG_CAP = "config"
+
+
+def sleeve_cfg(cap: float | None | str = CONFIG_CAP, guard: str | None = None, brake: bool = True) -> dict:
+    """The exact config.yaml (its sleeves block, cap, guard) unless overridden for a parity run."""
     cfg = load_config(HERE / "config.yaml")
-    core = list(cfg["universe"])
-    cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, capital_cap_usd=cap,
-               activity_guard=guard,
-               sleeves=[{"name": "s3v2", "weight": 0.5, "execution": "band", "universe": core,
-                         "decision_hour_utc": 0},
-                        {"name": "xsmom", "weight": 0.5, "strategy": {"name": "xsmom"}, "universe": TM,
-                         "execution": "scheduled", "decision_hour_utc": 15}])
+    if not cfg.get("sleeves"):        # config without sleeves: test the documented 0.5 / 0.5 example
+        cfg["sleeves"] = [{"name": "s3v2", "weight": 0.5, "execution": "band", "decision_hour_utc": 0},
+                          {"name": "xsmom", "weight": 0.5, "strategy": {"name": "xsmom"}, "universe": TM,
+                           "execution": "scheduled", "decision_hour_utc": 15}]
+    cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0)
+    if cap != CONFIG_CAP:
+        cfg["capital_cap_usd"] = cap
+    if guard is not None:
+        cfg["activity_guard"] = guard
     if not brake:
         cfg.update(dd_soft=-0.99, dd_hard=-0.995)
     return cfg
@@ -66,7 +72,8 @@ class Sim:
                  pairs: list[str] | None = None, vol24: dict[str, float] | None = None) -> None:
         self.base, self.c, self.cfg = OUT / tag, c, cfg
         shutil.rmtree(self.base, ignore_errors=True)
-        pairs = pairs or list(dict.fromkeys(p for s in cfg.get("sleeves") or [] for p in s["universe"])) \
+        pairs = pairs or list(dict.fromkeys(p for s in cfg.get("sleeves") or []
+                                            for p in (s.get("universe") or cfg["universe"]))) \
             or list(cfg["universe"])
         self.ex = MockRoostoo(pairs, usd=usd)
         self.ex.vol24.update(vol24 or {})
@@ -102,8 +109,10 @@ class Sim:
         self.bot.poll()
         self._snap()
 
-    def restart(self, at: pd.Timestamp) -> int:
+    def restart(self, at: pd.Timestamp, cfg: dict | None = None) -> int:
         self.now["t"] = at
+        if cfg is not None:
+            self.cfg = cfg
         self.bot = self.new_bot()
         n = self.bot.step(self.ex.ticker()["Data"], "startup")
         self._snap()
@@ -133,7 +142,8 @@ def side_of(o: dict) -> str | None:
 
 
 def test_joint(c: pd.DataFrame, days: int) -> bool:
-    cfg = sleeve_cfg(3000.0, "minimal")
+    cfg = sleeve_cfg()
+    cap = float(cfg["capital_cap_usd"])
     hours = c.index[-24 * days:]
     sim = Sim("joint", c, hours[0], cfg, vol24={"LISTA/USD": 200_000.0})   # below the $1M floor
     for h in hours:
@@ -167,10 +177,11 @@ def test_joint(c: pd.DataFrame, days: int) -> bool:
     print(f"\n   {len(orders)} orders over {days} days; xsmom decision trades on {len(x_times)} steps; "
           f"SOL orders with both sleeves netted: {len(sol_both)}; final books "
           f"{ {n: round(v[0], 2) for n, v in sim.books[-1][1].items()} }")
-    return report(f"joint replay {days}d, sleeves s3v2 0.5 + xsmom 0.5, cap $3,000", {
+    return report(f"joint replay {days}d, config.yaml sleeves "
+                  f"{[(s['name'], s['weight']) for s in cfg['sleeves']]}, cap ${cap:,.0f}", {
         f"0 errors ({len(errors)})": not errors,
         f"USD cash never negative (min ${sim.min_usd:,.2f})": sim.min_usd >= -1e-6,
-        f"gross within cap incl. drift (max ${gross_max:,.0f} vs $3,300)": gross_max <= 3300,
+        f"gross within cap incl. drift (max ${gross_max:,.0f} vs ${1.1 * cap:,.0f})": gross_max <= 1.1 * cap,
         f"every day active ({len(days_with & all_days)}/{len(all_days)})": all_days <= days_with,
         f"no ping-pong: no step buys and sells the same pair ({len(pingpong)} found)": not pingpong,
         f"SOL (both sleeves): at most one direction per step ({len(sol_steps)} SOL steps)": not
@@ -244,7 +255,7 @@ def test_parity(c: pd.DataFrame, days: int) -> bool:
 
 
 def test_restart(c: pd.DataFrame) -> bool:
-    cfg = sleeve_cfg(3000.0, "minimal")
+    cfg = sleeve_cfg()
     hours = c.index[-24 * 6:]
     day0 = hours[0].floor("D") + pd.Timedelta(days=1)
     start = day0 - pd.Timedelta(hours=2)
@@ -275,12 +286,83 @@ def test_restart(c: pd.DataFrame) -> bool:
     })
 
 
+def test_migration(c: pd.DataFrame) -> bool:
+    """Deploying this config onto the running single-strategy bot (cap $3,000, s3v2 only):
+    first restart, then a restart where only capital_cap_usd changes."""
+    single = sleeve_cfg(3000.0)
+    single.pop("sleeves")
+    new = sleeve_cfg()
+    pairs = list(dict.fromkeys(list(single["universe"]) + TM))
+    hours = c.index[-24 * 5:]
+    day0 = hours[0].floor("D") + pd.Timedelta(days=1)
+    start = day0 - pd.Timedelta(hours=2)
+    # latest day fully inside the data, mid-day before 14:00 (its last decision = previous day's 14:00 bar)
+    at = (hours[-1] - pd.Timedelta(hours=11)).floor("D") + pd.Timedelta(hours=9, minutes=10)
+    sim = Sim("migration", c, start, single, pairs=pairs)
+    out: dict = {}
+    for h in hours[hours >= start]:
+        if "n0" not in out and sim.now["t"] < at <= h + pd.Timedelta(minutes=59):
+            out["single_target"] = dict(sim.bot.target)
+            n_orders = len([o for o in sim.read("orders") if "response" in o])
+            out["n0"] = sim.restart(at, new)
+            new_orders = [o for o in sim.read("orders") if "response" in o][n_orders:]
+            out["startup_by_sleeve"] = {}
+            for o in new_orders:
+                for k in (o.get("sleeves") or {}):
+                    out["startup_by_sleeve"][k] = out["startup_by_sleeve"].get(k, 0) + 1
+            books = sim.bot.books
+            out["xsmom_target"] = {p: w for p, w in (books["xsmom"].target or {}).items() if w}
+            pxs = dict(sim.ex.px)
+            bw = books["s3v2"].weights(pxs)
+            traded = {(o.get("request") or {}).get("pair") for o in new_orders if "s3v2" in (o.get("sleeves") or {})}
+            out["s3v2_resize_ok"] = all(abs(books["s3v2"].target.get(p, 0.0) - bw.get(p, 0.0)) < 0.002 for p in traded)
+            out["repair_tags"] = sum(1 for o in new_orders if "repair" in (o.get("sleeves") or {}))
+            out["s3v2_target"] = dict(books["s3v2"].target)
+            out["capital"] = sum(bk.equity(dict(sim.ex.px)) for bk in books.values())
+            out["s3v2_units"] = dict(books["s3v2"].units)
+            # a second restart where ONLY the capital cap changes
+            t2 = at + pd.Timedelta(minutes=20)
+            k0 = len([o for o in sim.read("orders") if "response" in o])
+            out["n_cap"] = sim.restart(t2, sleeve_cfg(12_000.0))
+            out["cap_restored"] = sorted(d["sleeve"] for d in sim.read("decisions")
+                                         if d.get("event") == "targets" and d.get("reason") == "restored"
+                                         and pd.Timestamp(d["time"]) == t2)
+            out["cap_orders"] = len([o for o in sim.read("orders") if "response" in o]) - k0
+            sim.cfg = new
+        sim.run_hour(h)
+    dec = [d for d in sim.read("decisions") if d.get("event") == "targets" and pd.Timestamp(d["time"]) == at]
+    reasons = {d.get("sleeve"): (d["reason"], d.get("source"), d.get("bar_time")) for d in dec}
+    same = all(abs(out["s3v2_target"].get(p, 0) - out["single_target"].get(p, 0)) < 1e-12
+               for p in out["s3v2_target"])
+    cap_cfg = float(new["capital_cap_usd"])
+    print(f"\n   first restart at {at:%Y-%m-%d %H:%M} UTC into config.yaml: targets {reasons}")
+    print(f"   startup orders: {out['n0']} {out['startup_by_sleeve']}; total book capital "
+          f"${out['capital']:,.2f} (cap ${cap_cfg:,.0f}); s3v2 book inherited {len(out['s3v2_units'])} positions")
+    print(f"   cap-only change restart: restored {out['cap_restored']}, orders {out['cap_orders']}")
+    return report("switching the running single-strategy bot to this config", {
+        "s3v2 sleeve adopts the running bot's 00:00 targets (no mid-day recompute)":
+            reasons.get("s3v2", ("",))[0] == "restored" and same,
+        "xsmom computes its targets from its last 14:00 UTC decision bar (first start)":
+            reasons.get("xsmom", ("",))[0] == "first start"
+            and pd.Timestamp(reasons["xsmom"][2]).hour == 14,
+        f"xsmom trades at startup iff its last decision holds coins ({out['xsmom_target']})":
+            (out["startup_by_sleeve"].get("xsmom", 0) > 0) == bool(out["xsmom_target"]),
+        "s3v2 startup orders only resize inherited positions to the adopted targets "
+        "(sleeve capital 0.5 x $10k vs the old $3k sizing)": out["s3v2_resize_ok"],
+        f"no 'repair' orders at the switch ({out['repair_tags']})": out["repair_tags"] == 0,
+        "books start at min(equity, cap) in total, existing positions assigned to s3v2":
+            abs(out["capital"] - cap_cfg) / cap_cfg < 0.01 and len(out["s3v2_units"]) > 0,
+        "capital_cap change alone: both sleeves restored, 0 orders":
+            out["cap_restored"] == ["s3v2", "xsmom"] and out["n_cap"] == 0 and out["cap_orders"] == 0,
+    })
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=30)
     a = ap.parse_args()
     c = all_closes()
-    ok = test_joint(c, a.days) & test_parity(c, a.days) & test_restart(c)
+    ok = test_migration(c) & test_joint(c, a.days) & test_parity(c, a.days) & test_restart(c)
     print(f"\n(e) sleeve tests: {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

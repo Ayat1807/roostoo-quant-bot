@@ -35,6 +35,7 @@ OUT = HERE / ".cache" / "restart"
 
 def make_cfg(**over) -> dict:
     cfg = load_config(HERE / "config.yaml")
+    cfg.pop("sleeves", None)          # single-strategy restart logic (sleeves: tests/test_sleeves.py)
     cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0, **over)
     return cfg
 

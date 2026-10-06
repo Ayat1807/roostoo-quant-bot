@@ -173,7 +173,7 @@ Restarts are safe. State lives in `state/`: bars, the risk brake's peak and cool
 
 ## 11. Sleeves (optional: s3v2 + xsmom in one account)
 
-Uncomment the `sleeves:` block in `config.yaml` to run several strategies on one account, one polling loop:
+`config.yaml` has the `sleeves:` block enabled (testing-key forward test from 2026-10-06: s3v2 0.5 + xsmom 0.5, cap $10,000). Remove the block to go back to single-strategy mode. Sleeves run several strategies on one account, one polling loop:
 
 - **Books:** each sleeve gets `weight` x the capped capital as its own virtual book, persisted in `state/sleeves.json`, and then evolves with its own PnL.
 - **s3v2 (`execution: band`):** keeps the hourly 6pp band checks.
@@ -184,3 +184,12 @@ Uncomment the `sleeves:` block in `config.yaml` to run several strategies on one
 - **Liquidity guard:** `liquidity_guard` skips illiquid coins at each decision, for example LISTA or STO when their 24h volume on Roostoo is under $1M.
 
 Tests: `python -m tests.test_sleeves` and `python -m tests.test_xsmom_parity`.
+
+**First restart with the sleeves config** (switching from the single-strategy bot):
+
+- **Books:** `state/sleeves.json` doesn't exist yet, so both books start at 0.5 x min(equity, $10,000). The positions the account already holds are assigned to the s3v2 book.
+- **s3v2:** adopts today's 00:00 targets from `state/targets.json`, logged as `restored`, so there's no mid-day recompute. It may trade once at startup, but only to resize the inherited positions. They were sized for the old $3,000 cap; the s3v2 book now has about $5,000.
+- **xsmom:** computes its targets from its last 14:00 UTC decision bar (`first start`). It trades to them at startup if that decision holds coins; otherwise it waits for the next 14:00 bar. After that it trades only at its daily decision.
+- **Later restarts:** both books and targets are restored from `state/sleeves.json`, with 0 orders. Changing only `capital_cap_usd` doesn't reset targets.
+  - Book capital is fixed when the books are created. A lower cap scales sizing down; a higher cap doesn't grow existing books.
+  - To re-split the capital (for example after changing sleeve weights), stop the bot, delete `state/sleeves.json`, and restart.

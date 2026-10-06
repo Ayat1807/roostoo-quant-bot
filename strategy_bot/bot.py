@@ -390,6 +390,8 @@ class StrategyBot:
             return False
         if valid:
             return False
+        if first and book.target is None and not decide and self._adopt_single_targets(spec, book, slot, fp):
+            return False
         reason = "daily" if decide else ("first start" if first else "config changed")
         if book.target is not None and book.fingerprint != fp:
             log.warning("sleeve %s: config changed since %s; fresh targets", spec.name, book.computed_at)
@@ -408,6 +410,31 @@ class StrategyBot:
             "fingerprint": fp})
         log.info("sleeve %s: targets computed: %s (slot %s): %s", spec.name, reason, slot,
                  {p: round(w, 3) for p, w in tgt.items() if w})
+        return True
+
+    def _adopt_single_targets(self, spec: SleeveSpec, book: SleeveBook, slot: pd.Timestamp,
+                              fp: dict[str, Any]) -> bool:
+        """Switching a running single-strategy bot to sleeves: a sleeve running the same
+        strategy config adopts the current slot's targets from state/targets.json, so the
+        switch does not recompute them mid-day (same rule as a normal restart)."""
+        if not self.targets_file.exists():
+            return False
+        try:
+            d = json.loads(self.targets_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return False
+        f = d.get("fingerprint") or {}
+        if (f.get("strategy") != spec.strategy or bool(f.get("allow_short")) != bool(self.cfg["allow_short"])
+                or not set(spec.universe) <= set(f.get("pairs") or [])
+                or pd.Timestamp(d.get("slot", "1970-01-01T00:00:00+00:00")) != slot):
+            return False
+        book.target = {p: float(d["target"].get(p, 0.0)) for p in spec.universe}
+        book.slot, book.computed_at, book.fingerprint = str(slot), d.get("computed_at"), fp
+        self.logs.write("decisions", {"event": "targets", "sleeve": spec.name, "reason": "restored",
+                                      "slot": str(slot), "source": "state/targets.json (single-strategy)",
+                                      "computed_at": book.computed_at, "target": book.target})
+        log.info("sleeve %s: adopted the single-strategy targets of slot %s (computed %s)", spec.name,
+                 f"{slot:%Y-%m-%d %H:%M}", book.computed_at)
         return True
 
     def step_sleeves(self, tick: dict[str, Any], reason: str) -> int:
@@ -462,22 +489,24 @@ class StrategyBot:
         """Net all sleeves' book changes per pair into one account order per pair."""
         tags: dict[str, dict[str, float]] = {}
         total_want: dict[str, float] = {}
+        total_cur: dict[str, float] = {}
         for nm, want in wants.items():
             book = self.books[nm]
             for p in set(want) | set(book.units):
                 w_u = want.get(p, book.units.get(p, 0.0))
                 total_want[p] = total_want.get(p, 0.0) + w_u
+                total_cur[p] = total_cur.get(p, 0.0) + book.units.get(p, 0.0)
                 d = w_u - book.units.get(p, 0.0)
                 if abs(d * px[p]) > 1e-9:
                     tags.setdefault(p, {})[nm] = round(d * px[p], 2)
         trade = set(tags)
-        # repair: the account drifted from the books (failed / partial order) beyond a threshold
+        # repair: the account drifted from the books BEFORE this step (failed / partial order)
         for p in self.pairs:
             actual = units[p][0] - units[p][1]
-            gap_usd = abs(actual - total_want.get(p, 0.0)) * px[p]
+            gap_usd = abs(actual - total_cur.get(p, 0.0)) * px[p]
             if gap_usd > max(2 * float(self.port.info[p]["MiniOrder"]), 0.005 * sizing):
                 trade.add(p)
-                tags.setdefault(p, {})["repair"] = round((total_want.get(p, 0.0) - actual) * px[p], 2)
+                tags.setdefault(p, {})["repair"] = round((total_cur.get(p, 0.0) - actual) * px[p], 2)
         if not trade:
             return 0
         target_w = {p: (total_want.get(p, 0.0) * px[p] / sizing if sizing > 0 else 0.0) for p in self.pairs}
