@@ -357,12 +357,42 @@ def test_migration(c: pd.DataFrame) -> bool:
     })
 
 
+def test_xsmom_only(c: pd.DataFrame, days: int = 10) -> bool:
+    """The block-3 winner config: one scheduled xsmom sleeve at weight 1.0."""
+    cfg = sleeve_cfg()
+    cfg["sleeves"] = [{"name": "xsmom", "weight": 1.0, "strategy": {"name": "xsmom"}, "universe": TM,
+                       "execution": "scheduled", "decision_hour_utc": 15}]
+    hours = c.index[-24 * days:]
+    sim = Sim("xsmom_only", c, hours[0], cfg)
+    for h in hours:
+        sim.run_hour(h)
+    orders = [o for o in sim.read("orders") if "response" in o]
+    errors = sim.read("errors") + [o for o in sim.read("orders") if o.get("error")]
+    eq = sim.read("equity")
+    first = pd.Timestamp(eq[0]["time"])
+    mult_change = {pd.Timestamp(eq[i]["time"]) for i in range(1, len(eq)) if eq[i]["mult"] != eq[i - 1]["mult"]}
+    off = [o for o in orders if pd.Timestamp(o["time"]).hour != 15 and pd.Timestamp(o["time"]) != first
+           and pd.Timestamp(o["time"]).floor("min") not in {t.floor("min") for t in mult_change}]
+    gross_max = max(sum(abs(v) for v in e["exposure"].values()) for e in eq)
+    cap = float(cfg["capital_cap_usd"])
+    active = len({o["time"][:10] for o in orders})
+    print(f"\n   {len(orders)} orders over {days} days, active days {active}/{days + 1}, max gross ${gross_max:,.0f}")
+    return report(f"block-3 winner config: xsmom alone (weight 1.0), {days}d", {
+        f"0 errors ({len(errors)})": not errors,
+        f"orders only at the 15:00 decision step or startup ({len(off)} off-schedule)": not off,
+        f"USD cash never negative (min ${sim.min_usd:,.2f})": sim.min_usd >= -1e-6,
+        f"exposure <= 75% of the cap incl. drift (max ${gross_max:,.0f} vs ${0.75 * 1.1 * cap:,.0f})":
+            gross_max <= 0.75 * 1.1 * cap,
+    })
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=30)
     a = ap.parse_args()
     c = all_closes()
-    ok = test_migration(c) & test_joint(c, a.days) & test_parity(c, a.days) & test_restart(c)
+    ok = (test_migration(c) & test_joint(c, a.days) & test_parity(c, a.days) & test_restart(c)
+          & test_xsmom_only(c))
     print(f"\n(e) sleeve tests: {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

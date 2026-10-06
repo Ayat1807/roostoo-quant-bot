@@ -37,6 +37,17 @@ sleeves:
     universe: [ZEC/USD, PAXG/USD, POL/USD, ICP/USD, TRX/USD, LISTA/USD, STO/USD, CAKE/USD, TUT/USD, SOL/USD]
     execution: scheduled                          # trades fully to target only at its decision
     decision_hour_utc: 15                         # decides on the 14:00 UTC bar (completes at 15:00)
+# Block-3 winner under its fixed selection rule (strategy_lab/leaderboard_b3.md): xsmom alone on
+# the teammate's 10 coins. NOT the current config. To use it, replace the sleeves block above with:
+# sleeves:
+#   - name: xsmom
+#     weight: 1.0
+#     strategy: {name: xsmom}
+#     universe: [ZEC/USD, PAXG/USD, POL/USD, ICP/USD, TRX/USD, LISTA/USD, STO/USD, CAKE/USD, TUT/USD, SOL/USD]
+#     execution: scheduled
+#     decision_hour_utc: 15
+# Caveats: no band sleeve, so no activity guard (about 12 active days per 14 in the backtest); the
+# universe choice is in-sample for 2025-09 -> 2026-09 (see the selection-bias check).
 capital_cap_usd: 10000     # size as if equity = min(actual, cap); null = full equity
 
 # --- execution ---
