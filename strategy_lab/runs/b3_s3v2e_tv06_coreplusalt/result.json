@@ -1,0 +1,229 @@
+{
+ "name": "b3_s3v2e_tv06_coreplusalt",
+ "group": "c",
+ "note": null,
+ "trial": 235,
+ "spec": {
+  "strategy": "s3v2x",
+  "start": "2020-02-15",
+  "band": 0.06,
+  "brake": true,
+  "allow_short": true,
+  "activity_guard": "minimal",
+  "params": {
+   "horizons": [
+    24,
+    72,
+    168,
+    336
+   ],
+   "vol_win": 336,
+   "regime_win": 336,
+   "target_vol": 0.6,
+   "short_scale_bull": 0.5,
+   "max_w": 0.3,
+   "btc_pair": "BTCUSDT",
+   "n_divisor": 10,
+   "vol_method": "ewma",
+   "ewma_halflife": 168
+  },
+  "universe": {
+   "type": "list",
+   "assets": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "XRPUSDT",
+    "ADAUSDT",
+    "DOGEUSDT",
+    "AVAXUSDT",
+    "LINKUSDT",
+    "DOTUSDT",
+    "ZECUSDT",
+    "NEARUSDT",
+    "SUIUSDT",
+    "LTCUSDT",
+    "UNIUSDT",
+    "AAVEUSDT",
+    "TAOUSDT",
+    "ENAUSDT",
+    "HBARUSDT",
+    "TRXUSDT"
+   ]
+  },
+  "name": "b3_s3v2e_tv06_coreplusalt"
+ },
+ "runtime_s": 50.8,
+ "assets_loaded": 20,
+ "scorecard": {
+  "periods": {
+   "full": {
+    "return": 1.1091813205742018,
+    "ann_ret": 0.11895513202049224,
+    "vol": 0.24147869188104037,
+    "sharpe": 0.5862003845984463,
+    "sortino": 0.8275105098403516,
+    "mdd": -0.3068698851835546,
+    "calmar": 0.38764029239734316,
+    "composite": 0.6231564070348775,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "in_sample": {
+    "return": 0.7526088551638006,
+    "ann_ret": 0.12179680960941863,
+    "vol": 0.2455736007501826,
+    "sharpe": 0.5908110079885568,
+    "sortino": 0.8308161750441162,
+    "mdd": -0.3068698851835546,
+    "calmar": 0.3969004959107203,
+    "composite": 0.6286399211874296,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2024-12-31 23:00:00+00:00"
+   },
+   "out_of_sample": {
+    "return": 0.2040577238502299,
+    "ann_ret": 0.111426278452194,
+    "vol": 0.22973836257282612,
+    "sharpe": 0.5747333264855028,
+    "sortino": 0.82148422048907,
+    "mdd": -0.19548668000023428,
+    "calmar": 0.5699942239136726,
+    "composite": 0.6720119533153806,
+    "start": "2025-01-01 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "oos_12m_ref": {
+    "return": 0.1746645909729525,
+    "ann_ret": 0.1746645909729525,
+    "vol": 0.23618778149244946,
+    "sharpe": 0.799710547867521,
+    "sortino": 1.1517062107188276,
+    "mdd": -0.19548668000023428,
+    "calmar": 0.8934858936309276,
+    "composite": 0.9686414167370656,
+    "start": "2025-10-01 00:00:00+00:00",
+    "end": "2026-10-01 00:00:00+00:00"
+   }
+  },
+  "rolling_14d": {
+   "full": {
+    "n_windows": 2410,
+    "median_return": -0.005208441737815872,
+    "pct_positive": 0.42821576763485475,
+    "worst_return": -0.10251747264683242,
+    "best_return": 0.22765098100694203,
+    "worst_dd": -0.12390132680380106,
+    "median_dd": -0.04236446228728924,
+    "median_composite": -1.9559685405310883,
+    "mean_composite": 5.119125099540081,
+    "median_sharpe": -0.8088057633884809,
+    "median_active_days": 14.0,
+    "min_active_days": 10,
+    "pct_windows_all_days_active": 0.9738589211618257
+   },
+   "out_of_sample": {
+    "n_windows": 628,
+    "median_return": -0.003325405926723257,
+    "pct_positive": 0.46178343949044587,
+    "worst_return": -0.08976867748583672,
+    "best_return": 0.2264588733825057,
+    "worst_dd": -0.10003255316737658,
+    "median_dd": -0.04297909106614317,
+    "median_composite": -1.1687174944845273,
+    "mean_composite": 4.8124513112557095,
+    "median_sharpe": -0.4522206245795696,
+    "median_active_days": 14.0,
+    "min_active_days": 13,
+    "pct_windows_all_days_active": 0.9554140127388535
+   },
+   "in_sample": {
+    "n_windows": 1768,
+    "median_return": -0.005660515035536717,
+    "pct_positive": 0.41798642533936653,
+    "worst_return": -0.10251747264683242,
+    "best_return": 0.22765098100694203,
+    "worst_dd": -0.12390132680380106,
+    "median_dd": -0.04201273435013775,
+    "median_composite": -2.235752989274536,
+    "mean_composite": 5.297314537911231,
+    "median_sharpe": -1.0234550549609747,
+    "median_active_days": 14.0,
+    "min_active_days": 10,
+    "pct_windows_all_days_active": 0.9802036199095022
+   }
+  },
+  "regimes": {
+   "shock": {
+    "days": 176,
+    "share_days": 0.07263722657862154,
+    "mean_daily": 0.002550544521033034,
+    "hit_rate": 0.5056818181818182,
+    "ann_sharpe": 2.2335800484991446,
+    "cum_return": 0.5022601636113282
+   },
+   "bull": {
+    "days": 687,
+    "share_days": 0.2835328105654148,
+    "mean_daily": 0.0012430836065319942,
+    "hit_rate": 0.5138282387190685,
+    "ann_sharpe": 1.9763361694892658,
+    "cum_return": 1.2352723989092746
+   },
+   "bear": {
+    "days": 400,
+    "share_days": 0.1650846058605035,
+    "mean_daily": 0.0004440710326654426,
+    "hit_rate": 0.485,
+    "ann_sharpe": 0.8063459031507805,
+    "cum_return": 0.1683477403135909
+   },
+   "chop": {
+    "days": 1160,
+    "share_days": 0.47874535699546017,
+    "mean_daily": -0.00043396598548796654,
+    "hit_rate": 0.4396551724137931,
+    "ann_sharpe": -0.7142344978837695,
+    "cum_return": -0.43968259609882887
+   }
+  },
+  "regime_share_oos": {
+   "chop": 0.609,
+   "bull": 0.178,
+   "bear": 0.17,
+   "shock": 0.044
+  },
+  "activity": {
+   "trades_total": 8542,
+   "trades_per_day": 3.523927392739274,
+   "active_day_share": 0.9971122112211221,
+   "turnover_per_year_x_equity": 82.99510460944148,
+   "fees_total_usd": 42808.81459943396,
+   "fees_per_year_pct_equity": 0.0829951046094415,
+   "avg_gross_exposure": 0.33582356732502644,
+   "time_brake_active": 0.36568844877679785
+  },
+  "corr_daily_vs_s3v2": 0.7473404794361839
+ },
+ "last_targets": {
+  "time": "2026-10-04 00:00:00+00:00",
+  "members": 20,
+  "target": {
+   "BTCUSDT": 0.17895,
+   "ETHUSDT": 0.07481,
+   "SOLUSDT": 0.05451,
+   "BNBUSDT": 0.16709,
+   "XRPUSDT": -0.02295,
+   "ADAUSDT": -0.01771,
+   "DOGEUSDT": -0.02155,
+   "AVAXUSDT": 0.06194,
+   "LINKUSDT": 0.03593,
+   "ZECUSDT": -0.02639,
+   "SUIUSDT": 0.02695,
+   "UNIUSDT": 0.02463,
+   "AAVEUSDT": 0.06191,
+   "TAOUSDT": 0.02923
+  }
+ }
+}

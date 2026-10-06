@@ -149,10 +149,11 @@ def regime_mode_shares() -> dict:
     """Share of days in each mode, IS / OOS / INFO, from the frozen mode function."""
     sys.path.insert(0, str(ROOT))
     from lab.data import load_close
-    from lab.strategies import get_strategy  # noqa: F401  (loads lab strategies)
-    mod = sys.modules.get("lab_strategies.regime")
+    from lab.strategies import get_strategy
+    get_strategy("regime_switch")          # registers lab strategy modules
+    mod = sys.modules["lab_strategies.regime"]
     btc = load_close(["BTCUSDT"])["BTCUSDT"]
-    days = pd.date_range("2020-02-15", btc.index[-1].floor("D"), freq="1D", tz="UTC")
+    days = pd.date_range(pd.Timestamp("2020-02-15", tz="UTC"), btc.index[-1].floor("D"), freq="1D")
     m = pd.Series({d: mod.mode_at(btc, d) for d in days})
     out = {}
     for k, (a, b) in {"IS": (None, IS_END), "OOS": (OOS0, OOS_END), "INFO": (INFO0, None)}.items():

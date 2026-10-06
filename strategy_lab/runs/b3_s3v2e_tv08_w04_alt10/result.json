@@ -1,0 +1,214 @@
+{
+ "name": "b3_s3v2e_tv08_w04_alt10",
+ "group": "d",
+ "note": null,
+ "trial": 225,
+ "spec": {
+  "strategy": "s3v2x",
+  "start": "2020-02-15",
+  "band": 0.06,
+  "brake": true,
+  "allow_short": true,
+  "activity_guard": "minimal",
+  "params": {
+   "horizons": [
+    24,
+    72,
+    168,
+    336
+   ],
+   "vol_win": 336,
+   "regime_win": 336,
+   "target_vol": 0.8,
+   "short_scale_bull": 0.5,
+   "max_w": 0.4,
+   "btc_pair": "BTCUSDT",
+   "no_trade": [
+    "BTCUSDT"
+   ],
+   "n_divisor": 10,
+   "vol_method": "ewma",
+   "ewma_halflife": 168
+  },
+  "universe": {
+   "type": "list",
+   "assets": [
+    "ZECUSDT",
+    "NEARUSDT",
+    "SUIUSDT",
+    "LTCUSDT",
+    "UNIUSDT",
+    "AAVEUSDT",
+    "TAOUSDT",
+    "ENAUSDT",
+    "HBARUSDT",
+    "TRXUSDT",
+    "BTCUSDT"
+   ]
+  },
+  "name": "b3_s3v2e_tv08_w04_alt10"
+ },
+ "runtime_s": 106.6,
+ "assets_loaded": 11,
+ "scorecard": {
+  "periods": {
+   "full": {
+    "return": 0.5809333142267155,
+    "ann_ret": 0.07141338127485497,
+    "vol": 0.2392907261796804,
+    "sharpe": 0.4078468938011808,
+    "sortino": 0.579580296125337,
+    "mdd": -0.3251486460404647,
+    "calmar": 0.21963302675406987,
+    "composite": 0.42007609461671,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "in_sample": {
+    "return": 0.6109414009945484,
+    "ann_ret": 0.10259575246804098,
+    "vol": 0.23088594261073792,
+    "sharpe": 0.5382857583679538,
+    "sortino": 0.7750674283569886,
+    "mdd": -0.3185097845933297,
+    "calmar": 0.3221117762489912,
+    "composite": 0.5681462317278789,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2024-12-31 23:00:00+00:00"
+   },
+   "out_of_sample": {
+    "return": -0.012155532517805434,
+    "ann_ret": -0.006933568565928083,
+    "vol": 0.2611864180211398,
+    "sharpe": 0.10414634575845663,
+    "sortino": 0.1440276357763851,
+    "mdd": -0.3251486460404647,
+    "calmar": -0.02132430397715758,
+    "composite": 0.08245766684494377,
+    "start": "2025-01-01 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "oos_12m_ref": {
+    "return": 0.29043591851466655,
+    "ann_ret": 0.29043591851466655,
+    "vol": 0.24864732416450677,
+    "sharpe": 1.149913926666223,
+    "sortino": 1.6411020348359058,
+    "mdd": -0.18688706325111193,
+    "calmar": 1.5540718199655188,
+    "composite": 1.4676365379238847,
+    "start": "2025-10-01 00:00:00+00:00",
+    "end": "2026-10-01 00:00:00+00:00"
+   }
+  },
+  "rolling_14d": {
+   "full": {
+    "n_windows": 2410,
+    "median_return": -0.005345900946839788,
+    "pct_positive": 0.42863070539419085,
+    "worst_return": -0.12778050874320845,
+    "best_return": 0.22512558795428794,
+    "worst_dd": -0.16301543973838772,
+    "median_dd": -0.04215261213486787,
+    "median_composite": -1.9263410697015964,
+    "mean_composite": 4.650409449842587,
+    "median_sharpe": -0.8128742006047959,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   },
+   "out_of_sample": {
+    "n_windows": 628,
+    "median_return": -0.008261403176384907,
+    "pct_positive": 0.4171974522292994,
+    "worst_return": -0.12778050874320845,
+    "best_return": 0.20759504670200934,
+    "worst_dd": -0.16301543973838772,
+    "median_dd": -0.04825386917840152,
+    "median_composite": -1.9934735683065863,
+    "mean_composite": 5.319465442274604,
+    "median_sharpe": -0.8559909827686587,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   },
+   "in_sample": {
+    "n_windows": 1768,
+    "median_return": -0.004177605540963469,
+    "pct_positive": 0.43608597285067874,
+    "worst_return": -0.0905787332262652,
+    "best_return": 0.22512558795428794,
+    "worst_dd": -0.1449582291612893,
+    "median_dd": -0.03781533757041272,
+    "median_composite": -1.7694241311820682,
+    "mean_composite": 4.509140361783442,
+    "median_sharpe": -0.7223108352207552,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   }
+  },
+  "regimes": {
+   "shock": {
+    "days": 176,
+    "share_days": 0.07263722657862154,
+    "mean_daily": 0.0017200719937791294,
+    "hit_rate": 0.4659090909090909,
+    "ann_sharpe": 1.507321793592791,
+    "cum_return": 0.29882480912307496
+   },
+   "bull": {
+    "days": 687,
+    "share_days": 0.2835328105654148,
+    "mean_daily": 0.000853893802285787,
+    "hit_rate": 0.5036390101892285,
+    "ann_sharpe": 1.4269570402256166,
+    "cum_return": 0.7197069897464787
+   },
+   "bear": {
+    "days": 400,
+    "share_days": 0.1650846058605035,
+    "mean_daily": 0.0005005112910748241,
+    "hit_rate": 0.475,
+    "ann_sharpe": 0.8108004813961434,
+    "cum_return": 0.18813638425788715
+   },
+   "chop": {
+    "days": 1160,
+    "share_days": 0.47874535699546017,
+    "mean_daily": -0.00037895029141704606,
+    "hit_rate": 0.44913793103448274,
+    "ann_sharpe": -0.6908039147729671,
+    "cum_return": -0.395342937422817
+   }
+  },
+  "regime_share_oos": {
+   "chop": 0.609,
+   "bull": 0.178,
+   "bear": 0.17,
+   "shock": 0.044
+  },
+  "activity": {
+   "trades_total": 7182,
+   "trades_per_day": 2.962871287128713,
+   "active_day_share": 1.0,
+   "turnover_per_year_x_equity": 81.2411294826608,
+   "fees_total_usd": 33056.010471913476,
+   "fees_per_year_pct_equity": 0.08124112948266078,
+   "avg_gross_exposure": 0.28475427470335496,
+   "time_brake_active": 0.32920728247975656
+  },
+  "corr_daily_vs_s3v2": 0.599184093265721
+ },
+ "last_targets": {
+  "time": "2026-10-04 00:00:00+00:00",
+  "members": 11,
+  "target": {
+   "ZECUSDT": -0.03518,
+   "SUIUSDT": 0.03594,
+   "UNIUSDT": 0.03284,
+   "AAVEUSDT": 0.08255,
+   "TAOUSDT": 0.03897
+  }
+ }
+}

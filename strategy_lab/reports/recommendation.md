@@ -65,3 +65,14 @@ All run on 30m bars with targets recomputed every bar, the minimal guard and the
 - **Satellite spreads today (Roostoo):** 14/15 R1 coins ≤ 5 bps; PEPE 22 bps.
 
 **Next step if adopted:** port vol_method="ewma" (halflife 168h) into strategy_bot's s3v2 as a config flag with a parity test, deploy on the testing key first. Not done: the live bot is untouched.
+
+## Research block 3 (2026-10-06): competition objective and launch decision
+
+Full results: [leaderboard_b3.md](../leaderboard_b3.md). 267 trials have been declared across all blocks. Runs were judged on data to 2026-06-30 only; Jul–Oct 2026 is informational.
+
+- **Rule winner: xsmom on tm10** (OOS P(14d ≥ +10%) 9.2%, meets both constraints). Its universe was chosen with hindsight, though:
+  - before the teammate's sample (2023-01 to 2025-09), P(≥ +10%) was 5%;
+  - inside it, 19%;
+  - our OOS period overlaps that sample.
+- **Launch config (team decision): xsmom on R1.** The rule-based universe has no hindsight: in-sample 15%, OOS 8.7%. It meets both constraints in both halves and is robust to 100% taker fills + 5 bps extra slippage. strategy_bot `config_competition.yaml` (a379740) matches the lab's b3_xsmom_r1 exactly: the universe on 20 month-starts and targets on 34 dates.
+- **Frequency sweep:** for xsmom on R1, the daily refresh is as good as any faster refresh. Faster refreshes only add fees: 6h ties at 9% OOS P(≥ +10%) with fees 17% → 27%/yr; 1h falls to 3% at 54%/yr. The same holds for the other swept candidates.
