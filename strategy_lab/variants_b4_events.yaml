@@ -1,0 +1,54 @@
+# Research block 4a: EVENT-DAY variants of the LIVE strategy (xsmom on R1 = b3_xsmom_r1, trial 243).
+# Declared 2026-10-07 BEFORE any run in this file (team request 2026-10-06; deadline 2026-10-12,
+# before the US CPI release of 2026-10-14). Nothing below has been run.
+# Trial counter continues: 268-276 (9 new); global declared 267 + 9 = 276.
+#
+# Event calendar: data/events.csv (lab/events.py, official BLS / Fed calendars, 2020 -> 2026-10):
+# CPI releases (08:30 ET), FOMC decisions (statement, 14:00 ET; 2020-03-03 10:00, 2020-03-15 17:00)
+# and FOMC minutes (14:00 ET). Times in UTC with US daylight saving.
+# "CPI/FOMC" below = CPI + FOMC_DECISION. Minutes count only as "event days" for variant 1.
+#
+# Timing: a decision at an hourly bar happens when the bar closes (tau = bar open + 1h), as in
+# the live bot's hourly step. Every variant = b3_xsmom_r1 unchanged (R1 universe, xsmom, top 5 x 15%,
+# decision on the 14:00 UTC bar, scheduled execution, drawdown brake, no guard) + one overlay:
+#   1. post_event_fast (frequency sweep per the standing rule: 2h, 4h, 6h, 12h): on the UTC date of
+#      each CPI / FOMC decision / FOMC minutes release and the 2 days after, extra target refreshes
+#      every N hours (anchored at the 14:00 bar like the block-3 sweep); the daily decision as now.
+#   2. pre_event_derisk (50% and 25%): steps with  event - 24h <= tau < event + 4h  cap gross at
+#      50% (25%) of equity, weights scaled down proportionally; back to the standing target after.
+#   3. post_event_breakout: at each step with  event < tau <= event + 4h, BTC return vs the last
+#      close at or before the event; first crossing per event: > +2% -> an extra xsmom decision
+#      immediately; < -2% -> cash until the next daily decision.
+#   4. combined: 2 + 3 (both caps).
+#   5. control: b3_xsmom_r1 (trial 243, unchanged; not re-counted). The event code with no overlay
+#      must reproduce it exactly (checked before reporting).
+# Overlay changes (cap on/off, cash spell) trade the book fully to the new target, like a brake
+# multiplier change in scheduled execution.
+#
+# JUDGING (data to 2026-06-30 only; IS = 2020-02-15 -> 2024-12-31, OOS = 2025-01-01 -> 2026-06-30;
+# Jul-Oct 2026 informational only). Rolling 14-day windows, daily step (lab/b3.windows).
+#   Primary: windows that CONTAIN a CPI/FOMC decision time. Secondary: all windows.
+#   Report per half: P(14d >= +10%), P(14d <= -10%), worst 14d, median 14d; event-day returns
+#   (the strategy's return from 00:00 UTC two days before the event day to 00:00 UTC three days after
+#   it, i.e. event day +/- 2 days; mean and median over events); fees/yr; trades/day; number of
+#   independent events per half; and a FEW-EVENTS flag: the windows where the variant and the
+#   control differ on ">= +10%" are mapped to the events they contain; if the variant's net gain
+#   in event-window P(>= +10%) rests on fewer than 5 distinct events in a half, it is flagged.
+# ADOPT RULE (fixed now): a variant is adopted if, in BOTH halves, its P(14d >= +10%) on
+#   event-containing windows is strictly higher than the control's AND its P(14d <= -10%) on all
+#   windows is not higher than the control's. Several pass -> highest OOS event-window P(>= +10%),
+#   ties IS. Adopted -> implemented in strategy_bot behind a config flag with the event calendar
+#   file and tests; NOT deployed. A FEW-EVENTS flag is reported next to the decision.
+
+declared_trials: 9
+
+runs:
+  - {name: b4e_fast_2h, trial: 268, group: fast, base: b3_xsmom_r1, events: {fast: {types: [CPI, FOMC_DECISION, FOMC_MINUTES], every_h: 2, days_after: 2}}}
+  - {name: b4e_fast_4h, trial: 269, group: fast, base: b3_xsmom_r1, events: {fast: {types: [CPI, FOMC_DECISION, FOMC_MINUTES], every_h: 4, days_after: 2}}}
+  - {name: b4e_fast_6h, trial: 270, group: fast, base: b3_xsmom_r1, events: {fast: {types: [CPI, FOMC_DECISION, FOMC_MINUTES], every_h: 6, days_after: 2}}}
+  - {name: b4e_fast_12h, trial: 271, group: fast, base: b3_xsmom_r1, events: {fast: {types: [CPI, FOMC_DECISION, FOMC_MINUTES], every_h: 12, days_after: 2}}}
+  - {name: b4e_derisk_50, trial: 272, group: derisk, base: b3_xsmom_r1, events: {derisk: {types: [CPI, FOMC_DECISION], before_h: 24, after_h: 4, max_gross: 0.50}}}
+  - {name: b4e_derisk_25, trial: 273, group: derisk, base: b3_xsmom_r1, events: {derisk: {types: [CPI, FOMC_DECISION], before_h: 24, after_h: 4, max_gross: 0.25}}}
+  - {name: b4e_breakout, trial: 274, group: breakout, base: b3_xsmom_r1, events: {breakout: {types: [CPI, FOMC_DECISION], within_h: 4, up: 0.02, down: -0.02}}}
+  - {name: b4e_combined_50, trial: 275, group: combined, base: b3_xsmom_r1, events: {derisk: {types: [CPI, FOMC_DECISION], before_h: 24, after_h: 4, max_gross: 0.50}, breakout: {types: [CPI, FOMC_DECISION], within_h: 4, up: 0.02, down: -0.02}}}
+  - {name: b4e_combined_25, trial: 276, group: combined, base: b3_xsmom_r1, events: {derisk: {types: [CPI, FOMC_DECISION], before_h: 24, after_h: 4, max_gross: 0.25}, breakout: {types: [CPI, FOMC_DECISION], within_h: 4, up: 0.02, down: -0.02}}}

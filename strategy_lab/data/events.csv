@@ -1,0 +1,192 @@
+time_utc,type,date_et,time_et,ref,status,src
+2020-01-14T13:30Z,CPI,2020-01-14,08:30,CPI December 2019,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-01-29T19:00Z,FOMC_DECISION,2020-01-29,14:00,FOMC 2020-01-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-02-13T13:30Z,CPI,2020-02-13,08:30,CPI January 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-02-19T19:00Z,FOMC_MINUTES,2020-02-19,14:00,minutes of FOMC 2020-01-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-03-03T15:00Z,FOMC_DECISION,2020-03-03,10:00,FOMC 2020-03-03,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-03-11T12:30Z,CPI,2020-03-11,08:30,CPI February 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-03-15T21:00Z,FOMC_DECISION,2020-03-15,17:00,FOMC 2020-03-15,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-04-08T18:00Z,FOMC_MINUTES,2020-04-08,14:00,minutes of FOMC 2020-03-15,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-04-10T12:30Z,CPI,2020-04-10,08:30,CPI March 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-04-29T18:00Z,FOMC_DECISION,2020-04-29,14:00,FOMC 2020-04-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-05-12T12:30Z,CPI,2020-05-12,08:30,CPI April 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-05-20T18:00Z,FOMC_MINUTES,2020-05-20,14:00,minutes of FOMC 2020-04-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-06-10T12:30Z,CPI,2020-06-10,08:30,CPI May 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-06-10T18:00Z,FOMC_DECISION,2020-06-10,14:00,FOMC 2020-06-10,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-07-01T18:00Z,FOMC_MINUTES,2020-07-01,14:00,minutes of FOMC 2020-06-10,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-07-14T12:30Z,CPI,2020-07-14,08:30,CPI June 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-07-29T18:00Z,FOMC_DECISION,2020-07-29,14:00,FOMC 2020-07-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-08-12T12:30Z,CPI,2020-08-12,08:30,CPI July 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-08-19T18:00Z,FOMC_MINUTES,2020-08-19,14:00,minutes of FOMC 2020-07-29,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-09-11T12:30Z,CPI,2020-09-11,08:30,CPI August 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-09-16T18:00Z,FOMC_DECISION,2020-09-16,14:00,FOMC 2020-09-16,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-10-07T18:00Z,FOMC_MINUTES,2020-10-07,14:00,minutes of FOMC 2020-09-16,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-10-13T12:30Z,CPI,2020-10-13,08:30,CPI September 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-11-05T19:00Z,FOMC_DECISION,2020-11-05,14:00,FOMC 2020-11-05,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-11-12T13:30Z,CPI,2020-11-12,08:30,CPI October 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-11-25T19:00Z,FOMC_MINUTES,2020-11-25,14:00,minutes of FOMC 2020-11-05,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2020-12-10T13:30Z,CPI,2020-12-10,08:30,CPI November 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2020-12-16T19:00Z,FOMC_DECISION,2020-12-16,14:00,FOMC 2020-12-16,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2021-01-06T19:00Z,FOMC_MINUTES,2021-01-06,14:00,minutes of FOMC 2020-12-16,released,https://www.federalreserve.gov/monetarypolicy/fomchistorical2020.htm
+2021-01-13T13:30Z,CPI,2021-01-13,08:30,CPI December 2020,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-01-27T19:00Z,FOMC_DECISION,2021-01-27,14:00,FOMC 2021-01-27,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-02-10T13:30Z,CPI,2021-02-10,08:30,CPI January 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-02-17T19:00Z,FOMC_MINUTES,2021-02-17,14:00,minutes of FOMC 2021-01-27,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-03-10T13:30Z,CPI,2021-03-10,08:30,CPI February 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-03-17T18:00Z,FOMC_DECISION,2021-03-17,14:00,FOMC 2021-03-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-04-07T18:00Z,FOMC_MINUTES,2021-04-07,14:00,minutes of FOMC 2021-03-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-04-13T12:30Z,CPI,2021-04-13,08:30,CPI March 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-04-28T18:00Z,FOMC_DECISION,2021-04-28,14:00,FOMC 2021-04-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-05-12T12:30Z,CPI,2021-05-12,08:30,CPI April 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-05-19T18:00Z,FOMC_MINUTES,2021-05-19,14:00,minutes of FOMC 2021-04-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-06-10T12:30Z,CPI,2021-06-10,08:30,CPI May 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-06-16T18:00Z,FOMC_DECISION,2021-06-16,14:00,FOMC 2021-06-16,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-07-07T18:00Z,FOMC_MINUTES,2021-07-07,14:00,minutes of FOMC 2021-06-16,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-07-13T12:30Z,CPI,2021-07-13,08:30,CPI June 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-07-28T18:00Z,FOMC_DECISION,2021-07-28,14:00,FOMC 2021-07-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-08-11T12:30Z,CPI,2021-08-11,08:30,CPI July 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-08-18T18:00Z,FOMC_MINUTES,2021-08-18,14:00,minutes of FOMC 2021-07-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-09-14T12:30Z,CPI,2021-09-14,08:30,CPI August 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-09-22T18:00Z,FOMC_DECISION,2021-09-22,14:00,FOMC 2021-09-22,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-10-13T12:30Z,CPI,2021-10-13,08:30,CPI September 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-10-13T18:00Z,FOMC_MINUTES,2021-10-13,14:00,minutes of FOMC 2021-09-22,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-11-03T18:00Z,FOMC_DECISION,2021-11-03,14:00,FOMC 2021-11-03,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-11-10T13:30Z,CPI,2021-11-10,08:30,CPI October 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-11-24T19:00Z,FOMC_MINUTES,2021-11-24,14:00,minutes of FOMC 2021-11-03,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2021-12-10T13:30Z,CPI,2021-12-10,08:30,CPI November 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2021-12-15T19:00Z,FOMC_DECISION,2021-12-15,14:00,FOMC 2021-12-15,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-01-05T19:00Z,FOMC_MINUTES,2022-01-05,14:00,minutes of FOMC 2021-12-15,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-01-12T13:30Z,CPI,2022-01-12,08:30,CPI December 2021,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-01-26T19:00Z,FOMC_DECISION,2022-01-26,14:00,FOMC 2022-01-26,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-02-10T13:30Z,CPI,2022-02-10,08:30,CPI January 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-02-16T19:00Z,FOMC_MINUTES,2022-02-16,14:00,minutes of FOMC 2022-01-26,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-03-10T13:30Z,CPI,2022-03-10,08:30,CPI February 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-03-16T18:00Z,FOMC_DECISION,2022-03-16,14:00,FOMC 2022-03-16,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-04-06T18:00Z,FOMC_MINUTES,2022-04-06,14:00,minutes of FOMC 2022-03-16,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-04-12T12:30Z,CPI,2022-04-12,08:30,CPI March 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-05-04T18:00Z,FOMC_DECISION,2022-05-04,14:00,FOMC 2022-05-04,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-05-11T12:30Z,CPI,2022-05-11,08:30,CPI April 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-05-25T18:00Z,FOMC_MINUTES,2022-05-25,14:00,minutes of FOMC 2022-05-04,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-06-10T12:30Z,CPI,2022-06-10,08:30,CPI May 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-06-15T18:00Z,FOMC_DECISION,2022-06-15,14:00,FOMC 2022-06-15,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-07-06T18:00Z,FOMC_MINUTES,2022-07-06,14:00,minutes of FOMC 2022-06-15,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-07-13T12:30Z,CPI,2022-07-13,08:30,CPI June 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-07-27T18:00Z,FOMC_DECISION,2022-07-27,14:00,FOMC 2022-07-27,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-08-10T12:30Z,CPI,2022-08-10,08:30,CPI July 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-08-17T18:00Z,FOMC_MINUTES,2022-08-17,14:00,minutes of FOMC 2022-07-27,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-09-13T12:30Z,CPI,2022-09-13,08:30,CPI August 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-09-21T18:00Z,FOMC_DECISION,2022-09-21,14:00,FOMC 2022-09-21,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-10-12T18:00Z,FOMC_MINUTES,2022-10-12,14:00,minutes of FOMC 2022-09-21,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-10-13T12:30Z,CPI,2022-10-13,08:30,CPI September 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-11-02T18:00Z,FOMC_DECISION,2022-11-02,14:00,FOMC 2022-11-02,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-11-10T13:30Z,CPI,2022-11-10,08:30,CPI October 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-11-23T19:00Z,FOMC_MINUTES,2022-11-23,14:00,minutes of FOMC 2022-11-02,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2022-12-13T13:30Z,CPI,2022-12-13,08:30,CPI November 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2022-12-14T19:00Z,FOMC_DECISION,2022-12-14,14:00,FOMC 2022-12-14,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-01-04T19:00Z,FOMC_MINUTES,2023-01-04,14:00,minutes of FOMC 2022-12-14,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-01-12T13:30Z,CPI,2023-01-12,08:30,CPI December 2022,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-02-01T19:00Z,FOMC_DECISION,2023-02-01,14:00,FOMC 2023-02-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-02-14T13:30Z,CPI,2023-02-14,08:30,CPI January 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-02-22T19:00Z,FOMC_MINUTES,2023-02-22,14:00,minutes of FOMC 2023-02-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-03-14T12:30Z,CPI,2023-03-14,08:30,CPI February 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-03-22T18:00Z,FOMC_DECISION,2023-03-22,14:00,FOMC 2023-03-22,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-04-12T12:30Z,CPI,2023-04-12,08:30,CPI March 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-04-12T18:00Z,FOMC_MINUTES,2023-04-12,14:00,minutes of FOMC 2023-03-22,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-05-03T18:00Z,FOMC_DECISION,2023-05-03,14:00,FOMC 2023-05-03,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-05-10T12:30Z,CPI,2023-05-10,08:30,CPI April 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-05-24T18:00Z,FOMC_MINUTES,2023-05-24,14:00,minutes of FOMC 2023-05-03,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-06-13T12:30Z,CPI,2023-06-13,08:30,CPI May 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-06-14T18:00Z,FOMC_DECISION,2023-06-14,14:00,FOMC 2023-06-14,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-07-05T18:00Z,FOMC_MINUTES,2023-07-05,14:00,minutes of FOMC 2023-06-14,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-07-12T12:30Z,CPI,2023-07-12,08:30,CPI June 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-07-26T18:00Z,FOMC_DECISION,2023-07-26,14:00,FOMC 2023-07-26,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-08-10T12:30Z,CPI,2023-08-10,08:30,CPI July 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-08-16T18:00Z,FOMC_MINUTES,2023-08-16,14:00,minutes of FOMC 2023-07-26,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-09-13T12:30Z,CPI,2023-09-13,08:30,CPI August 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-09-20T18:00Z,FOMC_DECISION,2023-09-20,14:00,FOMC 2023-09-20,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-10-11T18:00Z,FOMC_MINUTES,2023-10-11,14:00,minutes of FOMC 2023-09-20,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-10-12T12:30Z,CPI,2023-10-12,08:30,CPI September 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-11-01T18:00Z,FOMC_DECISION,2023-11-01,14:00,FOMC 2023-11-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-11-14T13:30Z,CPI,2023-11-14,08:30,CPI October 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-11-21T19:00Z,FOMC_MINUTES,2023-11-21,14:00,minutes of FOMC 2023-11-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2023-12-12T13:30Z,CPI,2023-12-12,08:30,CPI November 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2023-12-13T19:00Z,FOMC_DECISION,2023-12-13,14:00,FOMC 2023-12-13,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-01-03T19:00Z,FOMC_MINUTES,2024-01-03,14:00,minutes of FOMC 2023-12-13,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-01-11T13:30Z,CPI,2024-01-11,08:30,CPI December 2023,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-01-31T19:00Z,FOMC_DECISION,2024-01-31,14:00,FOMC 2024-01-31,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-02-13T13:30Z,CPI,2024-02-13,08:30,CPI January 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-02-21T19:00Z,FOMC_MINUTES,2024-02-21,14:00,minutes of FOMC 2024-01-31,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-03-12T12:30Z,CPI,2024-03-12,08:30,CPI February 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-03-20T18:00Z,FOMC_DECISION,2024-03-20,14:00,FOMC 2024-03-20,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-04-10T12:30Z,CPI,2024-04-10,08:30,CPI March 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-04-10T18:00Z,FOMC_MINUTES,2024-04-10,14:00,minutes of FOMC 2024-03-20,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-05-01T18:00Z,FOMC_DECISION,2024-05-01,14:00,FOMC 2024-05-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-05-15T12:30Z,CPI,2024-05-15,08:30,CPI April 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-05-22T18:00Z,FOMC_MINUTES,2024-05-22,14:00,minutes of FOMC 2024-05-01,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-06-12T12:30Z,CPI,2024-06-12,08:30,CPI May 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-06-12T18:00Z,FOMC_DECISION,2024-06-12,14:00,FOMC 2024-06-12,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-07-03T18:00Z,FOMC_MINUTES,2024-07-03,14:00,minutes of FOMC 2024-06-12,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-07-11T12:30Z,CPI,2024-07-11,08:30,CPI June 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-07-31T18:00Z,FOMC_DECISION,2024-07-31,14:00,FOMC 2024-07-31,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-08-14T12:30Z,CPI,2024-08-14,08:30,CPI July 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-08-21T18:00Z,FOMC_MINUTES,2024-08-21,14:00,minutes of FOMC 2024-07-31,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-09-11T12:30Z,CPI,2024-09-11,08:30,CPI August 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-09-18T18:00Z,FOMC_DECISION,2024-09-18,14:00,FOMC 2024-09-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-10-09T18:00Z,FOMC_MINUTES,2024-10-09,14:00,minutes of FOMC 2024-09-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-10-10T12:30Z,CPI,2024-10-10,08:30,CPI September 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-11-07T19:00Z,FOMC_DECISION,2024-11-07,14:00,FOMC 2024-11-07,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-11-13T13:30Z,CPI,2024-11-13,08:30,CPI October 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-11-26T19:00Z,FOMC_MINUTES,2024-11-26,14:00,minutes of FOMC 2024-11-07,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2024-12-11T13:30Z,CPI,2024-12-11,08:30,CPI November 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2024-12-18T19:00Z,FOMC_DECISION,2024-12-18,14:00,FOMC 2024-12-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-01-08T19:00Z,FOMC_MINUTES,2025-01-08,14:00,minutes of FOMC 2024-12-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-01-15T13:30Z,CPI,2025-01-15,08:30,CPI December 2024,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-01-29T19:00Z,FOMC_DECISION,2025-01-29,14:00,FOMC 2025-01-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-02-12T13:30Z,CPI,2025-02-12,08:30,CPI January 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-02-19T19:00Z,FOMC_MINUTES,2025-02-19,14:00,minutes of FOMC 2025-01-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-03-12T12:30Z,CPI,2025-03-12,08:30,CPI February 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-03-19T18:00Z,FOMC_DECISION,2025-03-19,14:00,FOMC 2025-03-19,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-04-09T18:00Z,FOMC_MINUTES,2025-04-09,14:00,minutes of FOMC 2025-03-19,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-04-10T12:30Z,CPI,2025-04-10,08:30,CPI March 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-05-07T18:00Z,FOMC_DECISION,2025-05-07,14:00,FOMC 2025-05-07,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-05-13T12:30Z,CPI,2025-05-13,08:30,CPI April 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-05-28T18:00Z,FOMC_MINUTES,2025-05-28,14:00,minutes of FOMC 2025-05-07,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-06-11T12:30Z,CPI,2025-06-11,08:30,CPI May 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-06-18T18:00Z,FOMC_DECISION,2025-06-18,14:00,FOMC 2025-06-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-07-09T18:00Z,FOMC_MINUTES,2025-07-09,14:00,minutes of FOMC 2025-06-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-07-15T12:30Z,CPI,2025-07-15,08:30,CPI June 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-07-30T18:00Z,FOMC_DECISION,2025-07-30,14:00,FOMC 2025-07-30,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-08-12T12:30Z,CPI,2025-08-12,08:30,CPI July 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-08-20T18:00Z,FOMC_MINUTES,2025-08-20,14:00,minutes of FOMC 2025-07-30,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-09-11T12:30Z,CPI,2025-09-11,08:30,CPI August 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-09-17T18:00Z,FOMC_DECISION,2025-09-17,14:00,FOMC 2025-09-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-10-08T18:00Z,FOMC_MINUTES,2025-10-08,14:00,minutes of FOMC 2025-09-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-10-24T12:30Z,CPI,2025-10-24,08:30,CPI September 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-10-29T18:00Z,FOMC_DECISION,2025-10-29,14:00,FOMC 2025-10-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-11-19T19:00Z,FOMC_MINUTES,2025-11-19,14:00,minutes of FOMC 2025-10-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-12-10T19:00Z,FOMC_DECISION,2025-12-10,14:00,FOMC 2025-12-10,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2025-12-18T13:30Z,CPI,2025-12-18,08:30,CPI November 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2025-12-30T19:00Z,FOMC_MINUTES,2025-12-30,14:00,minutes of FOMC 2025-12-10,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-01-13T13:30Z,CPI,2026-01-13,08:30,CPI December 2025,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-01-28T19:00Z,FOMC_DECISION,2026-01-28,14:00,FOMC 2026-01-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-02-13T13:30Z,CPI,2026-02-13,08:30,CPI January 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-02-18T19:00Z,FOMC_MINUTES,2026-02-18,14:00,minutes of FOMC 2026-01-28,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-03-11T12:30Z,CPI,2026-03-11,08:30,CPI February 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-03-18T18:00Z,FOMC_DECISION,2026-03-18,14:00,FOMC 2026-03-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-04-08T18:00Z,FOMC_MINUTES,2026-04-08,14:00,minutes of FOMC 2026-03-18,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-04-10T12:30Z,CPI,2026-04-10,08:30,CPI March 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-04-29T18:00Z,FOMC_DECISION,2026-04-29,14:00,FOMC 2026-04-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-05-12T12:30Z,CPI,2026-05-12,08:30,CPI April 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-05-20T18:00Z,FOMC_MINUTES,2026-05-20,14:00,minutes of FOMC 2026-04-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-06-10T12:30Z,CPI,2026-06-10,08:30,CPI May 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-06-17T18:00Z,FOMC_DECISION,2026-06-17,14:00,FOMC 2026-06-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-07-08T18:00Z,FOMC_MINUTES,2026-07-08,14:00,minutes of FOMC 2026-06-17,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-07-14T12:30Z,CPI,2026-07-14,08:30,CPI June 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-07-29T18:00Z,FOMC_DECISION,2026-07-29,14:00,FOMC 2026-07-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-08-12T12:30Z,CPI,2026-08-12,08:30,CPI July 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-08-19T18:00Z,FOMC_MINUTES,2026-08-19,14:00,minutes of FOMC 2026-07-29,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-09-11T12:30Z,CPI,2026-09-11,08:30,CPI August 2026,released,https://web.archive.org/web/2026id_/https://www.bls.gov/bls/news-release/cpi.htm
+2026-09-16T18:00Z,FOMC_DECISION,2026-09-16,14:00,FOMC 2026-09-16,released,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-10-07T18:00Z,FOMC_MINUTES,2026-10-07,14:00,minutes of FOMC 2026-09-16,scheduled_rule,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+2026-10-14T12:30Z,CPI,2026-10-14,08:30,CPI September 2026,scheduled,https://web.archive.org/web/2026id_/https://www.bls.gov/schedule/news_release/cpi.htm
+2026-10-28T18:00Z,FOMC_DECISION,2026-10-28,14:00,FOMC 2026-10-28,scheduled,https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm

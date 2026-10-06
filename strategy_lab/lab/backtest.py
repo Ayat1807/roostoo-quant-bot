@@ -74,6 +74,7 @@ class RunConfig:
     costs: dict[str, float] = field(default_factory=lambda: dict(LAB["costs"]))
     engine_mode: bool = False
     execution: str = "band"         # band (hourly band checks) | scheduled (trade fully only at refresh)
+    events: dict[str, Any] | None = None   # macro-event overlays (block 4, see _event_plan); None = off
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -90,6 +91,8 @@ class RunConfig:
             raise ValueError(f"execution must be band|scheduled, got {cfg.execution!r}")
         if cfg.bar not in BPH:
             raise ValueError(f"bar must be one of {sorted(BPH)}, got {cfg.bar!r}")
+        if cfg.events and cfg.bar != "1h":
+            raise ValueError("events overlays need bar=1h")
         cfg.costs = {**LAB["costs"], **(d.get("costs") or {})}
         return cfg
 
@@ -155,6 +158,9 @@ class Backtest:
         eq_hist = np.empty(i1 - i0)
         last_trade_day = None
         sched_mult = None           # scheduled execution: multiplier at the last scheduled trade
+        ev = self._event_plan(idx, assets) if rc.events else None
+        cash_mode = False           # breakout overlay: BTC fell > threshold after an event
+        ev_log: dict[str, Any] = {"breakout_up": [], "breakout_down": [], "derisk_bars": 0, "fast_refreshes": 0}
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
                                                "turnover", "fees", "trades", "mult")}
         targets_log: list[dict[str, Any]] = []
@@ -203,6 +209,27 @@ class Backtest:
             hours_since = (ts - anchor) / pd.Timedelta(hours=1)
             sched = (ts.hour == rc.rebalance_hour_utc and ts.minute == 0) if rc.rebalance_every_h == 24 \
                 else hours_since % rc.rebalance_every_h == 0
+            if ev is not None:
+                extra = False
+                if sched:
+                    cash_mode = False                  # the daily decision ends a post-event cash spell
+                if ev["fast"] is not None and ev["fast"][i] and not sched \
+                        and hours_since % ev["fast_every_h"] == 0:
+                    extra = True
+                    ev_log["fast_refreshes"] += 1
+                for e_id, pre in ev["breakout"].get(i, []):
+                    if e_id in ev["fired"]:
+                        continue
+                    r = last_px[i, ev["btc"]] / last_px[pre, ev["btc"]] - 1
+                    if r > ev["up"]:
+                        ev["fired"].add(e_id)
+                        extra, cash_mode = True, False
+                        ev_log["breakout_up"].append(str(ts))
+                    elif r < ev["down"]:
+                        ev["fired"].add(e_id)
+                        cash_mode = True
+                        ev_log["breakout_down"].append(str(ts))
+                sched = sched or extra
             if target is None or sched:
                 ti = i if (sched or target is not None) else self._last_sched(i)
                 members = self.universe.members(idx[ti], assets, alive_all[ti])
@@ -228,6 +255,17 @@ class Backtest:
             g = np.abs(tgt).sum()
             if g > 1:
                 tgt = tgt / g
+            ev_key: tuple = ()
+            if ev is not None:
+                if cash_mode:
+                    tgt = np.zeros(A)
+                if ev["derisk"] is not None and ev["derisk"][i]:
+                    ev_log["derisk_bars"] += 1
+                    g = np.abs(tgt).sum()
+                    if g > ev["max_gross"]:
+                        tgt = tgt * (ev["max_gross"] / g)
+                g0 = np.abs(target * mult).sum()
+                ev_key = (cash_mode, round(float(np.abs(tgt).sum() / g0), 9) if g0 > 0 else 1.0)
             # 5) band check + per-leg plan (strategy_bot portfolio.py), then activity guard
             sizing = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
             guard_hour = (exact and rc.activity_guard != "off" and ts.hour == rc.guard_hour_utc and ts.minute == 0
@@ -241,10 +279,11 @@ class Backtest:
             if rc.execution == "scheduled":
                 # strategy_bot sleeve execution "scheduled": move fully to target at each refresh
                 # (and when the brake / KILL multiplier changes); no trades in between
-                due = sched or sched_mult is None or mult != sched_mult
+                # event overlays (cash spell, de-risk cap) act like a multiplier change
+                due = sched or sched_mult is None or (mult, ev_key) != sched_mult
                 trade = ((np.abs(tgt - cw) > 1e-9) | hedged) if due else np.zeros(A, dtype=bool)
                 if due:
-                    sched_mult = mult
+                    sched_mult = (mult, ev_key)
             else:
                 trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
             trade &= alive_all[i]
@@ -281,7 +320,60 @@ class Backtest:
                                axis=1)[list(rec)]
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
-                "trades_total": n_trades_total}
+                "trades_total": n_trades_total, "events": ev_log if ev is not None else None}
+
+    # ------------------------------------------------------------------ #
+    def _event_plan(self, idx: pd.DatetimeIndex, assets: list[str]) -> dict[str, Any]:
+        """Precompute the event overlays (data/events.csv, lab/events.py) on the bar grid.
+
+        A decision at bar i happens when bar i CLOSES, at tau_i = idx[i] + 1h (the bot's hourly
+        step). Settings (rc.events), each optional:
+          fast:     {types, every_h, days_after}: on the UTC dates of an event and the next
+                    `days_after` days, extra target refreshes every `every_h` hours (anchored like
+                    the sweep, at rebalance_hour_utc), on top of the daily decision
+          derisk:   {types, before_h, after_h, max_gross}: steps with e - before_h <= tau < e + after_h
+                    cap gross at max_gross (weights scaled down proportionally)
+          breakout: {types, within_h, up, down}: at each step with e < tau <= e + within_h, BTC
+                    return vs the last close at or before e; first crossing per event: > up -> an
+                    extra decision now; < down -> cash until the next daily decision
+        Overlay changes (cash spell, cap on/off) trade fully, like a brake multiplier change.
+        """
+        from lab.events import load_events
+        e = self.rc.events
+        tau = idx + pd.Timedelta(hours=1)
+        out: dict[str, Any] = {"fast": None, "derisk": None, "breakout": {}, "fired": set(),
+                               "btc": assets.index(self.universe.btc_asset)}
+
+        def times(spec: dict) -> pd.DatetimeIndex:
+            ev = load_events(tuple(spec.get("types", ("CPI", "FOMC_DECISION"))))
+            return pd.DatetimeIndex(ev["time"]).sort_values()
+
+        if e.get("fast"):
+            f = e["fast"]
+            days = {t.floor("D") + pd.Timedelta(days=d) for t in times(f)
+                    for d in range(int(f.get("days_after", 2)) + 1)}
+            out["fast"] = np.array([t.floor("D") in days for t in tau])
+            out["fast_every_h"] = float(f["every_h"])
+        if e.get("derisk"):
+            d = e["derisk"]
+            on = np.zeros(len(idx), dtype=bool)
+            for t in times(d):
+                a = tau.searchsorted(t - pd.Timedelta(hours=float(d.get("before_h", 24))))
+                b = tau.searchsorted(t + pd.Timedelta(hours=float(d.get("after_h", 4))))
+                on[a:b] = True
+            out["derisk"], out["max_gross"] = on, float(d["max_gross"])
+        if e.get("breakout"):
+            b = e["breakout"]
+            out["up"], out["down"] = float(b.get("up", 0.02)), float(b.get("down", -0.02))
+            for k, t in enumerate(times(b)):
+                pre = int(tau.searchsorted(t, side="right")) - 1       # last close at or before the event
+                if pre < 0:
+                    continue
+                j = pre + 1
+                while j < len(idx) and tau[j] <= t + pd.Timedelta(hours=float(b.get("within_h", 4))):
+                    out["breakout"].setdefault(j, []).append((k, pre))
+                    j += 1
+        return out
 
     # ------------------------------------------------------------------ #
     def _execute(self, plan: dict[int, float], lw, sw, sizing, p, cash, lu, su, entry, coll,
