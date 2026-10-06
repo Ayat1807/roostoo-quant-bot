@@ -78,7 +78,7 @@ peak_days: 14
 allow_competition: false   # ROOSTOO_KEY_LABEL=competition is refused unless true
 
 # --- files (relative to strategy_bot/) ---
-bootstrap_hours: 800
+bootstrap_hours: 2000          # 2000 bars: xsmom's EMA168 matches the lab / teammate exactly
 paths:
   log_dir: logs
   state_dir: state

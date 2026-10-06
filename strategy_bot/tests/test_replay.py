@@ -79,6 +79,8 @@ def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
         now["t"] = h + pd.Timedelta(hours=1, seconds=30)  # first tick of next hour: closes bar h
         bot.poll()
         max_gross = max(max_gross, ex.gross_exposure())
+        if kill_off is not None and h > kill_off:
+            kill_check["max_gross_after"] = max(kill_check.get("max_gross_after", 0.0), ex.gross_exposure())
     if kill_off is not None:
         kill_check["gross_end"] = ex.gross_exposure()
 
@@ -132,7 +134,8 @@ def main() -> int:
         if r["kill"]:
             k = r["kill"]
             print(f"   KILL: gross ${k['gross_before']:,.0f} -> ${k['gross_after_1_poll']:,.2f} after 1 poll; "
-                  f"${k['gross_at_removal']:,.2f} at removal; ${k['gross_end']:,.0f} at end (resumed)")
+                  f"${k['gross_at_removal']:,.2f} at removal; max ${k.get('max_gross_after', 0):,.0f} after "
+                  f"removal, ${k['gross_end']:,.0f} at end")
             print(f"   KILL dust left (each below MiniOrder / one qty step, untradeable): {k['dust']}")
         checks = {
             "0 errors": not r["errors"],
@@ -143,7 +146,9 @@ def main() -> int:
         if r["kill"]:
             checks["KILL flattens in 1 poll (dust only)"] = r["kill"]["flat_after_1_poll"]
             checks["KILL stays flat (idle)"] = r["kill"]["flat_at_removal"]
-            checks["resumes after KILL"] = r["kill"]["gross_end"] > 100
+            # rebuilt positions after KILL was removed (gross at the very last hour depends on
+            # the signals of that day, which may legitimately be inside the band)
+            checks["resumes after KILL"] = r["kill"].get("max_gross_after", 0.0) > 100
         if r["tag"] == "s3v2_shorts_off":
             checks["no shorts when allow_short=false"] = r["shorts_opened"] == 0
         if r["guard"] == "minimal":

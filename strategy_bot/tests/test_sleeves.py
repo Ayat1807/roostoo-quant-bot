@@ -119,7 +119,7 @@ class Sim:
         return n
 
     def read(self, name: str) -> list[dict]:
-        p = self.base / "logs" / f"{name}.jsonl"
+        p = self.base / (self.cfg.get("paths") or {}).get("log_dir", "logs") / f"{name}.jsonl"
         return [json.loads(x) for x in p.read_text().splitlines()] if p.exists() else []
 
 
@@ -152,8 +152,21 @@ def test_joint(c: pd.DataFrame, days: int) -> bool:
     orders = [o for o in sim.read("orders") if "response" in o]
     errors = sim.read("errors") + [o for o in sim.read("orders") if o.get("error")]
     # ping-pong: per step (order time to the minute) and pair, both a buy and a sell?
+    # ping-pong = a buy AND a sell of the same pair in one step, each worth more than $2. Closing a
+    # dust leg (e.g. a 0.001 BNB short left by rounding, below MiniOrder) next to a real order is
+    # the per-leg cleanup of portfolio.py, not two sleeves fighting.
+    def notional(o: dict) -> float:
+        rq = o.get("request") or {}
+        if "collateral" in rq:
+            return float(rq["collateral"])
+        q = rq.get("quantity") or rq.get("close_qty") or 0.0
+        t = pd.Timestamp(o["time"])
+        h = t.floor("h") - pd.Timedelta(hours=1) if t.minute == 0 else t.floor("h")
+        return float(q) * float(sim.c.loc[h, rq["pair"]]) if q else 0.0
     steps: dict[tuple, set] = {}
     for o in orders:
+        if notional(o) <= 2.0:
+            continue
         key = (o["time"][:16], (o.get("request") or {}).get("pair"))
         steps.setdefault(key, set()).add(side_of(o))
     pingpong = [k for k, v in steps.items() if {"buy", "sell"} <= v]

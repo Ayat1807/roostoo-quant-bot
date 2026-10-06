@@ -94,7 +94,39 @@ def test_plugin_contract() -> bool:
     return ok1 and ok2
 
 
+def test_env_file_gate() -> bool:
+    """Competition configs read keys from env_file (.env.competition): a missing file stops the
+    bot before any request; a key file with an unknown label is refused."""
+    import subprocess
+    import tempfile
+    here = Path(__file__).resolve().parent.parent
+    missing = not (here / ".env.competition").exists()
+    if missing:
+        r = subprocess.run([sys.executable, "bot.py", "--config", "config_competition.yaml", "--dry-run",
+                            "--max-cycles", "0"], cwd=here, capture_output=True, text=True, timeout=120)
+        ok1 = r.returncode == 2 and "SAFETY" in (r.stdout + r.stderr)
+    else:
+        ok1 = True                    # a real .env.competition exists here: don't start the bot
+    saved = {k: os.environ.pop(k, None) for k in ("ROOSTOO_API_KEY", "ROOSTOO_API_SECRET", "ROOSTOO_KEY_LABEL")}
+    d = Path(tempfile.mkdtemp())
+    f = d / ".env.x"
+    f.write_text("ROOSTOO_API_KEY=abcd1234\nROOSTOO_API_SECRET=s\nROOSTOO_KEY_LABEL=bogus\n")
+    try:
+        build_client(True, d / "api.jsonl", f)
+        ok2 = False
+    except KeySafetyError:
+        ok2 = True
+    finally:
+        for k, v in saved.items():
+            if v is not None:
+                os.environ[k] = v
+    print(f"[{'PASS' if ok1 else 'FAIL'}] env_file missing -> bot refuses to start (exit 2)"
+          f"{' (skipped: .env.competition present)' if not missing else ''}")
+    print(f"[{'PASS' if ok2 else 'FAIL'}] env_file with an unknown key label -> refused")
+    return ok1 and ok2
+
+
 if __name__ == "__main__":
-    ok = test_no_resend_after_timeout() & test_key_gate() & test_plugin_contract()
+    ok = test_no_resend_after_timeout() & test_key_gate() & test_plugin_contract() & test_env_file_gate()
     print(f"\nsafety tests: {'PASS' if ok else 'FAIL'}")
     sys.exit(0 if ok else 1)

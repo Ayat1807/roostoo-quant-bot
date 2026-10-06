@@ -104,7 +104,7 @@ class BarStore:
                 if s is not None:
                     self.close = self.close.reindex(self.close.index.union(s.index))
                     self.close[p] = s.combine_first(self.close[p])
-        self.close = self._contiguous(self.close[self.pairs].sort_index()).iloc[-KEEP_ROWS:]
+        self.close = self._contiguous(self.close.reindex(columns=self.pairs).sort_index()).iloc[-KEEP_ROWS:]
         self.save()
         log.info("bars loaded: %d rows x %d pairs, last bar %s", *self.close.shape,
                  self.close.index[-1] if len(self.close) else None)

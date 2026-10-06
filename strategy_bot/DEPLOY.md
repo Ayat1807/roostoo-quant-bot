@@ -193,3 +193,44 @@ Tests: `python -m tests.test_sleeves` and `python -m tests.test_xsmom_parity`.
 - **Later restarts:** both books and targets are restored from `state/sleeves.json`, with 0 orders. Changing only `capital_cap_usd` doesn't reset targets.
   - Book capital is fixed when the books are created. A lower cap scales sizing down; a higher cap doesn't grow existing books.
   - To re-split the capital (for example after changing sleeve weights), stop the bot, delete `state/sleeves.json`, and restart.
+
+## 12. Competition go-live (config_competition.yaml: xsmom on R1)
+
+`config_competition.yaml` runs **one sleeve: xsmom on the R1 universe**. That's the top 15 Roostoo crypto pairs by 30-day Binance dollar volume with ≥90 days of history, ≥$10M/day and a live Roostoo spread ≤5 bps, re-selected on the 1st of each month.
+
+- **Sizing:** weight 1.0, full equity (`capital_cap_usd: null`).
+- **Trading:** only at the decision on the 14:00 UTC bar (wall clock about 15:00 UTC).
+- **Risk:** liquidity guard and drawdown brake on.
+- **Isolation:** it has its own key file (`.env.competition`), `logs_competition/`, `state_competition/` and `KILL_competition`, so it runs next to the testing bot without sharing anything.
+- **Fallback:** `config_competition_tm10.yaml` (xsmom on the teammate's 10 coins + liquidity guard) uses the same files.
+
+**One-time setup (on EC2; the keys never go in chat or git):**
+```bash
+cd ~/Trading_Competition && git pull && bash strategy_bot/deploy/setup_ec2.sh
+cd ~/Trading_Competition/strategy_bot && cp .env.competition.example .env.competition && chmod 600 .env.competition
+nano .env.competition        # paste the COMPETITION key pair; keep ROOSTOO_KEY_LABEL=competition
+git check-ignore -v .env.competition   # must print the .gitignore rule (= ignored)
+.venv/bin/python -m tests.test_safety  # offline, no keys used
+```
+
+**Start (at launch, 04:00 UTC = 12:00 HKT), detached:**
+```bash
+tmux new-session -d -s competition -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition.yaml --live'
+```
+- **10-second warning:** the bot prints a COMPETITION KEY warning and counts down from 10 before starting.
+- **Bootstrap:** it then loads 2000 hourly bars for about 65 pairs and selects the R1 list, which takes about 5 minutes.
+- **First trades:** it trades at startup only if the last 14:00 UTC decision holds coins; otherwise it waits for the next decision (about 15:00 UTC).
+
+**Check:**
+```bash
+tmux ls; cd ~/Trading_Competition/strategy_bot && .venv/bin/python status.py --config config_competition.yaml
+tail -n 30 logs_competition/bot.log; cat state_competition/universe_r1.json
+```
+
+**Stop / kill switch:**
+- Graceful stop: `tmux send-keys -t competition C-c`.
+- Flatten and idle: `touch KILL_competition`. Delete the file to resume.
+
+**Fallback (tm10):** stop the bot, then `rm -rf state_competition` (its books belong to the R1 config), then start the same tmux command with `--config config_competition_tm10.yaml`.
+
+Don't make any manual API call with the competition key. The bot is the only thing that uses it.

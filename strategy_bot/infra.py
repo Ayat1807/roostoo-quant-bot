@@ -78,10 +78,11 @@ def setup_logging(log_dir: Path, max_bytes: int, backups: int) -> None:
     root.setLevel(logging.INFO)
 
 
-def build_client(allow_competition: bool, api_log: Path) -> RoostooClient:
+def build_client(allow_competition: bool, api_log: Path, env_path: Path | None = None) -> RoostooClient:
     """Key-label gate: 'testing' always; 'competition' only with allow_competition: true,
-    after a 10-second warning. Anything else is refused."""
-    label = RoostooClient.from_env().key_label
+    after a 10-second warning. Anything else is refused. `env_path`: the key file (default
+    strategy_bot/.env; the competition configs use .env.competition)."""
+    label = RoostooClient.from_env(env_path).key_label
     if label == "testing":
         allowed: tuple[str, ...] = ("testing",)
     elif label == "competition":
@@ -97,6 +98,6 @@ def build_client(allow_competition: bool, api_log: Path) -> RoostooClient:
     else:
         raise KeySafetyError(f"ROOSTOO_KEY_LABEL={label!r}: must be 'testing' "
                              "(or 'competition' with allow_competition: true).")
-    client = RoostooClient.from_env(allowed_labels=allowed, log_path=api_log)
+    client = RoostooClient.from_env(env_path, allowed_labels=allowed, log_path=api_log)
     client.assert_key_allowed()
     return client

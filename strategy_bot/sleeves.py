@@ -37,6 +37,7 @@ class SleeveSpec:
     band: float = 0.06
     decision_hour_utc: int = 0         # wall-clock hour of the decision step
     fee_rate: float = 0.001            # book-keeping fee (taker), as in the backtests
+    universe_rule: dict[str, Any] | None = None   # e.g. {type: R1, n: 15, ...} (universe_r1.py)
 
     @classmethod
     def from_cfg(cls, d: dict[str, Any], default_strategy: dict[str, Any], default_universe: list[str],
@@ -46,7 +47,11 @@ class SleeveSpec:
                 universe=list(d.get("universe") or default_universe),
                 execution=str(d.get("execution", "band")), band=float(d.get("band", default_band)),
                 decision_hour_utc=int(d.get("decision_hour_utc", default_hour)),
-                fee_rate=float(d.get("fee_rate", 0.001)))
+                fee_rate=float(d.get("fee_rate", 0.001)), universe_rule=d.get("universe_rule"))
+        if s.universe_rule is not None:
+            if str(s.universe_rule.get("type")) != "R1":
+                raise ValueError(f"sleeve {s.name}: universe_rule type must be R1")
+            s.universe = []                    # set from the rule at every step
         if s.execution not in ("band", "scheduled"):
             raise ValueError(f"sleeve {s.name}: execution must be band|scheduled")
         if not 0 < s.weight <= 1:

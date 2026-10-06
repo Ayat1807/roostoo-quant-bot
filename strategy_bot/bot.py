@@ -35,6 +35,7 @@ from market_data import BarStore
 from portfolio import Portfolio
 from risk import RiskManager
 from sleeves import SleeveBook, SleeveSpec, apply_fills, decision_slot, desired_units
+from universe_r1 import R1Universe
 from roostoo_client import KeySafetyError, mask_key, num
 from strategies import get_strategy
 
@@ -101,6 +102,7 @@ class StrategyBot:
         self.books: dict[str, SleeveBook] = {}
         self.sleeves_file = self.state_dir / "sleeves.json"
         self._sleeve_started: set[str] = set()
+        self.r1s: dict[str, R1Universe] = {}      # sleeves with universe_rule R1
         self.pairs: list[str] = []
         self.target: dict[str, float] | None = None
         self.target_time: str | None = None
@@ -129,6 +131,10 @@ class StrategyBot:
         wanted = list(cfg["universe"])
         if self.sleeve_specs:
             wanted = list(dict.fromkeys(p for s in self.sleeve_specs for p in s.universe))
+            if any(s.universe_rule for s in self.sleeve_specs):   # R1: the whole Roostoo crypto pool
+                pool = sorted(p for p, d in info.items()
+                              if d.get("CanTrade") and d.get("AssetType", "crypto") == "crypto")
+                wanted = list(dict.fromkeys(wanted + pool))
         self.pairs, dropped = validate_universe(wanted, info, tick)
         for p, why in dropped.items():
             log.warning("universe: dropping %s (%s)", p, why)
@@ -138,6 +144,9 @@ class StrategyBot:
             raise RuntimeError("BTC/USD (regime filter) failed the universe check")
         for s in self.sleeve_specs or []:
             s.universe = [p for p in s.universe if p in self.pairs]
+            if s.universe_rule:
+                self.r1s[s.name] = R1Universe(self.pairs, s.universe_rule, self.state_dir / "universe_r1.json",
+                                              self.logs, self.log_dir / "api_log.jsonl")
         if self.sleeve_specs and self.sleeves_file.exists():
             d = json.loads(self.sleeves_file.read_text(encoding="utf-8"))
             self.books = {n: SleeveBook.from_json(b) for n, b in d.get("books", {}).items()
@@ -347,9 +356,22 @@ class StrategyBot:
     # ----- sleeves ------------------------------------------------------------ #
 
     def _sleeve_fp(self, spec: SleeveSpec) -> dict[str, Any]:
+        # a rule-based universe is fingerprinted by its rule, not its monthly member list, so a
+        # new month's list takes effect at the next decision (as in the lab), not off-schedule
+        uni = self.r1s[spec.name].rule() if spec.name in self.r1s else sorted(spec.universe)
         return {"strategy": spec.strategy, "allow_short": bool(self.cfg["allow_short"]),
-                "universe": sorted(spec.universe), "execution": spec.execution,
-                "decision_hour_utc": spec.decision_hour_utc}
+                "universe": uni, "execution": spec.execution, "decision_hour_utc": spec.decision_hour_utc}
+
+    def required_pairs(self) -> list[str]:
+        """Pairs that must have ticker data for a step: in sleeve mode the sleeves' current
+        universes, their holdings and regime inputs (a large R1 pool must not block a step
+        because one unused coin is missing from the ticker); otherwise every pair."""
+        if not self.sleeve_specs:
+            return list(self.pairs)
+        need = {p for s in self.sleeve_specs for p in s.universe}
+        need |= {p for b in self.books.values() for p in b.units}
+        need |= {s.strategy.get("btc_pair") for s in self.sleeve_specs if s.strategy.get("btc_pair")}
+        return [p for p in self.pairs if p in need]
 
     def _init_books(self, sizing: float, units: dict[str, tuple], px: dict[str, float]) -> None:
         """First start in sleeve mode: each sleeve gets weight x capped capital. Positions
@@ -443,7 +465,10 @@ class StrategyBot:
         equity, sizing, expo, units = self.port.snapshot(tick)
         self.mult, self.brake = self.risk.scale(now, equity)
         snap = self.port.last_snapshot
-        px = {p: num(tick[p], "LastPrice") for p in self.pairs}
+        px = {p: num(tick[p], "LastPrice") for p in self.pairs if p in tick and num(tick[p], "LastPrice") > 0}
+        for spec in self.sleeve_specs:
+            if spec.name in self.r1s:
+                spec.universe = [p for p in self.r1s[spec.name].members(now, tick) if p in px]
         self._init_books(sizing, units, px)
         total = sum(b.equity(px) for b in self.books.values())
         cap = self.cfg.get("capital_cap_usd")
@@ -473,7 +498,7 @@ class StrategyBot:
                              "weights": {p: round(w, 4) for p, w in b.weights(px).items() if abs(w) > 1e-6}}
                         for nm, b in self.books.items()}})
         self.target = {p: sum(b.units.get(p, 0.0) * px[p] for b in self.books.values()) / total
-                       if total > 0 else 0.0 for p in self.pairs}
+                       if total > 0 else 0.0 for p in px if any(p in b.units for b in self.books.values())}
         if n:
             self.last_action = {"time": str(now), "orders": n, "reason": reason, "dry_run": self.dry}
             if not self.dry:
@@ -501,7 +526,7 @@ class StrategyBot:
                     tags.setdefault(p, {})[nm] = round(d * px[p], 2)
         trade = set(tags)
         # repair: the account drifted from the books BEFORE this step (failed / partial order)
-        for p in self.pairs:
+        for p in px:
             actual = units[p][0] - units[p][1]
             gap_usd = abs(actual - total_cur.get(p, 0.0)) * px[p]
             if gap_usd > max(2 * float(self.port.info[p]["MiniOrder"]), 0.005 * sizing):
@@ -509,7 +534,7 @@ class StrategyBot:
                 tags.setdefault(p, {})["repair"] = round((total_cur.get(p, 0.0) - actual) * px[p], 2)
         if not trade:
             return 0
-        target_w = {p: (total_want.get(p, 0.0) * px[p] / sizing if sizing > 0 else 0.0) for p in self.pairs}
+        target_w = {p: (total_want.get(p, 0.0) * px[p] / sizing if sizing > 0 else 0.0) for p in px}
         self.port.order_tags = tags
         self.logs.write("decisions", {
             "event": "sleeve_orders", "reason": why,
@@ -568,7 +593,7 @@ class StrategyBot:
         """One ticker call; on a completed hour (or a new KILL file) run a decision step."""
         now = self.clock()
         tick = self.c.ticker()["Data"]
-        missing = [p for p in self.pairs if p not in tick]
+        missing = [p for p in self.required_pairs() if p not in tick]
         prices = {p: num(tick[p], "LastPrice") for p in self.pairs if p in tick}
         closed = self.bars.on_ticker(now, prices)
         kill = self.risk.kill_active()
@@ -687,7 +712,11 @@ def main() -> int:
     log_dir = HERE / paths.get("log_dir", "logs")
     setup_logging(log_dir, int(cfg["bot_log"]["max_bytes"]), int(cfg["bot_log"]["backups"]))
     try:
-        client = build_client(bool(cfg.get("allow_competition", False)), log_dir / "api_log.jsonl")
+        env_file = HERE / cfg["env_file"] if cfg.get("env_file") else None
+        if env_file is not None and not env_file.exists():
+            log.error("SAFETY: key file %s (config env_file) does not exist", env_file)
+            return 2
+        client = build_client(bool(cfg.get("allow_competition", False)), log_dir / "api_log.jsonl", env_file)
         log.info("key %s label=%s dry_run=%s", mask_key(client.api_key), client.key_label,
                  cfg["dry_run"])
         return StrategyBot(cfg, client, max_cycles=args.max_cycles).run()

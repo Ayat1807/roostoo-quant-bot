@@ -1,6 +1,7 @@
 """Health check for strategy_bot. Read-only: no API calls.
 
-    python status.py
+    python status.py                                   # config.yaml (testing bot)
+    python status.py --config config_competition.yaml  # the competition bot
 
 Heartbeat age (WARN if older than 2 intervals, where an interval is one poll plus one
 limit-order wait), equity and brake, a target-vs-actual weight table per pair, the last
@@ -45,7 +46,10 @@ def fmt_w(w: float | None) -> str:
 
 
 def main() -> int:
-    cfg = yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default="config.yaml")
+    cfg = yaml.safe_load((HERE / ap.parse_args().config).read_text(encoding="utf-8"))
     paths = cfg.get("paths", {})
     log_dir = HERE / paths.get("log_dir", "logs")
     state_dir = HERE / paths.get("state_dir", "state")

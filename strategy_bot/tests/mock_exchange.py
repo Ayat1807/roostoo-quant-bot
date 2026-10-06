@@ -40,8 +40,9 @@ class MockRoostoo:
 
     def __init__(self, pairs: list[str], usd: float = 50_000.0, spread_bps: float = 1.0,
                  taker: float = 0.001, maker: float = 0.0005, short_fee: float = 0.001,
-                 pending_every: int = 3) -> None:
+                 pending_every: int = 3, prec: dict[str, tuple[int, int]] | None = None) -> None:
         self.pairs, self.usd = pairs, usd
+        self.prec = {**PREC, **(prec or {})}     # (PricePrecision, AmountPrecision) per pair
         self.coins = {p.split("/")[0]: 0.0 for p in pairs}
         self.locked = {p.split("/")[0]: 0.0 for p in pairs}
         self.usd_lock = 0.0
@@ -73,7 +74,7 @@ class MockRoostoo:
     def exchange_info(self) -> dict[str, Any]:
         return {"IsRunning": True, "TradePairs": {
             p: {"Coin": p.split("/")[0], "CanTrade": True, "AssetType": "crypto",
-                "PricePrecision": PREC[p][0], "AmountPrecision": PREC[p][1], "MiniOrder": 1}
+                "PricePrecision": self.prec[p][0], "AmountPrecision": self.prec[p][1], "MiniOrder": 1}
             for p in self.pairs}}
 
     def ticker(self, pair: str | None = None) -> dict[str, Any]:
@@ -106,11 +107,11 @@ class MockRoostoo:
         ep = "/v3/place_order"
         q = float(quantity)
         coin = pair.split("/")[0]
-        if _decimals(quantity) > PREC[pair][1]:
+        if _decimals(quantity) > self.prec[pair][1]:
             self._fail(ep, f"quantity precision: {quantity}")
         if order_type == "LIMIT":
             px = float(price)
-            if _decimals(price) > PREC[pair][0]:
+            if _decimals(price) > self.prec[pair][0]:
                 self._fail(ep, f"price precision: {price}")
             if px < self.px[pair] * 0.7 or px > self.px[pair] * 1.3:
                 self._fail(ep, "price should not less than market price 30%")
@@ -214,7 +215,7 @@ class MockRoostoo:
         if coll_req < 1:
             self._fail(ep, "minimum collateral is $1")
         entry = self._bid(pair)
-        ap = PREC[pair][1]
+        ap = self.prec[pair][1]
         qty = float(Decimal(str(coll_req / entry)).quantize(Decimal(1).scaleb(-ap), rounding="ROUND_DOWN"))
         if qty <= 0:
             self._fail(ep, "collateral too small for one quantity step")
@@ -256,7 +257,7 @@ class MockRoostoo:
 
     def unsellable(self, pair: str) -> float:
         """USD value below which a position can't be traded: max(MiniOrder, one qty step)."""
-        return max(1.0, 10 ** -PREC[pair][1] * self.px[pair])
+        return max(1.0, 10 ** -self.prec[pair][1] * self.px[pair])
 
     def pair_exposure(self) -> dict[str, float]:
         out = {p: (self.coins[p.split("/")[0]] + self.locked[p.split("/")[0]]) * self._bid(p)

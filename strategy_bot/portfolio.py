@@ -75,7 +75,8 @@ class Portfolio:
             coin = pair.split("/")[0]
             w = wallet.get(coin, {})
             q_long = num(w, "Free") + num(w, "Lock")
-            bid, ask = num(tick[pair], "MaxBid"), num(tick[pair], "MinAsk")
+            t = tick.get(pair, {})           # large pools: a pair may be missing from one ticker
+            bid, ask = num(t, "MaxBid"), num(t, "MinAsk")
             sp = shorts.get(pair)
             q_short = num(sp, "ShortQty") if sp else 0.0
             pv = num(sp, "PositionValue") if sp else 0.0
@@ -103,9 +104,9 @@ class Portfolio:
         # pair can hold both legs at once (e.g. unsellable long dust + a new short). The
         # reference planned on the NET weight only and could leave both legs open forever
         # (even under KILL). Planning per leg gives identical orders when one leg exists.
-        long_w = {p: (units[p][0] * num(tick[p], "MaxBid") / sizing if sizing else 0.0)
+        long_w = {p: (units[p][0] * num(tick.get(p, {}), "MaxBid") / sizing if sizing else 0.0)
                   for p in self.pairs}
-        short_w = {p: (units[p][1] * num(tick[p], "MinAsk") / sizing if sizing else 0.0)
+        short_w = {p: (units[p][1] * num(tick.get(p, {}), "MinAsk") / sizing if sizing else 0.0)
                    for p in self.pairs}
         plan = []
         for p in self.pairs:
