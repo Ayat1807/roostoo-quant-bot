@@ -53,3 +53,21 @@ runs:
   - {name: b3s_xsmom_tm10_r6h, trial: 251, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 6}
   - {name: b3s_xsmom_tm10_r12h, trial: 252, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 12}
   # b, c: resolved after block 3 by `python -m lab.b3_sweep` (appended below)
+  # b, best of i by OOS P(>=+10%): b3_xsmom_core10 1%, b3_xsmom_alt10 8%, b3_xsmom_r1 9%: b3_xsmom_r1 (own refresh 24h, skipped)
+  - {name: b3s_xsmom_r1_r1h, trial: 253, group: sweep, base: b3_xsmom_r1, rebalance_every_h: 1}
+  - {name: b3s_xsmom_r1_r2h, trial: 254, group: sweep, base: b3_xsmom_r1, rebalance_every_h: 2}
+  - {name: b3s_xsmom_r1_r4h, trial: 255, group: sweep, base: b3_xsmom_r1, rebalance_every_h: 4}
+  - {name: b3s_xsmom_r1_r6h, trial: 256, group: sweep, base: b3_xsmom_r1, rebalance_every_h: 6}
+  - {name: b3s_xsmom_r1_r12h, trial: 257, group: sweep, base: b3_xsmom_r1, rebalance_every_h: 12}
+  # c1, OOS P(>=+10%) 7%, meets both halves: True: b3_s3v2e_tv08_w04_core10 (own refresh 24h, skipped)
+  - {name: b3s_s3v2e_tv08_w04_core10_r1h, trial: 258, group: sweep, base: b3_s3v2e_tv08_w04_core10, rebalance_every_h: 1}
+  - {name: b3s_s3v2e_tv08_w04_core10_r2h, trial: 259, group: sweep, base: b3_s3v2e_tv08_w04_core10, rebalance_every_h: 2}
+  - {name: b3s_s3v2e_tv08_w04_core10_r4h, trial: 260, group: sweep, base: b3_s3v2e_tv08_w04_core10, rebalance_every_h: 4}
+  - {name: b3s_s3v2e_tv08_w04_core10_r6h, trial: 261, group: sweep, base: b3_s3v2e_tv08_w04_core10, rebalance_every_h: 6}
+  - {name: b3s_s3v2e_tv08_w04_core10_r12h, trial: 262, group: sweep, base: b3_s3v2e_tv08_w04_core10, rebalance_every_h: 12}
+  # c2, OOS P(>=+10%) 7%, meets both halves: True: b3_regime_coreplusalt (own refresh 24h, skipped)
+  - {name: b3s_regime_coreplusalt_r1h, trial: 263, group: sweep, base: b3_regime_coreplusalt, rebalance_every_h: 1}
+  - {name: b3s_regime_coreplusalt_r2h, trial: 264, group: sweep, base: b3_regime_coreplusalt, rebalance_every_h: 2}
+  - {name: b3s_regime_coreplusalt_r4h, trial: 265, group: sweep, base: b3_regime_coreplusalt, rebalance_every_h: 4}
+  - {name: b3s_regime_coreplusalt_r6h, trial: 266, group: sweep, base: b3_regime_coreplusalt, rebalance_every_h: 6}
+  - {name: b3s_regime_coreplusalt_r12h, trial: 267, group: sweep, base: b3_regime_coreplusalt, rebalance_every_h: 12}

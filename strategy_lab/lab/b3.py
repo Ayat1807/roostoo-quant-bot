@@ -140,6 +140,7 @@ def main() -> int:
         else:
             winner, why = REF, "fallback 2: no run qualified (nor s3v2e_tv06 core10): s3v2e on core10"
     write(rows, n_trials, winner, why, len(eps), today)
+    write_sweep(decl)
     print(f"winner: {winner} ({why})")
     return 0
 
@@ -160,6 +161,40 @@ def regime_mode_shares() -> dict:
     return out
 
 
+def write_sweep(decl: dict) -> None:
+    """Addendum frequency sweep: base runs and their refresh variants side by side (data to
+    2026-06-30; not eligible as the winner by themselves)."""
+    from lab.runner import resolve_base
+    add = yaml.safe_load((ROOT / "variants_b3_addendum.yaml").read_text(encoding="utf-8"))
+    groups: dict[str, list[tuple[float, str]]] = {}
+    for r in add["runs"]:
+        groups.setdefault(r["base"], []).append((float(r["rebalance_every_h"]), r["name"]))
+    pct = lambda x: "" if x is None else f"{x:+.1%}"
+    pr = lambda x: "" if x is None else f"{x:.0%}"
+    L = ["\n## Frequency sweep (standing rule; target refresh 1h to daily, horizons fixed in calendar time)\n",
+         "Side by side per base strategy; data to 2026-06-30. Sweep runs are not eligible as the block-3 "
+         "winner by themselves.\n",
+         "| base | refresh | fees/yr | trades/day | IS P>=10% / P<=-10% | OOS P>=10% / P<=-10% | OOS median 14d |",
+         "|---|---|---|---|---|---|---|"]
+    for base, items in groups.items():
+        own = float(resolve_base(base).get("rebalance_every_h", 24))
+        for every, name in sorted(items + [(own, base)]):
+            h = load_hourly(name)
+            if h is None:
+                L.append(f"| {base} | {every:g}h | not run | | | | |")
+                continue
+            hj = h.loc[:OOS_END]
+            yrs = (hj.index[-1] - hj.index[0]) / pd.Timedelta(days=365)
+            fees = float(hj["fees"].sum() / hj["equity"].mean() / yrs)
+            tpd = float(hj["trades"].groupby(hj.index.floor("D")).sum().mean())
+            i, o = wstats(windows(h, None, IS_END)), wstats(windows(h, OOS0, OOS_END))
+            L.append(f"| {base} | {every:g}h{' (base)' if name == base else ''} | {fees:.1%} | {tpd:.1f} | "
+                     f"{pr(i.get('p10'))} / {pr(i.get('pm10'))} | {pr(o.get('p10'))} / {pr(o.get('pm10'))} | "
+                     f"{pct(o.get('median'))} |")
+    out = ROOT / "leaderboard_b3.md"
+    out.write_text(out.read_text(encoding="utf-8") + "\n".join(L) + "\n", encoding="utf-8")
+
+
 def write(rows: list[dict], n_trials: int, winner: str, why: str, n_eps: int, today: pd.Timestamp) -> None:
     pct = lambda x: "" if x is None or (isinstance(x, float) and np.isnan(x)) else f"{x:+.1%}"
     pr = lambda x: "" if x is None else f"{x:.0%}"
@@ -168,7 +203,7 @@ def write(rows: list[dict], n_trials: int, winner: str, why: str, n_eps: int, to
          f"_Generated {pd.Timestamp.now(tz='UTC'):%Y-%m-%d %H:%M} UTC. Judged on data to 2026-06-30 only: "
          f"IS = start to 2024-12-31, OOS = 2025-01-01 to 2026-06-30. **Jul 1 to Oct 4 2026 is INFORMATIONAL "
          f"ONLY** (the block-2 holdout, already spent), never a gate._\n",
-         f"**Trials:** {n_trials} declared across all blocks (block 3: 41). With that many tries, the best "
+         f"**Trials:** {n_trials} declared across all blocks (block 3: 41 + 20 addendum sweep). With that many tries, the best "
          f"P(>= +10%) is expected to look about {sr0:.1f} standard errors better than its true value; treat "
          f"small differences as noise.\n",
          "**Constraints (each half):** P(14d <= -10%) <= 10% and worst 14d >= -20%. **Selection:** highest "
