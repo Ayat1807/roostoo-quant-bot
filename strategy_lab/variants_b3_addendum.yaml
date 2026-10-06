@@ -1,0 +1,55 @@
+# Research block 3 ADDENDUM (team request 2026-10-06), declared BEFORE any further block-3 run.
+# 13 of the 41 block-3 trials had already finished when this was written (runs/ b3_*); nothing in
+# this file has been run. Trial counter continues: 248-267 (20 new); global declared 247 + 20 = 267.
+#
+# 1. STANDING RULE (all strategies from now on; also in README.md): frequency sweep of the target
+#    refresh at 1h, 2h, 4h, 6h, 12h and daily, signal horizons fixed in calendar time (hourly bars,
+#    so horizons in bars are unchanged; only rebalance_every_h changes; everything else as the
+#    base run). Report side by side: fees/yr, trades/day, P(14d >= +10%), P(14d <= -10%) per half.
+#    xsmom keeps its execution "scheduled" (full rebalance at each refresh); s3v2-based runs keep
+#    their hourly band checks (refresh changes only how often targets are recomputed).
+#    Sweep refreshes are NOT eligible as the block-3 winner by themselves; they show how
+#    sensitive a candidate is to the clock. If a sweep variant beats its base under the block-3
+#    selection rule in both halves it is reported, and adopting it needs a separate team decision.
+#
+#    Applied to:
+#      a. xsmom on tm10 (5 new refreshes; daily = trial 238)             trials 248-252
+#      b. xsmom on the best rule-based universe = the block-3 "best of i" (core10 / alt10 / R1,
+#         highest OOS P(>= +10%), ties IS), resolved by the same rule as k (5 new)  trials 253-257
+#      c. the top 2 candidates of block 3 under its selection rule (meeting both constraints in
+#         both halves, ranked by OOS P(>= +10%), ties IS; if fewer than 2 qualify, the remaining
+#         slots go to the next runs by OOS P(>= +10%) regardless of constraints), excluding
+#         sweep and xsmom runs already swept above; the 5 refreshes other than the candidate's
+#         own                                                               trials 258-267
+#    b and c are resolved by `python -m lab.b3_sweep` from data to 2026-06-30 only; the resolved
+#    run specs are written below under `runs:` by that script (rule fixed here, before results).
+#
+# 2. REAL-MARKET ROBUSTNESS (not selection trials; no trial numbers): the final recommended
+#    config re-run with 100% taker fills (spot_maker_share 0, already the lab default) and +5 bps
+#    extra slippage (slippage 0.0002 -> 0.0007 per fill), same metrics, reported next to the base
+#    result and in strategy_bot/README.md ("Real-market robustness").
+
+declared_trials: 20
+trial_offset: 247
+baseline: b3_s3v2e_core10
+
+defaults:
+  strategy: s3v2x
+  start: "2020-02-15"
+  band: 0.06
+  brake: true
+  allow_short: true
+  activity_guard: minimal
+  params: {horizons: [24, 72, 168, 336], vol_win: 336, regime_win: 336, target_vol: 0.40,
+           short_scale_bull: 0.5, max_w: 0.30, btc_pair: BTCUSDT}
+
+sweep_refresh_h: [1, 2, 4, 6, 12, 24]
+
+runs:
+  # a. xsmom on tm10 (base: b3_xsmom_tm10, trial 238, daily refresh at the 14:00 UTC bar)
+  - {name: b3s_xsmom_tm10_r1h, trial: 248, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 1}
+  - {name: b3s_xsmom_tm10_r2h, trial: 249, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 2}
+  - {name: b3s_xsmom_tm10_r4h, trial: 250, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 4}
+  - {name: b3s_xsmom_tm10_r6h, trial: 251, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 6}
+  - {name: b3s_xsmom_tm10_r12h, trial: 252, group: sweep, base: b3_xsmom_tm10, rebalance_every_h: 12}
+  # b, c: resolved after block 3 by `python -m lab.b3_sweep` (appended below)

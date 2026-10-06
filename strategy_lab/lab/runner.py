@@ -93,6 +93,19 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
     return meta
 
 
+def resolve_base(name: str) -> dict[str, Any]:
+    """Full declared spec of run `name` (its file's defaults merged) from any variants*.yaml."""
+    for f in sorted(ROOT.glob("variants*.yaml")):
+        doc = yaml.safe_load(f.read_text(encoding="utf-8"))
+        for r in doc.get("runs", []):
+            if r["name"] == name and "base" not in r:
+                d = doc.get("defaults", {})
+                out = {**d, **{k: v for k, v in r.items() if k not in ("name", "trial", "group", "note")}}
+                out["params"] = {**d.get("params", {}), **r.get("params", {})}
+                return out
+    raise KeyError(f"base run {name!r} not declared")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", type=Path)
@@ -117,6 +130,8 @@ def main() -> int:
     print(f"{len(runs)} runs ({len(names)} declared; trial ledger total {led['total_runs']})")
     cache: dict = {}
     for r in runs:
+        if "base" in r:       # sweep run: the base run's full spec + overrides (block 3 addendum)
+            r = {**resolve_base(r["base"]), **{k: v for k, v in r.items() if k != "base"}}
         spec = {**defaults, **{k: v for k, v in r.items() if k != "name"}}
         if "params" in defaults and "params" in r:
             spec["params"] = {**defaults["params"], **r["params"]}

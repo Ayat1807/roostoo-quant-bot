@@ -78,6 +78,12 @@ python -m tests.test_strategies   # every strategy returns valid weights; s3v2x 
 
 ## Honesty rules
 
+- **Frequency sweep (standing rule, from block 3):** every strategy that becomes a candidate is also run with its target refresh at 1h, 2h, 4h, 6h, 12h and daily.
+  - Signal horizons stay fixed in calendar time; only `rebalance_every_h` changes, anchored at the strategy's own clock (`rebalance_hour_utc`).
+  - Report them side by side: fees/yr, trades/day, P(14d ≥ +10%) and P(14d ≤ −10%), per half.
+  - Declare the sweep runs as trials before running them (see `variants_b3_addendum.yaml`, `lab/b3_sweep.py`).
+- **Real-market robustness:** the final recommended config is also reported with 100% taker fills and +5 bps extra slippage per fill. The judges discount strategies that rely on queue-free simulator fills.
+
 - Declare a variant in `variants.yaml` **before** running it, and never delete a declared run because it looked bad.
 - A result is evidence only if it beats its baseline in **both** in-sample and OOS, by more than about one standard error of Sharpe.
 - Look at the 14-day windows, not just total return. The competition is scored on one 14-day window.

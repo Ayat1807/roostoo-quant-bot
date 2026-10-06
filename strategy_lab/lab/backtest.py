@@ -197,7 +197,10 @@ class Backtest:
                 elif dd < rc.dd_soft:
                     mult = 0.5
             # 4) targets: on schedule, or at the first bar
-            hours_since = (ts - self.start) / pd.Timedelta(hours=1)
+            # sub-daily refreshes are anchored at rebalance_hour_utc (00:00 for s3v2 -> unchanged;
+            # 14:00 for xsmom -> a 12h refresh runs at 02:00 / 14:00)
+            anchor = self.start.floor("D") + pd.Timedelta(hours=rc.rebalance_hour_utc)
+            hours_since = (ts - anchor) / pd.Timedelta(hours=1)
             sched = (ts.hour == rc.rebalance_hour_utc and ts.minute == 0) if rc.rebalance_every_h == 24 \
                 else hours_since % rc.rebalance_every_h == 0
             if target is None or sched:
