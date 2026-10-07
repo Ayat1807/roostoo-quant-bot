@@ -1,5 +1,5 @@
 {
- "total_runs": 462,
+ "total_runs": 477,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -218,6 +218,11 @@
   "b6c_erc",
   "b6c_hrp",
   "b6c_kelly",
+  "b6d_meta_edge",
+  "b6d_meta_p",
+  "b6e_trend_top10",
+  "b6e_trend_top15",
+  "b6e_trend_top20",
   "b6s_b6a_A3_bocpd05_c50_r12h",
   "b6s_b6a_A3_bocpd05_c50_r1h",
   "b6s_b6a_A3_bocpd05_c50_r2h",
@@ -238,6 +243,16 @@
   "b6s_b6b_hmm2_r2h",
   "b6s_b6b_hmm2_r4h",
   "b6s_b6b_hmm2_r6h",
+  "b6s_b6c_erc_r12h",
+  "b6s_b6c_erc_r1h",
+  "b6s_b6c_erc_r2h",
+  "b6s_b6c_erc_r4h",
+  "b6s_b6c_erc_r6h",
+  "b6s_b6c_hrp_r12h",
+  "b6s_b6c_hrp_r1h",
+  "b6s_b6c_hrp_r2h",
+  "b6s_b6c_hrp_r4h",
+  "b6s_b6c_hrp_r6h",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -445,7 +460,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 10:31 UTC",
+ "updated": "2026-10-07 10:46 UTC",
  "corrections": [
   {
    "date": "2026-10-05",

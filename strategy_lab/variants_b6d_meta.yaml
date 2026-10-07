@@ -27,3 +27,14 @@ runs:
   - {name: b6d_meta_p, trial: 471, group: D, params: {size_map: p}}
   - {name: b6d_meta_edge, trial: 472, group: D, params: {size_map: edge}}
   # 473-482 sweep: resolved by lab/b6.py d --resolve-sweep --sweep-start 473, appended below
+  # resolved 2026-10-07 10:47 UTC by lab/b6.py d --resolve-sweep: best 2 = ['b6d_meta_edge', 'b6d_meta_p']
+  - {name: b6s_b6d_meta_edge_r1h, trial: 473, group: sweep, base: b6d_meta_edge, rebalance_every_h: 1}
+  - {name: b6s_b6d_meta_edge_r2h, trial: 474, group: sweep, base: b6d_meta_edge, rebalance_every_h: 2}
+  - {name: b6s_b6d_meta_edge_r4h, trial: 475, group: sweep, base: b6d_meta_edge, rebalance_every_h: 4}
+  - {name: b6s_b6d_meta_edge_r6h, trial: 476, group: sweep, base: b6d_meta_edge, rebalance_every_h: 6}
+  - {name: b6s_b6d_meta_edge_r12h, trial: 477, group: sweep, base: b6d_meta_edge, rebalance_every_h: 12}
+  - {name: b6s_b6d_meta_p_r1h, trial: 478, group: sweep, base: b6d_meta_p, rebalance_every_h: 1}
+  - {name: b6s_b6d_meta_p_r2h, trial: 479, group: sweep, base: b6d_meta_p, rebalance_every_h: 2}
+  - {name: b6s_b6d_meta_p_r4h, trial: 480, group: sweep, base: b6d_meta_p, rebalance_every_h: 4}
+  - {name: b6s_b6d_meta_p_r6h, trial: 481, group: sweep, base: b6d_meta_p, rebalance_every_h: 6}
+  - {name: b6s_b6d_meta_p_r12h, trial: 482, group: sweep, base: b6d_meta_p, rebalance_every_h: 12}

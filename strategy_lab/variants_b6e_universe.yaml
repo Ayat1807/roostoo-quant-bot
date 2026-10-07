@@ -28,3 +28,14 @@ runs:
   - {name: b6e_trend_top15, trial: 459, group: E, universe: {type: satellite, rule: TREND, n_liquid: 15, min_history_days: 180, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}}
   - {name: b6e_trend_top20, trial: 460, group: E, universe: {type: satellite, rule: TREND, n_liquid: 20, min_history_days: 180, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}}
   # 461-470 sweep: resolved by lab/b6.py e --resolve-sweep --sweep-start 461, appended below
+  # resolved 2026-10-07 10:46 UTC by lab/b6.py e --resolve-sweep: best 2 = ['b6e_trend_top10', 'b6e_trend_top15']
+  - {name: b6s_b6e_trend_top10_r1h, trial: 461, group: sweep, base: b6e_trend_top10, rebalance_every_h: 1}
+  - {name: b6s_b6e_trend_top10_r2h, trial: 462, group: sweep, base: b6e_trend_top10, rebalance_every_h: 2}
+  - {name: b6s_b6e_trend_top10_r4h, trial: 463, group: sweep, base: b6e_trend_top10, rebalance_every_h: 4}
+  - {name: b6s_b6e_trend_top10_r6h, trial: 464, group: sweep, base: b6e_trend_top10, rebalance_every_h: 6}
+  - {name: b6s_b6e_trend_top10_r12h, trial: 465, group: sweep, base: b6e_trend_top10, rebalance_every_h: 12}
+  - {name: b6s_b6e_trend_top15_r1h, trial: 466, group: sweep, base: b6e_trend_top15, rebalance_every_h: 1}
+  - {name: b6s_b6e_trend_top15_r2h, trial: 467, group: sweep, base: b6e_trend_top15, rebalance_every_h: 2}
+  - {name: b6s_b6e_trend_top15_r4h, trial: 468, group: sweep, base: b6e_trend_top15, rebalance_every_h: 4}
+  - {name: b6s_b6e_trend_top15_r6h, trial: 469, group: sweep, base: b6e_trend_top15, rebalance_every_h: 6}
+  - {name: b6s_b6e_trend_top15_r12h, trial: 470, group: sweep, base: b6e_trend_top15, rebalance_every_h: 12}
