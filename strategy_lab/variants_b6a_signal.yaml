@@ -40,3 +40,5 @@ runs:
   - {name: b6a_A3_bocpd08_c50, trial: 417, group: A3, changepoint: {method: bocpd, threshold: 0.8, cut: 0.5}}
   - {name: b6a_A3_bocpd08_c0, trial: 418, group: A3, changepoint: {method: bocpd, threshold: 0.8, cut: 0.0}}
   # 419 (A4) and 420-429 (sweep): resolved by lab/b6.py, appended below
+  # resolved 2026-10-07 10:27 UTC by lab/b6.py a --resolve-a4: best A3 = b6a_A3_cusum4_c50
+  - {name: b6a_A4_tstat_cusum4_c50, trial: 419, group: A4, params: {signal: tstat, tstat_cap: 2.0}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
