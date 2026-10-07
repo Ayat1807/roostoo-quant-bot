@@ -346,7 +346,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 07:51 UTC",
+ "updated": "2026-10-07 08:21 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
@@ -376,5 +376,6 @@
    "reason": "backtester skipped target refreshes on non-check bars (check_every_h=4 with 6h refresh), so the first result equalled d_4h_r12h; fixed in lab/backtest.py (203ed09) and re-run under the same trial number"
   }
  ],
- "note_race": "2026-10-07: two runners started together; the 9 b4c_B_c2_* runs were added by hand (bump lost in the race)"
+ "note_race": "2026-10-07: two runners started together; the 9 b4c_B_c2_* runs were added by hand (bump lost in the race)",
+ "note_rerun": "2026-10-07: b4d_patient_limit re-run after a backtest bug crash (alive check); ledger bump not double-counted"
 }

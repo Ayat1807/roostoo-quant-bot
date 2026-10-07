@@ -1,0 +1,51 @@
+# Research block 5: RISK-ADJUSTED profit and DOWN-MARKET designs (team decision 2026-10-07: finalists = top 5 per region
+# from the top 20 by return, judged on the risk-adjusted composite). Declared BEFORE any run in this file.
+# Trials 394-408 (15 new); global declared 393 + 15 = 408. Live competition bot untouched.
+#
+# NEW JUDGING (fixed now; lab/b5.py). Data to 2026-06-30, both halves (IS 2020-02-15 -> 2024-12-31, OOS 2025-01-01 ->
+# 2026-06-30); Jul-Oct 2026 informational. Rolling 14-day windows, daily step (lab/b3.windows).
+#   Primary: median 14d composite (0.4 Sortino + 0.3 Sharpe + 0.3 Calmar per window, lab/scorecard.metrics) and mean 14d return.
+#   Down-market requirement: mean 14d return > 0 in DOWN windows (BTC 14d return over the same window < -5%), both halves.
+#   Risk limits: OOS Sharpe (whole OOS period, hourly, annualised) >= 1.0; P(14d <= -10%) <= 5% and worst 14d >= -15% in
+#   both halves.
+#   Also reported: UP (BTC 14d > +5%) and FLAT windows, the 30 analog-to-today windows (lab/analogs), regime slices
+#   (bull / bear / chop / shock, config/lab.yaml, daily returns), short vs long P&L and short hit rate (runs with recorded
+#   positions), fees, trades/day, correlation of daily returns with live xsmom R1 and with BTC.
+#   ADOPT RULE: meets ALL requirements in both halves (incl. OOS Sharpe >= 1) AND beats the best existing reference
+#   b3_s3v2e_core10 on the primary metric: higher median 14d composite AND higher mean 14d return in both halves.
+#   Ranking ("best"): highest OOS median 14d composite among runs meeting all requirements, ties higher OOS mean 14d
+#   return; none meets them -> same ranking over all runs (reported as failing).
+# REFERENCES re-scored (no trials; re-runs with recorded positions, identical curves): b3_xsmom_r1, b3_s3v2e_core10,
+#   b3_s3v2e_tv06_core10, b3_regime_core10 (regime_switch), and 50/50 b3_s3v2e_core10 + b3_xsmom_r1 (two books).
+#
+# DESIGNS (realistic costs: taker 0.10% + 2 bps; shorts 0.10% on open AND close; drawdown brake per book as live):
+#   A  b3_s3v2e_core10 = reference (down-window analysis only)
+#   B  s3v2e core10 with short_scale_bull 1.0 (full shorts always) and 0.75                       394, 395
+#   C  slow_short_book on R1 (strategies/short_books.py SlowShort): EMA(7d) < EMA(30d) AND 14d return < -5%, only when
+#      BTC < 30d mean AND alt breadth < 40%; up to 3 shorts at 15% (and 10%); daily decision on the 14:00 UTC bar; cover
+#      intraday when EMA(7d) > EMA(30d)                                                            396, 397
+#   D  beta_hedge: live xsmom R1 + BTC/ETH short (equal split) = beta (30d, hourly, cap 1) x long gross, only when
+#      BTC < 30d mean (and: when BTC 7d return < -5%); gross > 1 scaled down (collateral)           398, 399
+#   E  breakdown_short on R1 (BreakdownShort): close below the 20-day low with 24h volume > 1.5x the 20-day average,
+#      only when BTC < 30d mean; stop at breakdown level + 1 ATR (close-only ATR, 14 days), 14-day max hold, cover when
+#      BTC >= 30d mean at a decision; up to 3 shorts at 15% (and 10%)                              400, 401
+#   F  sleeve combos (separate books, never rebalanced): s3v2e_core10 70% + best C 30%; s3v2e_core10 70% + best E 30%;
+#      s3v2e_core10 50% + xsmom R1 30% + best C 20%. "best C / E" by the ranking above; resolved by
+#      `python -m lab.b5 --resolve-f` after 396-401 ran                                            402-404
+# FREQUENCY SWEEP (standing rule, team list 4h / 12h / daily), 405-408: the best 2 of 394-401 (B-E; combos excluded) by
+#   the ranking, at a 4h and a 12h refresh (daily = the base): for C / E the full re-selection interval (select_every_h;
+#   intraday cover checks stay hourly), for B / D the target refresh (rebalance_every_h). `python -m lab.b5 --resolve-sweep`.
+#   Not adoptable by themselves.
+
+declared_trials: 15
+
+runs:
+  - {name: b5_s3v2e_ssb100, trial: 394, group: B, base: b3_s3v2e_core10, record_positions: true, params: {short_scale_bull: 1.0}}
+  - {name: b5_s3v2e_ssb075, trial: 395, group: B, base: b3_s3v2e_core10, record_positions: true, params: {short_scale_bull: 0.75}}
+  - {name: b5_slowshort_15, trial: 396, group: C, base: b3_xsmom_r1, strategy: slow_short, allow_short: true, rebalance_every_h: 1, lookback_bars: 3000, record_positions: true, params: {wa: 0.15}}
+  - {name: b5_slowshort_10, trial: 397, group: C, base: b3_xsmom_r1, strategy: slow_short, allow_short: true, rebalance_every_h: 1, lookback_bars: 3000, record_positions: true, params: {wa: 0.10}}
+  - {name: b5_betahedge_btc30, trial: 398, group: D, base: b3_xsmom_r1, strategy: beta_hedge, allow_short: true, record_positions: true, params: {gate: btc_below_30d}}
+  - {name: b5_betahedge_btc7d, trial: 399, group: D, base: b3_xsmom_r1, strategy: beta_hedge, allow_short: true, record_positions: true, params: {gate: btc_7d}}
+  - {name: b5_breakdown_15, trial: 400, group: E, base: b3_xsmom_r1, strategy: breakdown_short, allow_short: true, rebalance_every_h: 1, record_positions: true, params: {wa: 0.15}}
+  - {name: b5_breakdown_10, trial: 401, group: E, base: b3_xsmom_r1, strategy: breakdown_short, allow_short: true, rebalance_every_h: 1, record_positions: true, params: {wa: 0.10}}
+  # 402-404 (combos) and 405-408 (sweep): resolved by lab/b5.py, appended below

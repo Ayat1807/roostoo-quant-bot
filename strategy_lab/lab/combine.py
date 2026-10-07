@@ -29,3 +29,15 @@ def combine_hourly(core: pd.DataFrame, sat: pd.DataFrame, share: float, initial:
     out["trades"] = c["trades"] + s["trades"]
     out["mult"] = c["mult"]
     return out
+
+
+def combine_many(books: list[tuple[pd.DataFrame, float]], initial: float = 50_000.0) -> pd.DataFrame:
+    """N sub-books with fixed starting shares (sum 1), never rebalanced against each other; each book keeps its
+    own drawdown brake (the live bot's brake is account-wide: a simplification)."""
+    if abs(sum(s for _, s in books) - 1) > 1e-9:
+        raise ValueError("book shares must sum to 1")
+    out, acc = books[0][0], books[0][1]
+    for h, s in books[1:]:
+        out = combine_hourly(out, h, s / (acc + s), initial)
+        acc += s
+    return out

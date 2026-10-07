@@ -376,7 +376,7 @@ class Backtest:
                         pend.pop(j)
                         continue
                     lo = self.lows[i, j]
-                    if alive_all[i] and np.isfinite(lo) and lo <= x["limit"] * (1 - float(el.get("through", 0.001))):
+                    if alive_all[i, j] and np.isfinite(lo) and lo <= x["limit"] * (1 - float(el.get("through", 0.001))):
                         ap = amount_precision(assets[j], x["limit"], self.specs)
                         q = floor_qty(min(tgt[j] * sizing_el, cash / (1 + costs["maker"])) / x["limit"], ap)
                         if q > 0 and q * x["limit"] > mini:

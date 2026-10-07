@@ -82,6 +82,27 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
             cb["satellite"] = max(score, key=lambda n: score[n])
             cb["resolved_scores"] = {n: list(v) for n, v in score.items()}
             print(f"  {name}: satellite resolved by rule {cb.get('rule')} -> {cb['satellite']} {score}")
+        if "books" in cb:          # block 5: N books [[run, share], ...]
+            from lab.combine import combine_many
+            hs = [(load_hourly(n), float(sh)) for n, sh in cb["books"]]
+            if any(x is None for x, _ in hs):
+                raise RuntimeError(f"{name}: run {[n for n, _ in cb['books']]} first")
+            h = combine_many(hs)
+            res = {"assets": [], "targets": []}
+            s = {"name": name, "combo": cb}
+            HCACHE.mkdir(parents=True, exist_ok=True)
+            h.to_pickle(HCACHE / f"{name}.pkl")
+            base = load_hourly(baseline) if name != baseline else None
+            sc = scorecard(h, btc, base)
+            out_dir = RUNS / name
+            out_dir.mkdir(parents=True, exist_ok=True)
+            meta = {"name": name, "group": spec.get("group"), "note": spec.get("note"), "trial": spec.get("trial"),
+                    "spec": s, "runtime_s": round(time.time() - t0, 1), "assets_loaded": 0, "scorecard": sc,
+                    "last_targets": None}
+            (out_dir / "result.json").write_text(json.dumps(meta, indent=1, default=str))
+            (out_dir / "summary.md").write_text(to_markdown(name, s, sc), encoding="utf-8")
+            h["equity"].resample("1D").last().to_csv(out_dir / "equity_daily.csv", header=["equity"])
+            return meta
         core, sat = load_hourly(cb["core"]), load_hourly(cb["satellite"])
         if core is None or sat is None:
             raise RuntimeError(f"{name}: run {cb['core']} and {cb['satellite']} first")
