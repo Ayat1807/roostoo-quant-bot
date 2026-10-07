@@ -1,0 +1,29 @@
+# Research block 6, TRACK D: meta-labeling of s3v2e_core10 (reference b3_s3v2e_core10). Declared 2026-10-07 BEFORE any
+# result of the model was seen (lab/meta.py had just been started; its docstring is part of this declaration).
+# Trials 471-482 (12 new); global declared 470 + 12 = 482.
+#
+# Primary signals: s3v2e targets at each daily decision (00:00 UTC). Label: position profitable over the next 3 days net of
+# costs (0.24% round trip). Features: signed trend t-stats (24 / 72 / 168 / 336h), EWMA vol, vol-of-vol, breadth, 30d BTC
+# beta, 30d correlation state, BOCPD changepoint score against the position, hours since the target last changed sign, side.
+# Model: LightGBM (fixed params in lab/meta.py), expanding walk-forward with monthly test steps, >= 6 months of training,
+# purge (training decisions end 3 days before the test month, so no label overlaps it), isotonic calibration on the last 25%
+# (time order) of each training window; out-of-sample predictions only; Jul-Oct 2026 never used as a gate.
+# Bet size = calibrated probability mapped to [0, 1] x the s3v2e weight (strategies/s3v2x_meta.py):
+#   size_map p      m = p                                   471
+#   size_map edge   m = clip(2p - 1, 0, 1)                  472
+# Reported: feature importance (gain share), calibration table and AUC per half (reports/meta_track_d.md).
+# FREQUENCY SWEEP (standing rule), 473-482: best 2 of 471-472 at 1h, 2h, 4h, 6h, 12h
+#   (`python -m lab.b6 d --resolve-sweep --sweep-start 473`); not adoptable by themselves.
+# JUDGING, ranking, adopt rule, secondary 3-day metrics: as track A (lab/b5.py, team objective, data to 2026-06-30).
+
+declared_trials: 12
+
+defaults:
+  base: b3_s3v2e_core10
+  strategy: s3v2x_meta
+  record_positions: true
+
+runs:
+  - {name: b6d_meta_p, trial: 471, group: D, params: {size_map: p}}
+  - {name: b6d_meta_edge, trial: 472, group: D, params: {size_map: edge}}
+  # 473-482 sweep: resolved by lab/b6.py d --resolve-sweep --sweep-start 473, appended below
