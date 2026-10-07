@@ -133,7 +133,7 @@ def corr(name: str, other: pd.Series) -> float | None:
     return float(j.iloc[:, 0].corr(j.iloc[:, 1])) if len(j) > 30 else None
 
 
-def report(names: list[str]) -> int:
+def report(names: list[str], out: str = "leaderboard_b5.md") -> int:
     from lab.analogs import features, find_analogs
     labels = {n: lab for lab, n in REFS}
     have = [n for n in names if load_hourly(n) is not None]
@@ -211,9 +211,10 @@ if __name__ == "__main__":
     ap.add_argument("runs", nargs="*")
     ap.add_argument("--resolve-f", action="store_true")
     ap.add_argument("--resolve-sweep", action="store_true")
+    ap.add_argument("--out", default="leaderboard_b5.md")
     a = ap.parse_args()
     if a.resolve_f:
         sys.exit(resolve_f())
     if a.resolve_sweep:
         sys.exit(resolve_sweep())
-    sys.exit(report(a.runs or [n for _, n in REFS] + [r["name"] for r in runs()]))
+    sys.exit(report(a.runs or [n for _, n in REFS] + [r["name"] for r in runs()], a.out))
