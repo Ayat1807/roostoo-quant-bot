@@ -1,0 +1,39 @@
+# Research block 7: COMBINATIONS of the block-6 near misses on s3v2e_core10 (team request 2026-10-07; deliver by
+# 2026-10-11, before CPI on 2026-10-14). Declared BEFORE any run in this file. Trials 483-496 (14 new); global 482 + 14 = 496.
+#
+# Components, exactly as declared and run in block 6:
+#   HMM2   strategies/s3v2x_regime.py, regime_hmm 2 (walk-forward HMM, data/regime/hmm2.csv)            (b6b_hmm2)
+#   ERC    strategies/s3v2x_alloc.py, alloc erc, lookback_bars 4400                                     (b6c_erc)
+#   CUSUM  backtest changepoint {method cusum, threshold 4, cut 0.5}                                    (b6a_A3_cusum4_c50)
+# HMM2 + ERC = s3v2x_regime with inner s3v2x_alloc (the regime's short scaling feeds ERC's inputs, its gross multiplier
+# scales ERC's weights); the wrapper with regime off reproduces b6c_erc exactly and with inner s3v2x reproduces b6b_hmm2.
+#   1. HMM2 + CUSUM                483
+#   2. ERC + CUSUM                 484
+#   3. HMM2 + ERC                  485
+#   4. HMM2 + ERC + CUSUM          486
+# CONTROL / REFERENCE: b3_s3v2e_core10. JUDGING = team objective (lab/b5.py), data to 2026-06-30, both halves; Jul-Oct
+# informational. ADOPT (unchanged): every requirement in both halves (mean 14d return > 0 in DOWN windows, P(14d <= -10%)
+# <= 5%, worst 14d >= -15%; OOS Sharpe >= 1) AND higher median 14d composite AND higher mean 14d return than the reference in
+# BOTH halves. Several pass -> ranking of lab/b5.py (OOS median composite, ties OOS mean).
+# MARGIN vs LUCK (reported for every run, lab/b7.py): per half, t = margin / SE with
+#   mean 14d return: paired daily-start window differences, SE = std(diff) / sqrt(n / 14) (overlapping windows);
+#   median 14d composite: 14-day moving-block bootstrap of the median difference (2000 draws, seed 0), SE = bootstrap std;
+# compared with the luck threshold for the global trial count (expected best-of-N inflation, about 2.9 SE at 496 trials).
+# FREQUENCY SWEEP (standing rule), 487-496: best 2 of 483-486 at 1h, 2h, 4h, 6h, 12h (`python -m lab.b7 --resolve-sweep`);
+# not adoptable by themselves.
+# If one passes: strategy_bot implementation behind config flags (defaults = live behaviour) with parity, restart and replay
+# tests, and config_testing_<name>.yaml for the TESTING key (capital_cap_usd 10000, own log / state / KILL paths); no
+# competition config until the team decides.
+
+declared_trials: 14
+
+defaults:
+  base: b3_s3v2e_core10
+  record_positions: true
+
+runs:
+  - {name: b7_hmm2_cusum, trial: 483, group: combo, strategy: s3v2x_regime, params: {regime_hmm: 2}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
+  - {name: b7_erc_cusum, trial: 484, group: combo, strategy: s3v2x_alloc, lookback_bars: 4400, params: {alloc: erc}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
+  - {name: b7_hmm2_erc, trial: 485, group: combo, strategy: s3v2x_regime, lookback_bars: 4400, params: {regime_hmm: 2, inner: s3v2x_alloc, alloc: erc}}
+  - {name: b7_hmm2_erc_cusum, trial: 486, group: combo, strategy: s3v2x_regime, lookback_bars: 4400, params: {regime_hmm: 2, inner: s3v2x_alloc, alloc: erc}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
+  # 487-496 sweep: resolved by lab/b7.py --resolve-sweep, appended below

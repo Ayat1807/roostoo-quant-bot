@@ -7,7 +7,8 @@ Declared mapping:
   gross multiplier     = (1 - crisis_cut x p_crisis) x (1 + trend_boost x p_trend) x (corr_mult if the correlation state
                          is high and corr_filter)                               crisis_cut 0.5, trend_boost 0.25, corr_mult 0.7
   then gross > 1 is scaled to 1. Days before the first walk-forward fit (2020-08) use p = 0 (no change).
-regime_hmm 0 (none), 2 or 3 states; corr_filter true / false.
+regime_hmm 0 (none), 2 or 3 states; corr_filter true / false; inner = the wrapped strategy (s3v2x, or s3v2x_alloc with
+its alloc params passed through, block 7).
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ def _load(name: str) -> pd.DataFrame:
 
 class S3v2xRegime(Strategy):
     name = "s3v2x_regime"
-    DEF = {"regime_hmm": 0, "corr_filter": False, "crisis_cut": 0.5, "trend_boost": 0.25, "corr_mult": 0.7}
+    DEF = {"regime_hmm": 0, "corr_filter": False, "crisis_cut": 0.5, "trend_boost": 0.25, "corr_mult": 0.7, "inner": "s3v2x"}
 
     def target_weights(self, closes: pd.DataFrame, cfg: dict[str, Any]) -> dict[str, float]:
         from lab.strategies import get_strategy
@@ -47,7 +48,7 @@ class S3v2xRegime(Strategy):
         base = {k: v for k, v in p.items() if k not in self.DEF}
         ssb = float(base.get("short_scale_bull", 0.5))
         base["short_scale_bull"] = ssb + (1 - ssb) * pc
-        w = get_strategy("s3v2x").target_weights(closes, base)
+        w = get_strategy(str(p["inner"])).target_weights(closes, base)   # s3v2x, or s3v2x_alloc (block 7 combos)
         mult = (1 - float(p["crisis_cut"]) * pc) * (1 + float(p["trend_boost"]) * pt)
         if p["corr_filter"]:
             c = _load("corr")
