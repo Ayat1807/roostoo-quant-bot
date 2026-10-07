@@ -2,6 +2,20 @@
 
 The live trading bot for the Roostoo hackathon. It runs plug-in strategies (`strategies/`) on one Roostoo account, from one polling loop. Deployment and operation are covered in [DEPLOY.md](DEPLOY.md). Research and backtests live in [../strategy_lab](../strategy_lab).
 
+## Competition bot (LIVE, do not touch)
+
+Since **2026-10-07 10:04 UTC** the competition key runs `config_competition_s3v2e.yaml` in tmux session
+`competition_s3v2e`: s3v2 with EWMA vol on the 10 core coins (strategy_lab reference `b3_s3v2e_core10`), shorts on, full
+equity, own `logs_competition_s3v2e/`, `state_competition_s3v2e/`, `KILL_competition_s3v2e`. It opened 4 shorts at startup
+(ETH, XRP, DOGE, BTC). Stats card: `../strategy_lab/reports/stats_card_s3v2e_core10_competition.md`.
+
+### Strategy history (competition key)
+
+| period (UTC) | config | strategy | result | why it ended |
+|---|---|---|---|---|
+| 2026-10-06 15:30 to 2026-10-07 10:00 | `config_competition.yaml` | xsmom on R1 (long only, top 5 x 15%) | -3.36% | replaced after the stats-card review: it failed the team's new down-market and risk requirements (OOS Sharpe -0.79, mean 14d return in down windows -3.2%); flattened via `KILL_competition` 09:55-10:00, session removed |
+| 2026-10-07 10:04 to now | `config_competition_s3v2e.yaml` | s3v2e on core10 | live | meets every requirement of the new objective in both halves (`../strategy_lab/leaderboard_b5.md`) |
+
 ## Current configuration (testing key, from 2026-10-06)
 
 Two strategies run as sleeves of one account (`config.yaml`, `sleeves.py`), each on its own book:

@@ -196,7 +196,7 @@ Tests: `python -m tests.test_sleeves` and `python -m tests.test_xsmom_parity`.
   - Book capital is fixed when the books are created. A lower cap scales sizing down; a higher cap doesn't grow existing books.
   - To re-split the capital (for example after changing sleeve weights), stop the bot, delete `state/sleeves.json`, and restart.
 
-## 12. Competition go-live (config_competition.yaml: xsmom on R1)
+## 12. Competition go-live (config_competition.yaml: xsmom on R1) - HISTORY, replaced 2026-10-07 (section 13)
 
 **Required before any competition config:** a committed stats card next to it (`stats_card:` in the config, generated with `python -m lab.stats_card <run> [comparison runs]` in strategy_lab). `tests/test_safety.py` fails if a config with `allow_competition: true` has none.
 
@@ -240,6 +240,10 @@ tail -n 30 logs_competition/bot.log; cat state_competition/universe_r1.json
 Don't make any manual API call with the competition key. The bot is the only thing that uses it.
 
 ## 13. Competition switch: xsmom on R1 -> s3v2e on core10 (config_competition_s3v2e.yaml)
+
+> **DONE 2026-10-07:** the xsmom bot was flattened via `KILL_competition` (09:55-10:00 UTC) and stopped (session removed).
+> **The LIVE competition bot is `config_competition_s3v2e.yaml`, tmux session `competition_s3v2e`, since 10:04 UTC.**
+> Section 12 (xsmom on R1) is history; do not start it again unless the team decides a rollback.
 
 **Why (team decision 2026-10-07):** under the new objective (risk-adjusted composite, positive mean 14d return in down
 windows, OOS Sharpe >= 1, P(14d <= -10%) <= 5%, worst 14d >= -15%), the live xsmom R1 fails: OOS Sharpe -0.79, mean 14d
