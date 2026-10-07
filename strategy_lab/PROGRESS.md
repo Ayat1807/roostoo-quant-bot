@@ -27,12 +27,15 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
   - D `variants_b6d_meta.yaml` 471-482: `python -m lab.meta` running (dataset + walk-forward -> data/meta/preds.csv,
     reports/meta_track_d.md); then run 471-472.
 
+- Block 6 MAIN RESULTS (all tracks run): NOTHING ADOPTED; s3v2e_core10 stays. reports/block6_summary.md,
+  reports/stats_card_b6_finalists.md, leaderboard_b6{a,b,c,d,e}.md. Closest: B hmm2 (composite better both halves, mean ties),
+  C erc (best OOS composite +0.71, worse IS), A cusum4_c50 (lowest drawdowns).
+
 ## Running
-- logs: .cache/b4b_sweep.log, b6a_sweep.log, b6b_sweep.log, b6c_run.log, meta.log
+- sweeps: .cache/b4b_sweep.log, b6a_sweep.log, b6b_sweep.log, b6c_sweep.log, then b6e_sweep.log -> b6d_sweep.log.
 
 ## Next (in order)
-1. When each finishes: resolve its sweep (`python -m lab.b6 <track> --resolve-sweep`), commit, run `--group sweep`;
-   report `python -m lab.b6 <track>` -> leaderboard_b6<track>.md; stats cards for finalists (`python -m lab.stats_card`).
-2. Track E runs 458-460, then D runs 471-472 (after lab.meta). 4b: `python -m lab.b4gen 4b` + b5 report (newobj).
-3. Final block-6 summary: per track verdict, down-window results, stats cards, ideas needing more time (Deep Momentum
-   Networks etc.) for the finals presentation. Implement a passing variant behind a config flag + tests; never deploy.
+1. When the sweeps finish: `python -m lab.b6 <track>` for a, b, c, d, e (sweep rows join the tables; sweep runs are not
+   adoptable); 4b: `python -m lab.b4gen 4b` + `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out
+   leaderboard_b4b_newobj.md`; commit; note any sweep result in reports/block6_summary.md.
+2. Possible follow-up (needs new pre-registration and the team's go): HMM2 + CUSUM cut combination; ERC in-sample diagnosis.
