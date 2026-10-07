@@ -238,3 +238,63 @@ tail -n 30 logs_competition/bot.log; cat state_competition/universe_r1.json
 **Fallback (tm10):** stop the bot, then `rm -rf state_competition` (its books belong to the R1 config), then start the same tmux command with `--config config_competition_tm10.yaml`.
 
 Don't make any manual API call with the competition key. The bot is the only thing that uses it.
+
+## 13. Competition switch: xsmom on R1 -> s3v2e on core10 (config_competition_s3v2e.yaml)
+
+**Why (team decision 2026-10-07):** under the new objective (risk-adjusted composite, positive mean 14d return in down
+windows, OOS Sharpe >= 1, P(14d <= -10%) <= 5%, worst 14d >= -15%), the live xsmom R1 fails: OOS Sharpe -0.79, mean 14d
+return in down windows -3.2% OOS. s3v2e_core10 meets every requirement in both halves (`strategy_lab/leaderboard_b5.md`,
+stats card `strategy_lab/reports/stats_card_s3v2e_core10_competition.md`).
+
+`config_competition_s3v2e.yaml`: s3v2 with EWMA vol (halflife 168h) on the core10 universe, band 0.06, minimal activity
+guard, drawdown brake on, shorts on (half size while BTC > its 14-day mean), full equity, competition key from
+`.env.competition`. It has its **own fresh** `logs_competition_s3v2e/`, `state_competition_s3v2e/` and
+`KILL_competition_s3v2e`; it never reads the xsmom bot's state. Tested offline by `tests/test_competition_s3v2e.py`
+(lab parity, 30-day replay, restart, old-bot KILL flatten) and `tests/test_safety.py`.
+
+**0. Update the code (the running bots keep the code they loaded at start; a pull does not change them):**
+```bash
+cd ~/Trading_Competition && git pull && cd strategy_bot && .venv/bin/python -m tests.test_safety
+```
+
+**(a) Let the old bot flatten itself (it must sell all its coins, incl. those outside core10 such as NEAR):**
+```bash
+cd ~/Trading_Competition/strategy_bot && touch KILL_competition
+```
+It reacts within one poll (about 1 minute). With limit orders, each sale can rest up to 5 minutes before the market
+fallback, so allow up to about 30 minutes for 5 coins.
+
+**(b) Confirm it is flat:**
+```bash
+.venv/bin/python status.py --config config_competition.yaml      # KILL=PRESENT, every actual weight ~0 (dust only)
+tail -n 20 logs_competition/orders.jsonl                         # the SELL orders and their fills
+grep -c '"error"' logs_competition/orders.jsonl; tail -n 5 logs_competition/errors.jsonl
+```
+Dust below the minimum order (a few cents to about $1 per coin) can stay; it cannot be traded. If any coin still shows a
+real weight, wait for the next poll and check again. Do not stop the bot while orders are resting.
+
+**(c) Stop the old bot (leave `KILL_competition` in place, so the old config can never trade again by accident):**
+```bash
+tmux send-keys -t competition C-c; sleep 5; tmux ls      # "competition" must be gone (else: tmux kill-session -t competition)
+```
+
+**(d) Start the new bot in its own tmux session:**
+```bash
+tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e.yaml --live'
+```
+- 10-second COMPETITION KEY warning, then it loads 2000 hourly bars for the 10 coins (about 1 minute).
+- **First start:** no saved targets exist in `state_competition_s3v2e/`, so it computes fresh targets immediately (decision
+  log `targets` with reason `first start`) and trades only toward them: a pair trades if its weight is more than 6 pp off
+  target, so small targets wait (same rule as the backtest). Afterwards targets are recomputed daily at 00:00 UTC, the
+  band check runs hourly, and the minimal activity guard makes one small trade at 20:00 UTC if nothing traded that day.
+
+**Check:**
+```bash
+tmux ls; .venv/bin/python status.py --config config_competition_s3v2e.yaml
+tail -n 30 logs_competition_s3v2e/bot.log; grep '"first start"' logs_competition_s3v2e/decisions.jsonl | tail -n 1
+```
+
+**Stop / kill switch (new bot):** graceful stop `tmux send-keys -t competition_s3v2e C-c`; flatten and idle
+`touch KILL_competition_s3v2e` (delete it to resume). **Rollback** to xsmom: stop the new bot, `rm KILL_competition`, and
+start section 12's command (its books in `state_competition/` are flat after step a; at start it re-enters the targets of
+its last 15:00 UTC decision).

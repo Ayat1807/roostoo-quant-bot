@@ -102,9 +102,11 @@ def test_env_file_gate() -> bool:
     here = Path(__file__).resolve().parent.parent
     missing = not (here / ".env.competition").exists()
     if missing:
-        r = subprocess.run([sys.executable, "bot.py", "--config", "config_competition.yaml", "--dry-run",
-                            "--max-cycles", "0"], cwd=here, capture_output=True, text=True, timeout=120)
-        ok1 = r.returncode == 2 and "SAFETY" in (r.stdout + r.stderr)
+        ok1 = True
+        for cf in ("config_competition.yaml", "config_competition_s3v2e.yaml"):
+            r = subprocess.run([sys.executable, "bot.py", "--config", cf, "--dry-run",
+                                "--max-cycles", "0"], cwd=here, capture_output=True, text=True, timeout=120)
+            ok1 &= r.returncode == 2 and "SAFETY" in (r.stdout + r.stderr)
     else:
         ok1 = True                    # a real .env.competition exists here: don't start the bot
     saved = {k: os.environ.pop(k, None) for k in ("ROOSTOO_API_KEY", "ROOSTOO_API_SECRET", "ROOSTOO_KEY_LABEL")}
@@ -120,7 +122,7 @@ def test_env_file_gate() -> bool:
         for k, v in saved.items():
             if v is not None:
                 os.environ[k] = v
-    print(f"[{'PASS' if ok1 else 'FAIL'}] env_file missing -> bot refuses to start (exit 2)"
+    print(f"[{'PASS' if ok1 else 'FAIL'}] env_file missing -> both competition configs refuse to start (exit 2)"
           f"{' (skipped: .env.competition present)' if not missing else ''}")
     print(f"[{'PASS' if ok2 else 'FAIL'}] env_file with an unknown key label -> refused")
     return ok1 and ok2
