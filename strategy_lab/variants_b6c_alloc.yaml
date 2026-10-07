@@ -1,0 +1,31 @@
+# Research block 6, TRACK C: allocation across coins for s3v2e_core10 (reference b3_s3v2e_core10). Declared BEFORE any
+# run in this file. Trials 445-457 (13 new); global declared 444 + 13 = 457.
+#
+# strategies/s3v2x_alloc.py (docstring = declaration): s3v2e signals and active set; the s3v2e target's gross G is kept
+# and redistributed by a new allocation, then shorts x 0.5 while BTC > its 14d mean, per-coin cap 30%, gross <= 1:
+#   erc    equal risk contribution, 30-day covariance of the signed positions' hourly returns            445
+#   hrp    hierarchical risk parity, single-linkage clusters on 90-day correlation, inverse-variance bisection 446
+#   kelly  shrunk Kelly: edge from a pooled OLS of next-24h return on the signal over the last 90 days of daily
+#          decisions (24h purge, refit at every decision, point-in-time: out-of-sample predictions only), variance from
+#          EWMA (168h), shrunk 50% toward equal weight                                                   447
+#   lookback_bars 4400 for all three (2160h correlation + 90 days of decisions).
+# Kelly is the only fitted part; its fit uses only data before each decision (rolling 90-day window, 24h purge), so every
+# prediction is out-of-sample by construction (the team's min-6-month expanding walk-forward applies to tracks B / D models
+# that are fitted on long histories).
+# FREQUENCY SWEEP (standing rule), 448-457: best 2 of 445-447 at 1h, 2h, 4h, 6h, 12h
+#   (`python -m lab.b6 c --resolve-sweep --sweep-start 448`); not adoptable by themselves.
+# JUDGING, ranking, adopt rule, secondary 3-day metrics: as track A (lab/b5.py, team objective, data to 2026-06-30).
+
+declared_trials: 13
+
+defaults:
+  base: b3_s3v2e_core10
+  strategy: s3v2x_alloc
+  lookback_bars: 4400
+  record_positions: true
+
+runs:
+  - {name: b6c_erc, trial: 445, group: C, params: {alloc: erc}}
+  - {name: b6c_hrp, trial: 446, group: C, params: {alloc: hrp}}
+  - {name: b6c_kelly, trial: 447, group: C, params: {alloc: kelly}}
+  # 448-457 sweep: resolved by lab/b6.py c --resolve-sweep --sweep-start 448, appended below
