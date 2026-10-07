@@ -29,3 +29,14 @@ runs:
   - {name: b6c_hrp, trial: 446, group: C, params: {alloc: hrp}}
   - {name: b6c_kelly, trial: 447, group: C, params: {alloc: kelly}}
   # 448-457 sweep: resolved by lab/b6.py c --resolve-sweep --sweep-start 448, appended below
+  # resolved 2026-10-07 10:42 UTC by lab/b6.py c --resolve-sweep: best 2 = ['b6c_erc', 'b6c_hrp']
+  - {name: b6s_b6c_erc_r1h, trial: 448, group: sweep, base: b6c_erc, rebalance_every_h: 1}
+  - {name: b6s_b6c_erc_r2h, trial: 449, group: sweep, base: b6c_erc, rebalance_every_h: 2}
+  - {name: b6s_b6c_erc_r4h, trial: 450, group: sweep, base: b6c_erc, rebalance_every_h: 4}
+  - {name: b6s_b6c_erc_r6h, trial: 451, group: sweep, base: b6c_erc, rebalance_every_h: 6}
+  - {name: b6s_b6c_erc_r12h, trial: 452, group: sweep, base: b6c_erc, rebalance_every_h: 12}
+  - {name: b6s_b6c_hrp_r1h, trial: 453, group: sweep, base: b6c_hrp, rebalance_every_h: 1}
+  - {name: b6s_b6c_hrp_r2h, trial: 454, group: sweep, base: b6c_hrp, rebalance_every_h: 2}
+  - {name: b6s_b6c_hrp_r4h, trial: 455, group: sweep, base: b6c_hrp, rebalance_every_h: 4}
+  - {name: b6s_b6c_hrp_r6h, trial: 456, group: sweep, base: b6c_hrp, rebalance_every_h: 6}
+  - {name: b6s_b6c_hrp_r12h, trial: 457, group: sweep, base: b6c_hrp, rebalance_every_h: 12}

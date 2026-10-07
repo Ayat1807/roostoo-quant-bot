@@ -1,5 +1,5 @@
 {
- "total_runs": 452,
+ "total_runs": 462,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -228,6 +228,16 @@
   "b6s_b6a_A3_cusum4_c50_r2h",
   "b6s_b6a_A3_cusum4_c50_r4h",
   "b6s_b6a_A3_cusum4_c50_r6h",
+  "b6s_b6b_corr_r12h",
+  "b6s_b6b_corr_r1h",
+  "b6s_b6b_corr_r2h",
+  "b6s_b6b_corr_r4h",
+  "b6s_b6b_corr_r6h",
+  "b6s_b6b_hmm2_r12h",
+  "b6s_b6b_hmm2_r1h",
+  "b6s_b6b_hmm2_r2h",
+  "b6s_b6b_hmm2_r4h",
+  "b6s_b6b_hmm2_r6h",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
