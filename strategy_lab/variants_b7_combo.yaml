@@ -37,3 +37,14 @@ runs:
   - {name: b7_hmm2_erc, trial: 485, group: combo, strategy: s3v2x_regime, lookback_bars: 4400, params: {regime_hmm: 2, inner: s3v2x_alloc, alloc: erc}}
   - {name: b7_hmm2_erc_cusum, trial: 486, group: combo, strategy: s3v2x_regime, lookback_bars: 4400, params: {regime_hmm: 2, inner: s3v2x_alloc, alloc: erc}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
   # 487-496 sweep: resolved by lab/b7.py --resolve-sweep, appended below
+  # resolved 2026-10-07 11:10 UTC by lab/b7.py --resolve-sweep: best 2 = ['b7_hmm2_erc', 'b7_hmm2_erc_cusum']
+  - {name: b7s_b7_hmm2_erc_r1h, trial: 487, group: sweep, base: b7_hmm2_erc, rebalance_every_h: 1}
+  - {name: b7s_b7_hmm2_erc_r2h, trial: 488, group: sweep, base: b7_hmm2_erc, rebalance_every_h: 2}
+  - {name: b7s_b7_hmm2_erc_r4h, trial: 489, group: sweep, base: b7_hmm2_erc, rebalance_every_h: 4}
+  - {name: b7s_b7_hmm2_erc_r6h, trial: 490, group: sweep, base: b7_hmm2_erc, rebalance_every_h: 6}
+  - {name: b7s_b7_hmm2_erc_r12h, trial: 491, group: sweep, base: b7_hmm2_erc, rebalance_every_h: 12}
+  - {name: b7s_b7_hmm2_erc_cusum_r1h, trial: 492, group: sweep, base: b7_hmm2_erc_cusum, rebalance_every_h: 1}
+  - {name: b7s_b7_hmm2_erc_cusum_r2h, trial: 493, group: sweep, base: b7_hmm2_erc_cusum, rebalance_every_h: 2}
+  - {name: b7s_b7_hmm2_erc_cusum_r4h, trial: 494, group: sweep, base: b7_hmm2_erc_cusum, rebalance_every_h: 4}
+  - {name: b7s_b7_hmm2_erc_cusum_r6h, trial: 495, group: sweep, base: b7_hmm2_erc_cusum, rebalance_every_h: 6}
+  - {name: b7s_b7_hmm2_erc_cusum_r12h, trial: 496, group: sweep, base: b7_hmm2_erc_cusum, rebalance_every_h: 12}
