@@ -63,3 +63,27 @@ All three finalists are profitable in down markets in both halves, and so is the
 - **Market-structure features:** order book, funding rates, open interest, liquidations, options-implied vol (Deribit DVOL). These need historical data feeds that aren't in the lab.
 - **Online / Bayesian model averaging** across the trend, regime and allocation modules, with conformal-prediction position sizing.
 - **Hierarchical or multi-asset HMMs and BOCPD with a learned hazard rate**, validated on many more assets (top 50, 2017+).
+
+## Findings for the finals presentation (negative results are results)
+1. **Meta-labeling found no edge on this data.**
+   - **Setup:** LightGBM learns which s3v2e positions will be profitable over the next 3 days net of costs. It is trained walk-forward: expanding window, monthly steps, a 3-day purge, at least 6 months of training, and only out-of-sample predictions.
+   - **Result:** AUC 0.52 in both halves (0.50 = coin flip). Out of sample, the confidence bins are not monotone: the most confident bin (p > 0.6) had the worst hit rate (40%) and a −1.9% average 3-day result.
+   - **Effect on the strategy:** sizing by the predicted probability mostly shrinks exposure and cuts OOS Sharpe from 1.38 to 0.34.
+   - **Lesson:** with 10 coins and about 18,800 position-days, the trend signal's residual is not predictable from standard features. Most of the model's "importance" sits in the market-wide correlation state, a regime proxy rather than a position-level signal.
+2. **Trend screening does not persist out of sample.**
+   - **Setup:** coins that look trending over the past 180 days (7-day variance ratio > 1 and positive daily autocorrelation).
+   - **In-sample:** they are more likely to stay trending over the next 90 days (38% vs 29%).
+   - **Out of sample (2025–2026):** the edge reverses (17% vs 19%).
+   - **Effect on the strategy:** s3v2e on the screened universes drops to an OOS Sharpe of about 0.3–0.4, vs 1.38 on the fixed core10.
+   - **Lesson:** a stable, liquid universe beats a statistically "trending" one that changes every month.
+3. **More flexible signals overfit.** The continuous t-stat signal had the best in-sample composite of the whole program and one of the worst OOS. The simple sign-of-returns signal of s3v2e generalises better.
+4. **What did help, but not enough to clear the bar:**
+   - **Changepoint (CUSUM) cuts** lower drawdowns.
+   - **The walk-forward 2-state HMM** improves the composite in both halves.
+   - **Equal-risk-contribution allocation** gives the best OOS composite.
+
+   None beats the reference on both primary metrics in both halves on its own. Block 7 tests their combinations (`leaderboard_b7.md`).
+5. **Process:**
+   - 482 trials were declared in total by block 6 (luck threshold about 2.9 standard errors); every track was pre-registered before it ran.
+   - Every fitted model was validated walk-forward with purging.
+   - The Jul–Oct 2026 holdout was never used as a gate.
