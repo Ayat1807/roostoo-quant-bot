@@ -1,5 +1,5 @@
 {
- "total_runs": 286,
+ "total_runs": 295,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -62,6 +62,15 @@
   "b3s_xsmom_tm10_r2h",
   "b3s_xsmom_tm10_r4h",
   "b3s_xsmom_tm10_r6h",
+  "b4e_breakout",
+  "b4e_combined_25",
+  "b4e_combined_50",
+  "b4e_derisk_25",
+  "b4e_derisk_50",
+  "b4e_fast_12h",
+  "b4e_fast_2h",
+  "b4e_fast_4h",
+  "b4e_fast_6h",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -269,7 +278,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-06 08:37 UTC",
+ "updated": "2026-10-06 16:02 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
