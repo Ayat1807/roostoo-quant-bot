@@ -1,8 +1,8 @@
 # Block 4a addendum: intraday exits + frequency sweep (live strategy xsmom on R1)
 
-_Generated 2026-10-07 03:25 UTC. Rules in `variants_b4_exits.yaml` (declared before any run). Judged on data to 2026-06-30, both halves; Jul-Oct 2026 informational only._
+_Generated 2026-10-07 06:40 UTC. Rules in `variants_b4_exits.yaml` (declared before any run). Judged on data to 2026-06-30, both halves; Jul-Oct 2026 informational only._
 
-**Trials:** 290 declared across all blocks; luck threshold about 2.7 standard errors.
+**Trials:** 330 declared across all blocks; luck threshold about 2.7 standard errors.
 
 **Exit adopt rule:** P(14d >= +10%) strictly above the control and P(>= +8%) not below, both halves, both constraints met in both halves.
 
@@ -24,6 +24,16 @@ _Generated 2026-10-07 03:25 UTC. Rules in `variants_b4_exits.yaml` (declared bef
 | b4x_stop4 | 14% / 17% / 1% / -15.5% / -1.0% | 7% / 11% / 1% / -12.0% / -2.5% | 14% / 8% | yes | 14.3% | 5.0 | 15% / +0.1% |
 | b4x_stop6 | 14% / 17% / 1% / -19.1% / -1.0% | 8% / 10% / 2% / -12.0% / -2.6% | 14% / 6% | yes | 14.2% | 5.1 | 15% / -2.4% |
 | b4x_trail5 | 9% / 12% / 0% / -11.9% / -1.2% | 4% / 6% / 0% / -10.9% / -1.9% | 8% / 3% | yes | 16.9% | 5.0 | 15% / -0.4% |
+| b4s_b4e_derisk_50_r1h | 10% / 13% / 3% / -20.1% / -1.8% | 3% / 5% / 3% / -13.0% / -3.3% | 10% / 5% | **no** | 50.5% | 56.0 | 15% / -2.4% |
+| b4s_b4e_derisk_50_r2h | 12% / 15% / 3% / -20.7% / -1.3% | 7% / 9% / 3% / -12.9% / -2.7% | 11% / 8% | **no** | 37.2% | 31.1 | 16% / -0.5% |
+| b4s_b4e_derisk_50_r4h | 13% / 17% / 2% / -16.1% / -0.6% | 6% / 8% / 2% / -12.2% / -2.4% | 13% / 6% | yes | 28.7% | 17.8 | 15% / +0.0% |
+| b4s_b4e_derisk_50_r6h | 14% / 16% / 2% / -14.1% / -0.7% | 8% / 10% / 3% / -12.6% / -2.6% | 13% / 10% | yes | 24.0% | 13.1 | 16% / -0.1% |
+| b4s_b4e_derisk_50_r12h | 13% / 17% / 2% / -18.5% / -0.9% | 8% / 11% / 2% / -11.8% / -2.5% | 13% / 8% | yes | 18.1% | 8.0 | 16% / -0.5% |
+| b4s_b4e_combined_50_r1h | 10% / 13% / 3% / -20.1% / -1.7% | 3% / 5% / 3% / -13.0% / -3.3% | 10% / 5% | **no** | 50.6% | 55.9 | 15% / -2.4% |
+| b4s_b4e_combined_50_r2h | 12% / 15% / 3% / -20.7% / -1.3% | 7% / 9% / 3% / -12.9% / -2.8% | 11% / 8% | **no** | 37.2% | 31.1 | 16% / -0.7% |
+| b4s_b4e_combined_50_r4h | 13% / 17% / 2% / -16.1% / -0.7% | 6% / 8% / 2% / -12.2% / -2.4% | 13% / 6% | yes | 28.7% | 17.7 | 15% / -1.0% |
+| b4s_b4e_combined_50_r6h | 13% / 16% / 2% / -14.1% / -0.7% | 9% / 11% / 3% / -12.6% / -2.6% | 13% / 10% | yes | 23.7% | 13.0 | 16% / -0.4% |
+| b4s_b4e_combined_50_r12h | 13% / 17% / 2% / -18.5% / -0.9% | 7% / 11% / 2% / -11.8% / -2.5% | 13% / 8% | yes | 18.1% | 8.0 | 16% / -0.8% |
 
 ## How often the exits fired; loss avoided vs profit given up
 
