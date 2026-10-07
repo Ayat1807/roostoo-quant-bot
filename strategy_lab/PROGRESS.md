@@ -31,11 +31,12 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
   reports/stats_card_b6_finalists.md, leaderboard_b6{a,b,c,d,e}.md. Closest: B hmm2 (composite better both halves, mean ties),
   C erc (best OOS composite +0.71, worse IS), A cusum4_c50 (lowest drawdowns).
 
-## Running
-- sweeps: .cache/b4b_sweep.log, b6a_sweep.log, b6b_sweep.log, b6c_sweep.log, then b6e_sweep.log -> b6d_sweep.log.
+- Block 7 (combinations HMM2 / ERC / CUSUM, 483-486): NOT adopted; all margins |t| <= 1.5 vs luck threshold 2.9
+  (leaderboard_b7.md, reports/stats_card_b7_finalists.md). Sweep 487-496 running. Block 4b final reports done (old objective:
+  b4b_score / b4b_best_vol_target pass on noise-level margins but xsmom is retired; new objective: none).
 
-## Next (in order)
-1. When the sweeps finish: `python -m lab.b6 <track>` for a, b, c, d, e (sweep rows join the tables; sweep runs are not
-   adoptable); 4b: `python -m lab.b4gen 4b` + `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out
-   leaderboard_b4b_newobj.md`; commit; note any sweep result in reports/block6_summary.md.
-2. Possible follow-up (needs new pre-registration and the team's go): HMM2 + CUSUM cut combination; ERC in-sample diagnosis.
+## Running
+- sweeps: .cache/b6b_sweep.log, b6c_sweep.log, b6e_sweep.log -> b6d_sweep.log, b7_sweep.log (not adoptable; tables only).
+
+## Next
+1. When sweeps finish: `python -m lab.b6 b|c|d|e` and `python -m lab.b7`; commit. Nothing else queued; the team decides.

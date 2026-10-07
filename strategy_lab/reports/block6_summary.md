@@ -87,3 +87,18 @@ All three finalists are profitable in down markets in both halves, and so is the
    - 482 trials were declared in total by block 6 (luck threshold about 2.9 standard errors); every track was pre-registered before it ran.
    - Every fitted model was validated walk-forward with purging.
    - The Jul–Oct 2026 holdout was never used as a gate.
+
+## Block 7: combinations (variants_b7_combo.yaml, leaderboard_b7.md, reports/stats_card_b7_finalists.md)
+**Not adopted.**
+- **Pass/fail:** all four combinations fail the both-halves rule against s3v2e_core10.
+- **Significance:** every margin is far inside the noise. The largest t is +1.33 (HMM2 + ERC, OOS median composite), against a luck threshold of 2.9 at 496 declared trials.
+- **HMM2 + ERC:**
+  - Best OOS median 14d composite of the whole research program: +1.18, vs −0.28 for the reference.
+  - Down windows: +2.5% OOS, +1.4% IS.
+  - It misses in-sample by 0.03 composite (−1.64 vs −1.61), and its mean 14d return ties.
+- **HMM2 + CUSUM:**
+  - Best whole-period OOS composite (2.13 vs 1.77).
+  - OOS Sharpe 1.55, the lowest drawdown (−8.1%) and worst 14 days −3.7%.
+  - Its mean 14d return is slightly lower than the reference's in both halves.
+
+**Recommendation for the finals:** keep s3v2e_core10. The upgrades mainly reshape risk (smaller drawdowns, better risk-adjusted windows) rather than add return, and none of them is statistically distinguishable from the reference.
