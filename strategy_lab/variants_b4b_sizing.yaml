@@ -59,3 +59,14 @@ runs:
   - {name: b4b_best_vol_target, trial: 373, group: exposure_best, params: {sizing: score, exposure: vol_target}}
   - {name: b4b_best_regime, trial: 374, group: exposure_best, params: {sizing: score, exposure: regime}}
   - {name: b4b_best_conviction, trial: 375, group: exposure_best, params: {sizing: score, exposure: conviction}, lookback_bars: 10760}
+  # resolved 2026-10-07 10:10 UTC by lab/b4gen.py 4b --resolve-sweep: best 2 = ['b4b_score', 'b4b_top7_g90']
+  - {name: b4s_b4b_score_r1h, trial: 384, group: sweep, base: b4b_score, rebalance_every_h: 1}
+  - {name: b4s_b4b_score_r2h, trial: 385, group: sweep, base: b4b_score, rebalance_every_h: 2}
+  - {name: b4s_b4b_score_r4h, trial: 386, group: sweep, base: b4b_score, rebalance_every_h: 4}
+  - {name: b4s_b4b_score_r6h, trial: 387, group: sweep, base: b4b_score, rebalance_every_h: 6}
+  - {name: b4s_b4b_score_r12h, trial: 388, group: sweep, base: b4b_score, rebalance_every_h: 12}
+  - {name: b4s_b4b_top7_g90_r1h, trial: 389, group: sweep, base: b4b_top7_g90, rebalance_every_h: 1}
+  - {name: b4s_b4b_top7_g90_r2h, trial: 390, group: sweep, base: b4b_top7_g90, rebalance_every_h: 2}
+  - {name: b4s_b4b_top7_g90_r4h, trial: 391, group: sweep, base: b4b_top7_g90, rebalance_every_h: 4}
+  - {name: b4s_b4b_top7_g90_r6h, trial: 392, group: sweep, base: b4b_top7_g90, rebalance_every_h: 6}
+  - {name: b4s_b4b_top7_g90_r12h, trial: 393, group: sweep, base: b4b_top7_g90, rebalance_every_h: 12}

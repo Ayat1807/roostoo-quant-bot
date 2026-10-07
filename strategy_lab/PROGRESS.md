@@ -1,48 +1,32 @@
 # strategy_lab progress (resume here)
 
-Live competition bot: xsmom on R1, `config_competition.yaml`, commit a379740, live on EC2 since 2026-10-06 15:30 UTC.
-Never touch it. All work here is offline or for the testing bot.
+**LIVE competition bot: `config_competition_s3v2e.yaml` (s3v2e on core10), tmux `competition_s3v2e`, since 2026-10-07
+10:04 UTC. Never touch it.** (xsmom on R1 ran 2026-10-06 15:30 to 2026-10-07 10:00 UTC, ended -3.36%, replaced after the
+stats-card review.) **Reference for all research: b3_s3v2e_core10.** All work here is offline or for the testing bot.
 
-Rules: pre-register every trial (variants file + commit) before running; judge on data to 2026-06-30 in both halves
-(IS 2020-02-15 to 2024-12-31, OOS 2025-01-01 to 2026-06-30; Jul-Oct 2026 informational only); primary P(14d >= +10%) and
-P(>= +8%); constraints P(14d <= -10%) <= 10% and worst 14d >= -20%; frequency sweep for the best 2 of each block; every
-recommended variant gets a stats card (`python -m lab.stats_card <run> [others]`). Global declared trials: 393.
+## Judging (team objective since 2026-10-07, block 5 on)
+Primary: median 14d composite (0.4 Sortino + 0.3 Sharpe + 0.3 Calmar per window) and mean 14d return. Requirements (both
+halves): mean 14d return > 0 in DOWN windows (BTC 14d < -5%), P(14d <= -10%) <= 5%, worst 14d >= -15%; OOS Sharpe >= 1.0.
+Adopt: all requirements + beats b3_s3v2e_core10 on both primary numbers in both halves. Data to 2026-06-30 (IS 2020-02-15 to
+2024-12-31, OOS 2025-01-01 to 2026-06-30); Jul-Oct informational, never a gate. Pre-register (variants file + commit) before
+running; frequency sweep for the best 2; stats card (`python -m lab.stats_card`) for every finalist. Judging code: lab/b5.py.
+Fitted models: expanding walk-forward, purge/embargo, min 6-month train, 1-month test steps, OOS predictions only.
+Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
 
-## Done
-- `adf9dd5` strategy_bot: sleeve-aware status.py (display only).
-- Block 4a (events + exits + sweep, trials 268-290): leaderboard_b4_events.md, leaderboard_b4_exits.md. Event rule
-  mechanically adopted b4e_fast_12h (margin 1 window IS / 2 OOS, 4 events = noise); no exit adopted; every faster refresh worse.
-- `8d2d044` stats cards: lab/stats_card.py, reports/stats_card_xsmom_r1.md (+ s3v2e_core10, xsmom_tm10),
-  stats_card_xsmom_tm10_liq.md; competition configs need `stats_card:` (strategy_bot/tests/test_safety.py).
-- `e646b79` block 4c pre-registered per team spec (variants_b4c_lsx.yaml, 291-343; earlier draft superseded before any run,
-  reports/superseded/). Stage A (291-299) done: every long/short variant far worse than live (OOS -49% to -63% vs -32%).
-  Stage A winner (rule) = b4c_A1_minpos. Stage B (300-326) resolved.
-- `d3eb3a1` blocks 4d (entry timing, 344-358) and 4b (sizing/exposure/coins, 359-393) pre-registered.
-
-- Block 4c COMPLETE (291-343): NOT ADOPTED. Final candidate b4c_B_c4_w05_m125 (4h checks, w 0.5, m 1.25) fails IS
-  P(>=10%) (12% vs live 15%), ties OOS (9%); 0 of 7 neighbours beat live. leaderboard_b4c_lsx.md,
-  reports/stats_card_b4c_B_c4_w05_m125.md (vs live and stage A winner). Every frequency-sweep run worse.
-- `04b8018` strategy_bot: event_refresh option (off) + test fixes; all bot suites pass.
-- hourly lows downloaded (.cache/klines_hl, 65 coins).
-
-- 2026-10-07 NEW TEAM OBJECTIVE (risk-adjusted composite + down markets): block 5 pre-registered `88b5606`
-  (variants_b5_shorts.yaml, 394-408; judging in lab/b5.py). References re-run with positions (lab/b5_refs.py, b5ref__*).
-- Block 4d runs 344-348 done (report not yet written; to be judged under the NEW objective too).
-
-- Block 5 COMPLETE `c08c4a3`: none adopted (no run beats s3v2e_core10 on both median 14d composite and mean 14d in both
-  halves). s3v2e_core10 itself meets every new requirement; live xsmom R1 fails (OOS Sharpe -0.79, down windows -3.2%).
-  leaderboard_b5.md, reports/stats_card_b5_finalists.md.
-- Block 4d results `755375a`: none adopted (old and new objective; leaderboard_b4d_entry.md, _newobj.md).
-
-- `8592182` COMPETITION SWITCH prepared (team decision): config_competition_s3v2e.yaml (s3v2e core10), stats card,
-  DEPLOY.md section 13, tests/test_competition_s3v2e.py PASS, test_safety PASS. The user deploys.
-- Block 4b: 359-371, 376-383 done; 372-375 resolved (best sizing b4b_score).
+## Done (newest last)
+- Blocks 4a (events/exits), 4c (long/short xsmom), 5 (down-market designs): none adopted. leaderboard_b4_*.md, leaderboard_b5.md.
+- `8592182` competition switch prepared; deployed by the team 2026-10-07 10:04 UTC; `d154e7a` docs (README history, DEPLOY 13).
+- Block 4d (entry timing) 344-358 incl. sweep done, none adopted under the old objective.
+- Block 4b (sizing) 359-383 done (best sizing b4b_score); sweep 384-393 to resolve and run.
 
 ## Running
-- block 4b exposure_best 372-375: `.cache/b4b_run2.log`; block 4d sweep 349-358: `.cache/b4d_sweep.log`.
+- (see Next)
 
 ## Next (in order)
-1. Block 4b: `python -m lab.b4gen 4b --resolve-sweep` -> commit -> `python -m lab.runner variants_b4b_sizing.yaml --group sweep`;
-   reports `python -m lab.b4gen 4b` and `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out
-   leaderboard_b4b_newobj.md`; commit.
-2. Block 4d: after the sweep, `python -m lab.b4gen 4d` and the b5 new-objective report again; commit.
+1. Block 4b: `python -m lab.b4gen 4b --resolve-sweep` -> commit -> `--group sweep`; reports `python -m lab.b4gen 4b` and
+   `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out leaderboard_b4b_newobj.md`; commit.
+2. Block 4d: `python -m lab.b4gen 4d` + `python -m lab.b5 ... --out leaderboard_b4d_entry_newobj.md` incl. sweep runs; commit.
+3. NEW PROGRAM (block 6, upgrades of s3v2e_core10), order A, B, C, E, D; pre-register each track before running:
+   A signal / turning points (A1 continuous t-stat, A2 EMA speed ensemble, A3 changepoint exit CUSUM + BOCPD, A4 = A1 + A3);
+   B regime (HMM 2/3 states, correlation-state filter); C allocation (ERC, HRP, shrunk Kelly); E universe screening;
+   D meta-labeling (LightGBM, walk-forward). Implement a passing variant behind a config flag + tests; never deploy.

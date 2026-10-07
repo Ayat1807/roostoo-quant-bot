@@ -1,5 +1,5 @@
 {
- "total_runs": 409,
+ "total_runs": 413,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -64,6 +64,10 @@
   "b3s_xsmom_tm10_r6h",
   "b4b_all_elig_cap10",
   "b4b_all_elig_cap15",
+  "b4b_best_breadth",
+  "b4b_best_conviction",
+  "b4b_best_regime",
+  "b4b_best_vol_target",
   "b4b_breadth_k",
   "b4b_inv_vol",
   "b4b_inv_vol_cap20",
@@ -392,7 +396,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 08:45 UTC",
+ "updated": "2026-10-07 09:04 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
