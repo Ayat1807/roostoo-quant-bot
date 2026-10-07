@@ -28,3 +28,14 @@ runs:
   - {name: b6b_hmm2_corr, trial: 433, group: B, params: {regime_hmm: 2, corr_filter: true}}
   - {name: b6b_hmm3_corr, trial: 434, group: B, params: {regime_hmm: 3, corr_filter: true}}
   # 435-444 sweep: resolved by lab/b6.py b --resolve-sweep --sweep-start 435, appended below
+  # resolved 2026-10-07 10:31 UTC by lab/b6.py b --resolve-sweep: best 2 = ['b6b_hmm2', 'b6b_corr']
+  - {name: b6s_b6b_hmm2_r1h, trial: 435, group: sweep, base: b6b_hmm2, rebalance_every_h: 1}
+  - {name: b6s_b6b_hmm2_r2h, trial: 436, group: sweep, base: b6b_hmm2, rebalance_every_h: 2}
+  - {name: b6s_b6b_hmm2_r4h, trial: 437, group: sweep, base: b6b_hmm2, rebalance_every_h: 4}
+  - {name: b6s_b6b_hmm2_r6h, trial: 438, group: sweep, base: b6b_hmm2, rebalance_every_h: 6}
+  - {name: b6s_b6b_hmm2_r12h, trial: 439, group: sweep, base: b6b_hmm2, rebalance_every_h: 12}
+  - {name: b6s_b6b_corr_r1h, trial: 440, group: sweep, base: b6b_corr, rebalance_every_h: 1}
+  - {name: b6s_b6b_corr_r2h, trial: 441, group: sweep, base: b6b_corr, rebalance_every_h: 2}
+  - {name: b6s_b6b_corr_r4h, trial: 442, group: sweep, base: b6b_corr, rebalance_every_h: 4}
+  - {name: b6s_b6b_corr_r6h, trial: 443, group: sweep, base: b6b_corr, rebalance_every_h: 6}
+  - {name: b6s_b6b_corr_r12h, trial: 444, group: sweep, base: b6b_corr, rebalance_every_h: 12}
