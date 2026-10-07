@@ -37,3 +37,14 @@ runs:
   - {name: b4d_resistance, trial: 347, group: entry, params: {entry_filter: resistance}}
   - {name: b4d_patient_limit, trial: 348, group: entry, params: {entry_filter: none}, entry_limit: {offset: 0.0075, through: 0.001}}
   # 349-358 sweep slots: resolved by lab/b4d.py --resolve-sweep, appended below
+  # resolved 2026-10-07 08:45 UTC by lab/b4gen.py 4d --resolve-sweep: best 2 = ['b4d_resistance', 'b4d_not_ext10']
+  - {name: b4s_b4d_resistance_r1h, trial: 349, group: sweep, base: b4d_resistance, rebalance_every_h: 1}
+  - {name: b4s_b4d_resistance_r2h, trial: 350, group: sweep, base: b4d_resistance, rebalance_every_h: 2}
+  - {name: b4s_b4d_resistance_r4h, trial: 351, group: sweep, base: b4d_resistance, rebalance_every_h: 4}
+  - {name: b4s_b4d_resistance_r6h, trial: 352, group: sweep, base: b4d_resistance, rebalance_every_h: 6}
+  - {name: b4s_b4d_resistance_r12h, trial: 353, group: sweep, base: b4d_resistance, rebalance_every_h: 12}
+  - {name: b4s_b4d_not_ext10_r1h, trial: 354, group: sweep, base: b4d_not_ext10, rebalance_every_h: 1}
+  - {name: b4s_b4d_not_ext10_r2h, trial: 355, group: sweep, base: b4d_not_ext10, rebalance_every_h: 2}
+  - {name: b4s_b4d_not_ext10_r4h, trial: 356, group: sweep, base: b4d_not_ext10, rebalance_every_h: 4}
+  - {name: b4s_b4d_not_ext10_r6h, trial: 357, group: sweep, base: b4d_not_ext10, rebalance_every_h: 6}
+  - {name: b4s_b4d_not_ext10_r12h, trial: 358, group: sweep, base: b4d_not_ext10, rebalance_every_h: 12}

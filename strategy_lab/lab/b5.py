@@ -201,7 +201,7 @@ def report(names: list[str], out: str = "leaderboard_b5.md") -> int:
                  f"{pct(d['long_pnl']) if d else 'n/a'} | {pct(d['short_pnl']) if d else 'n/a'} | "
                  f"{pr(d['hit']) if d else 'n/a'} | {pr(d['net_short']) if d else 'n/a'} | "
                  f"{'' if n == LIVE else format(corr(n, live_d) or 0, '.2f')} | {format(corr(n, btc_d) or 0, '.2f')} |")
-    (ROOT / "leaderboard_b5.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    (ROOT / out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"adopted: {adopt}; ranking: {rank(trials, J)[:5]}")
     return 0
 
