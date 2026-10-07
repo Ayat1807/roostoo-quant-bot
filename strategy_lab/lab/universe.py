@@ -75,8 +75,8 @@ class Universe:
         excl = CFG["data"].get("exclude_assets_regex")
         self._excl = re.compile(excl) if excl else None
         self._daily_members: pd.Series | None = None
-        if self.type == "satellite" and self.spec.get("rule") not in ("R1", "R2", "R3", "R4"):
-            raise ValueError(f"satellite rule must be R1-R4, got {self.spec.get('rule')!r}")
+        if self.type == "satellite" and self.spec.get("rule") not in ("R1", "R2", "R3", "R4", "TREND"):
+            raise ValueError(f"satellite rule must be R1-R4 or TREND, got {self.spec.get('rule')!r}")
         if self.type == "roostoo_all":
             have = set(_daily()["close"].columns)
             self._list = sorted(a for a in self._roostoo if a in have)
@@ -141,6 +141,11 @@ class Universe:
                 raise RuntimeError("R4 needs the core run's equity: run b2_core first")
             core = h["equity"].resample("1D").last().pct_change()
         # R5 inputs
+        if s["rule"] == "TREND":           # block 6 E: 180-day variance ratio (7d) and lag-1 autocorrelation, daily log returns
+            lr = np.log(close).diff()
+            win = int(s.get("screen_days", 180))
+            vr7 = lr.rolling(7).sum().rolling(win, min_periods=win - 10).var() / (7 * lr.rolling(win, min_periods=win - 10).var())
+            ac1 = lr.rolling(win, min_periods=win - 10).corr(lr.shift(1))
         dd30 = close / close.rolling(30, min_periods=1).max() - 1
         pump = (qv > 3 * qv.shift(1).rolling(30, min_periods=20).mean()) & (close / close.shift(3) - 1 > 0.30)
         pump7 = pump.rolling(7, min_periods=1).max().astype(bool)
@@ -159,6 +164,9 @@ class Universe:
                 k = int(s.get("k", 5))
                 if s["rule"] == "R1":
                     sel = liq
+                elif s["rule"] == "TREND":       # trending coins (VR7 > 1 and AC1 > 0), top n by 30d volume
+                    okt = ok & (vr7.loc[prev] > 1) & (ac1.loc[prev] > 0)
+                    sel = list(mqv.loc[prev][okt].sort_values(ascending=False).index[: int(s.get("n_liquid", 10))])
                 elif s["rule"] == "R2":
                     lo, hi = s.get("vol_band", [0.5, 1.3])
                     v = vol30.loc[prev, liq] * np.sqrt(365)

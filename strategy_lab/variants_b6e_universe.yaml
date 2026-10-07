@@ -1,0 +1,30 @@
+# Research block 6, TRACK E: universe screening for s3v2e (reference b3_s3v2e_core10 = core10 universe). Declared BEFORE any
+# run in this file. Trials 458-470 (13 new); global declared 457 + 13 = 470.
+#
+# Screened universe (lab/universe.py satellite rule TREND, point-in-time, re-selected on the 1st of each month from data up
+# to the previous day): Roostoo crypto pairs with Binance history, >= 180 days of history, 30d mean daily quote volume
+# >= $10M; "trending" = variance ratio VR(7d) > 1 (overlapping 7-day vs 1-day log returns) AND lag-1 autocorrelation of daily
+# log returns > 0, both over the previous 180 days; then the top 10 / 15 / 20 trending coins by 30d volume. BTC is always in
+# the universe (s3v2's regime input; it is traded like any member). No crash guard. Everything else as b3_s3v2e_core10
+# (s3v2 sizing divides by the number of coins in the universe that day).
+#   trend_top10  458      trend_top15  459      trend_top20  460
+# Screening is a point-in-time rule on past data only (no fitted model), so every selection is out-of-sample.
+# REPORT also (lab/screen.py): per-coin point-in-time stats (VR at 3 / 7 / 14 days, Hurst from the VR slope, lag-1
+# autocorrelation, 180d BTC beta, vol stability = std / mean of the 30d vol over 180 days, 30d volume; Roostoo spread is
+# live-only, no history); persistence = share of screened coins with VR(7d) > 1 over the NEXT 90 days vs the same share for
+# the non-screened pool coins, per selection month.
+# FREQUENCY SWEEP (standing rule), 461-470: best 2 of 458-460 at 1h, 2h, 4h, 6h, 12h
+#   (`python -m lab.b6 e --resolve-sweep --sweep-start 461`); not adoptable by themselves.
+# JUDGING, ranking, adopt rule, secondary 3-day metrics: as track A (lab/b5.py, team objective, data to 2026-06-30).
+
+declared_trials: 13
+
+defaults:
+  base: b3_s3v2e_core10
+  record_positions: true
+
+runs:
+  - {name: b6e_trend_top10, trial: 458, group: E, universe: {type: satellite, rule: TREND, n_liquid: 10, min_history_days: 180, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}}
+  - {name: b6e_trend_top15, trial: 459, group: E, universe: {type: satellite, rule: TREND, n_liquid: 15, min_history_days: 180, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}}
+  - {name: b6e_trend_top20, trial: 460, group: E, universe: {type: satellite, rule: TREND, n_liquid: 20, min_history_days: 180, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}}
+  # 461-470 sweep: resolved by lab/b6.py e --resolve-sweep --sweep-start 461, appended below
