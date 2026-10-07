@@ -1,0 +1,53 @@
+# Research block 8 (LAST block): UNIVERSE BREADTH and EXPOSURE (team request 2026-10-07 after reviewing top teams' books;
+# deadline 2026-10-11). Declared BEFORE any run in this file. Trials 497-520 (24 new); global declared 496 + 24 = 520.
+# After this block no new trials are opened: the ledger is frozen at 520.
+#
+# Applied to TWO strategies, each judged against ITS OWN core10 baseline:
+#   s3v2e family (prefix b8_s_)   base b3_s3v2e_core10 (the live competition strategy)
+#   hmm family   (prefix b8_h_)   base b7_hmm2_cusum   (the forward-test candidate: s3v2e + HMM2 + CUSUM cut)
+# Universes / exposure rules (U1-U5 re-selected monthly, point-in-time, lab/universe.py satellite rule R1: Roostoo crypto
+# pairs with Binance history, >= 90 days of history, 30d mean volume >= $10M (the history-available proxy for the live
+# spread <= 5 bps check, which has no history), top N by 30d volume, BTC always included as the regime input):
+#   U1  top 15 (R1-15), sizing divisor 10 (s3v2x n_divisor 10)                          497 (s), 504 (h)
+#   U2  top 20, divisor 10                                                              498, 505
+#   U3  top 30, divisor 10                                                              499, 506
+#   U4  top 20, divisor N (the number of coins that day), band 0.04                     500, 507
+#   U5  top 20, divisor 10, gross cap 80% (s3v2x max_gross 0.8; the current cap is 100%) 501, 508
+#   U6  core10 + exposure floor: when >= 7 of 10 coins share the same signal sign and the gross is below 50%, all targets
+#       are scaled up proportionally to a 50% gross (per-coin cap 30% still applies; s3v2x floor_breadth 7, floor_gross 0.5;
+#       in the hmm family the HMM scaling applies after the floor)                     502, 509
+#   U7  core10 with band 0.04                                                           503, 510
+# JUDGING (team objective, lab/b5.py), data to 2026-06-30, both halves, Jul-Oct informational:
+#   requirements in both halves: mean 14d return > 0 in DOWN windows, P(14d <= -10%) <= 5%, worst 14d >= -15%; OOS Sharpe >= 1;
+#   ADOPT: all requirements AND higher median 14d composite AND higher mean 14d return than its OWN baseline in both halves;
+#   margin vs the luck threshold reported (lab/b7.margins, t vs about 2.9 SE).
+# REPORT (lab/b8.py): also the 30 analog-to-today windows; BROAD-DOWN windows (BTC 14d < -5% AND > 70% of the Roostoo pool
+#   coins with >= 90 days of history down over the same 14 days): mean return and mean gross exposure; average gross,
+#   positions, fees, trades/day, share of time net short; U6: how often the floor fires (share of daily decisions) and the
+#   strategy's mean / worst next-24h return on those days vs its baseline on the same days. Stats cards for finalists.
+# FREQUENCY SWEEP (standing rule), 511-520: the best 2 of 497-510 (OOS median 14d composite among runs meeting all
+#   requirements, ties OOS mean 14d) at 1h, 2h, 4h, 6h, 12h (`python -m lab.b8 --resolve-sweep`); not adoptable by themselves.
+# If an s3v2e variant passes: strategy_bot flags + tests + TESTING-key config. If an hmm variant passes: update
+#   config_testing_hmm_cusum.yaml instead. No competition change before the team decides.
+
+declared_trials: 24
+
+defaults:
+  record_positions: true
+
+runs:
+  - {name: b8_s_U1, trial: 497, group: s, base: b3_s3v2e_core10, universe: {type: satellite, rule: R1, n_liquid: 15, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_s_U2, trial: 498, group: s, base: b3_s3v2e_core10, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_s_U3, trial: 499, group: s, base: b3_s3v2e_core10, universe: {type: satellite, rule: R1, n_liquid: 30, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_s_U4, trial: 500, group: s, base: b3_s3v2e_core10, band: 0.04, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: null}}
+  - {name: b8_s_U5, trial: 501, group: s, base: b3_s3v2e_core10, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10, max_gross: 0.8}}
+  - {name: b8_s_U6, trial: 502, group: s, base: b3_s3v2e_core10, params: {floor_breadth: 7, floor_gross: 0.5}}
+  - {name: b8_s_U7, trial: 503, group: s, base: b3_s3v2e_core10, band: 0.04}
+  - {name: b8_h_U1, trial: 504, group: h, base: b7_hmm2_cusum, universe: {type: satellite, rule: R1, n_liquid: 15, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_h_U2, trial: 505, group: h, base: b7_hmm2_cusum, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_h_U3, trial: 506, group: h, base: b7_hmm2_cusum, universe: {type: satellite, rule: R1, n_liquid: 30, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10}}
+  - {name: b8_h_U4, trial: 507, group: h, base: b7_hmm2_cusum, band: 0.04, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: null}}
+  - {name: b8_h_U5, trial: 508, group: h, base: b7_hmm2_cusum, universe: {type: satellite, rule: R1, n_liquid: 20, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {n_divisor: 10, max_gross: 0.8}}
+  - {name: b8_h_U6, trial: 509, group: h, base: b7_hmm2_cusum, params: {floor_breadth: 7, floor_gross: 0.5}}
+  - {name: b8_h_U7, trial: 510, group: h, base: b7_hmm2_cusum, band: 0.04}
+  # 511-520 sweep: resolved by lab/b8.py --resolve-sweep, appended below

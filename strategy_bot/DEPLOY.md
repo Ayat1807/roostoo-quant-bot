@@ -302,3 +302,48 @@ tail -n 30 logs_competition_s3v2e/bot.log; grep '"first start"' logs_competition
 `touch KILL_competition_s3v2e` (delete it to resume). **Rollback** to xsmom: stop the new bot, `rm KILL_competition`, and
 start section 12's command (its books in `state_competition/` are flat after step a; at start it re-enters the targets of
 its last 15:00 UTC decision).
+
+## 14. Forward test on the TESTING key: s3v2e + HMM2 + CUSUM cut (config_testing_hmm_cusum.yaml)
+
+Plan and switch criteria: `../strategy_lab/reports/forward_test_plan.md`. Tests: `tests/test_hmm_cusum.py`. **The live
+competition bot (`competition_s3v2e`) is not touched by any step below.**
+
+**One account, one bot:** the testing key is one Roostoo account, so the current testing bot (tmux `strategy`,
+`config.yaml`, sleeves s3v2 + xsmom) must be flattened and stopped first. The new bot refuses to start while another bot's
+fresh heartbeat shows the same key label running live (`allow_shared_account: false`).
+
+**0. Update the code and install the extra packages (the running bots keep the code they loaded):**
+```bash
+cd ~/Trading_Competition && git pull && cd strategy_bot
+.venv/bin/pip install -r requirements-forward-test.txt        # hmmlearn, scikit-learn, scipy (forward test only)
+.venv/bin/python -m tests.test_safety
+```
+
+**1. Flatten and stop the old testing bot:**
+```bash
+touch KILL                                     # the old testing bot (config.yaml) sells everything itself
+.venv/bin/python status.py                     # wait until KILL=PRESENT and every actual weight ~0 (allow up to ~30 min)
+tmux send-keys -t strategy C-c; sleep 15; tmux ls     # "strategy" must be gone (else: tmux kill-session -t strategy)
+```
+Leave `KILL` in place so the old config cannot trade again by accident. A heartbeat stays "fresh" for 10 minutes after
+the stop; if step 2 refuses with "another bot is running LIVE on the same key", wait 10 minutes and start again.
+
+**2. Start the forward test in its own tmux session:**
+```bash
+tmux new-session -d -s testing_hmm -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_testing_hmm_cusum.yaml --live'
+```
+- First start: loads 2000 hourly bars for the 10 coins, downloads BTC hourly closes since 2020 for the HMM (about 60 Binance
+  requests, about 1 minute; cached in `state_testing_hmm/btc_1h_since_2020.csv`), fits the month's HMM (about 10 seconds,
+  saved in `state_testing_hmm/hmm2_model.json`), computes fresh targets and trades toward them.
+- Daily targets at 01:00 UTC (the bar opening 00:00, the lab convention); CUSUM cut checks every hour; the HMM refits on the
+  1st of each month.
+
+**3. Check:**
+```bash
+tmux ls; .venv/bin/python status.py --config config_testing_hmm_cusum.yaml     # incl. HMM p_crisis and active CUSUM cuts
+tail -n 30 logs_testing_hmm/bot.log
+.venv/bin/python daily_check.py      # once a day: forward test, old testing config and the live bot side by side
+```
+
+**Stop / kill switch:** graceful stop `tmux send-keys -t testing_hmm C-c`; flatten and idle `touch KILL_testing_hmm`.
+**Back to the old testing bot:** stop this one, `rm KILL`, start section 6's `strategy` command.

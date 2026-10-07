@@ -121,6 +121,16 @@ class StrategyBot:
         self.targets_file = self.state_dir / "targets.json"
         st = json.loads(self.state_file.read_text()) if self.state_file.exists() else {}
         self.last_trade_day: str | None = st.get("last_trade_day")
+        # optional HMM2 regime + CUSUM changepoint cut (regime_live.py; strategy_lab b7_hmm2_cusum). Off unless configured.
+        self.hmm_cfg = cfg.get("regime_hmm") if (cfg.get("regime_hmm") or {}).get("enabled") else None
+        self.cp_cfg = cfg.get("changepoint_cut") if (cfg.get("changepoint_cut") or {}).get("enabled") else None
+        if (self.hmm_cfg or self.cp_cfg) and self.sleeve_specs:
+            raise ValueError("regime_hmm / changepoint_cut are single-strategy options (no sleeves)")
+        self.hmm = None
+        self.regime_info: dict[str, Any] | None = None
+        self.cuts_file = self.state_dir / "cuts.json"
+        self.cuts: dict[str, float] = {}
+        self.cut_reset_bar: str | None = None
 
     # ----- setup ----------------------------------------------------------- #
 
@@ -159,6 +169,12 @@ class StrategyBot:
         if self.bars is None:
             self.bars = BarStore(self.pairs, self.state_dir / "bars.csv", self.log_dir / "api_log.jsonl")
             self.bars.load_or_bootstrap(int(cfg["bootstrap_hours"]), self.clock())
+        if self.hmm_cfg and self.hmm is None:
+            from market_data import fetch_binance_hourly
+            from regime_live import HMM_START, RegimeHMM
+            api = self.log_dir / "api_log.jsonl"
+            self.hmm = RegimeHMM(self.state_dir, lambda now: fetch_binance_hourly(
+                "BTC/USD", int((now - HMM_START) / pd.Timedelta(hours=1)) + 2, api, now), int(self.hmm_cfg.get("states", 2)))
         self.port = Portfolio(c, self.pairs, info, self.logs, cfg["entry_order"],
                               float(cfg["limit_wait_s"]), self.dry, cfg.get("capital_cap_usd"),
                               float(cfg.get("limit_poll_s", 15)), sleep=self._sleep_with_heartbeat,
@@ -205,8 +221,13 @@ class StrategyBot:
 
     def _fingerprint(self) -> dict[str, Any]:
         """Settings that change the targets: a mismatch means saved targets are stale."""
-        return {"strategy": self.cfg["strategy"], "allow_short": bool(self.cfg["allow_short"]),
-                "pairs": sorted(self.pairs)}
+        fp = {"strategy": self.cfg["strategy"], "allow_short": bool(self.cfg["allow_short"]),
+              "pairs": sorted(self.pairs)}
+        if self.hmm_cfg:                    # only when enabled: existing bots keep their fingerprint
+            fp["regime_hmm"] = self.hmm_cfg
+        if self.cp_cfg:
+            fp["changepoint_cut"] = self.cp_cfg
+        return fp
 
     def liquidity_skip(self, pairs: list[str], tick: dict[str, Any] | None) -> dict[str, str]:
         """Liquidity guard (config liquidity_guard, default on): at decision time skip pairs whose
@@ -245,7 +266,23 @@ class StrategyBot:
 
     def compute_targets(self, reason: str, slot: pd.Timestamp, tick: dict[str, Any] | None = None) -> None:
         closes = self.bars.close[self.pairs]
-        raw, tgt, skipped = self.strategy_targets(self.strategy, self.cfg["strategy"], self.pairs, tick)
+        params = dict(self.cfg["strategy"])
+        pc = 0.0
+        if self.hmm is not None:
+            # HMM2: the row of the day before the decision bar's day (complete daily data), as strategy_lab
+            day = closes.index[-1].floor("D") - pd.Timedelta(days=1)
+            pc, info = self.hmm.p_crisis(day, self.clock())
+            ssb = float(params.get("short_scale_bull", 0.5))
+            params["short_scale_bull"] = ssb + (1 - ssb) * pc
+            self.regime_info = {"day": str(day.date()), "p_crisis": round(pc, 4), **info}
+        raw, tgt, skipped = self.strategy_targets(self.strategy, params, self.pairs, tick)
+        if self.hmm is not None:
+            m = 1 - float(self.hmm_cfg.get("crisis_cut", 0.5)) * pc
+            tgt = {p: w * m for p, w in tgt.items()}
+            g = sum(abs(w) for w in tgt.values())
+            if g > 1:
+                tgt = {p: w / g for p, w in tgt.items()}
+        self._reset_cuts(str(closes.index[-1]), slot)
         self.target, self.target_time, self.target_slot = tgt, str(self.clock()), str(slot)
         rec = {"event": "targets", "reason": reason, "strategy": self.strategy.name,
                "slot": str(slot), "bar_time": str(closes.index[-1]),
@@ -255,6 +292,8 @@ class StrategyBot:
                "gross": round(sum(abs(w) for w in tgt.values()), 6),
                "liquidity_skipped": skipped,
                "fingerprint": self._fingerprint()}
+        if self.regime_info is not None:
+            rec["regime"] = self.regime_info
         self.logs.write("decisions", rec)
         write_json_atomic(self.targets_file, {**rec, "target": tgt, "computed_at": self.target_time,
                                               "fingerprint": self._fingerprint()})
@@ -285,6 +324,10 @@ class StrategyBot:
             return False
         tgt = {p: float(saved["target"].get(p, 0.0)) for p in self.pairs}
         self.target, self.target_time, self.target_slot = tgt, saved.get("computed_at") or saved.get("time"), str(slot)
+        if saved.get("regime"):
+            self.regime_info = saved["regime"]
+        if self.cp_cfg:
+            self._load_cuts(slot, saved.get("bar_time"))
         self.logs.write("decisions", {"event": "targets", "reason": "restored", "slot": str(slot),
                                       "source": source, "computed_at": self.target_time,
                                       "target": {p: round(w, 6) for p, w in tgt.items()}})
@@ -317,6 +360,52 @@ class StrategyBot:
                     found = {**d, "slot": str(slot), "computed_at": d["time"]}
         return found
 
+    # ----- changepoint cut (optional) --------------------------------------- #
+
+    def _reset_cuts(self, bar: str, slot: pd.Timestamp) -> None:
+        if not self.cp_cfg:
+            return
+        self.cuts, self.cut_reset_bar = {}, bar
+        write_json_atomic(self.cuts_file, {"slot": str(slot), "reset_bar": bar, "cuts": {}})
+
+    def _load_cuts(self, slot: pd.Timestamp, bar_time: str | None) -> None:
+        d = {}
+        if self.cuts_file.exists():
+            try:
+                d = json.loads(self.cuts_file.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                d = {}
+        if d.get("slot") == str(slot):
+            self.cuts, self.cut_reset_bar = dict(d.get("cuts") or {}), d.get("reset_bar")
+        else:
+            self.cuts, self.cut_reset_bar = {}, bar_time or str(slot - pd.Timedelta(hours=1))
+        log.info("changepoint cuts restored for slot %s: %s", slot, self.cuts or "none")
+
+    def check_cuts(self, equity: float, expo: dict[str, float]) -> dict[str, float]:
+        """New CUSUM cuts at this step: held long with down > threshold (short with up > threshold), once per daily target."""
+        c = self.cp_cfg
+        if not c or not self.cut_reset_bar or equity <= 0:
+            return {}
+        from regime_live import cusum_scores
+        reset = pd.Timestamp(self.cut_reset_bar)
+        dn, up = cusum_scores(self.bars.close[self.pairs], reset, float(c.get("k", 0.5)), float(c.get("halflife", 168)))
+        thr, cut = float(c["threshold"]), float(c["cut"])
+        new = {}
+        for p in self.pairs:
+            w = expo.get(p, 0.0) / equity
+            if p in self.cuts:
+                continue
+            if (w > 1e-4 and dn[p] > thr) or (w < -1e-4 and up[p] > thr):
+                new[p] = cut
+        if new:
+            self.cuts.update(new)
+            write_json_atomic(self.cuts_file, {"slot": self.target_slot, "reset_bar": self.cut_reset_bar, "cuts": self.cuts})
+            self.logs.write("decisions", {"event": "changepoint_cut", "pairs": new, "since_bar": self.cut_reset_bar,
+                                          "down": {p: round(float(dn[p]), 3) for p in new},
+                                          "up": {p: round(float(up[p]), 3) for p in new}})
+            log.info("changepoint cut: %s (since bar %s)", new, self.cut_reset_bar)
+        return new
+
     # ----- hourly decision ------------------------------------------------- #
 
     def step(self, tick: dict[str, Any], reason: str) -> int:
@@ -339,14 +428,20 @@ class StrategyBot:
         guard = (mode != "off" and hour.hour == int(self.cfg["activity_guard_hour_utc"])
                  and self.last_trade_day != str(now.date()))
         slot = self.rebalance_slot(now)
+        fresh = False
         if self.target is None or (daily and self.target_slot != str(slot)):
             # first step after a (re)start: reuse this slot's targets if they exist
             if self.target is not None or not self.restore_targets(slot):
                 self.compute_targets("daily" if daily else "first start", slot, tick)
+                fresh = True
         band = float(self.cfg["guard_band"] if (guard and mode == "full") else self.cfg["band"])
         why = f"{reason}{f' +activity_guard({mode})' if guard else ''} brake={self.brake}"
-        eff = {p: w * self.mult for p, w in self.target.items()}
-        n = self.port.rebalance(eff, tick, band, why)
+        new_cuts = {} if fresh else self.check_cuts(equity, expo)     # no cut on the bar of a new target (as the lab)
+        eff = {p: w * self.mult * self.cuts.get(p, 1.0) for p, w in self.target.items()}
+        n = 0
+        if new_cuts:                      # a cut trades at once, whatever the band
+            n += self.port.rebalance(eff, tick, 0.0, f"{why} changepoint_cut", only=set(new_cuts))
+        n += self.port.rebalance(eff, tick, band, why)
         if guard and mode == "minimal" and n == 0:
             n = self.minimal_guard_trade(eff, tick, why)
         if n:
@@ -632,6 +727,8 @@ class StrategyBot:
             "equity": snap.get("equity"), "sizing_equity": snap.get("sizing_equity"),
             "usd": snap.get("usd"), "brake": self.brake, "mult": self.mult,
             "target": self.target, "target_time": self.target_time,
+            "regime": self.regime_info, "cuts": self.cuts if self.cp_cfg else None,
+            "cut_reset_bar": self.cut_reset_bar if self.cp_cfg else None,
             "actual": snap.get("weights"), "last_trade_day": self.last_trade_day,
             "last_action": self.last_action, "pairs": self.pairs})
 
@@ -701,6 +798,25 @@ class StrategyBot:
         return 0
 
 
+def shared_account_conflicts(cfg: dict[str, Any], key_label: str | None, max_age_s: float = 600) -> list[str]:
+    """Other bots that look LIVE on the same key label: a fresh heartbeat (< 10 min, status running, dry_run false) in
+    another state dir. One Roostoo account = one bot: two bots on one key trade the same coins and cancel each other's
+    resting orders at startup."""
+    own = (HERE / (cfg.get("paths") or {}).get("state_dir", "state")).resolve()
+    out = []
+    for hb in sorted(HERE.glob("state*/heartbeat.json")):
+        if hb.parent.resolve() == own:
+            continue
+        try:
+            d = json.loads(hb.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        fresh = time.time() - float(d.get("ts", 0)) / 1000 < max_age_s
+        if fresh and str(d.get("status", "")).startswith("running") and not d.get("dry_run")                 and d.get("key_label") == key_label:
+            out.append(f"{hb.parent.name} (heartbeat {d.get('time')})")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -727,6 +843,12 @@ def main() -> int:
         client = build_client(bool(cfg.get("allow_competition", False)), log_dir / "api_log.jsonl", env_file)
         log.info("key %s label=%s dry_run=%s", mask_key(client.api_key), client.key_label,
                  cfg["dry_run"])
+        if not cfg["dry_run"]:
+            others = shared_account_conflicts(cfg, client.key_label)
+            if others and not cfg.get("allow_shared_account", False):
+                log.error("SAFETY: another bot is running LIVE on the same key (%s): %s. Stop it first (one account = one "
+                          "bot), or set allow_shared_account: true if that is really intended.", client.key_label, others)
+                return 2
         return StrategyBot(cfg, client, max_cycles=args.max_cycles).run()
     except KeySafetyError as exc:
         log.error("SAFETY: %s", exc)

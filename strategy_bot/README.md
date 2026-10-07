@@ -16,7 +16,16 @@ equity, own `logs_competition_s3v2e/`, `state_competition_s3v2e/`, `KILL_competi
 | 2026-10-06 15:30 to 2026-10-07 10:00 | `config_competition.yaml` | xsmom on R1 (long only, top 5 x 15%) | -3.36% | replaced after the stats-card review: it failed the team's new down-market and risk requirements (OOS Sharpe -0.79, mean 14d return in down windows -3.2%); flattened via `KILL_competition` 09:55-10:00, session removed |
 | 2026-10-07 10:04 to now | `config_competition_s3v2e.yaml` | s3v2e on core10 | live | meets every requirement of the new objective in both halves (`../strategy_lab/leaderboard_b5.md`) |
 
-## Current configuration (testing key, from 2026-10-06)
+## Forward test (testing key, from 2026-10-08): s3v2e + HMM2 + CUSUM cut
+
+`config_testing_hmm_cusum.yaml` (tmux `testing_hmm`) runs the live strategy plus two risk overlays from strategy_lab
+(`b7_hmm2_cusum`): a walk-forward 2-state HMM on BTC that shrinks targets and lets shorts grow when the crisis probability
+rises (`regime_live.py`, flag `regime_hmm`), and a CUSUM changepoint cut that halves a coin's position when it breaks
+against it (flag `changepoint_cut`). Both flags are off in every other config. Plan and switch criteria:
+`../strategy_lab/reports/forward_test_plan.md`; procedure: DEPLOY.md section 14; daily comparison: `python daily_check.py`.
+One account = one bot: the bot refuses to start while another live bot uses the same key label.
+
+## Previous testing configuration (from 2026-10-06, replaced by the forward test)
 
 Two strategies run as sleeves of one account (`config.yaml`, `sleeves.py`), each on its own book:
 
@@ -77,4 +86,6 @@ python -m tests.test_sleeves       # sleeves: migration, 30-day replay, parity, 
 python -m tests.test_competition   # competition config: R1 parity, target parity, replay, restart
 python -m tests.test_status        # status.py (display only) vs the mock account
 python -m tests.test_event_refresh # optional event_refresh sleeve option
+python -m tests.test_competition_s3v2e # live competition config: parity, replay, restart, old-bot KILL
+python -m tests.test_hmm_cusum     # forward test: HMM / CUSUM / target parity, replay, restart, guards
 ```

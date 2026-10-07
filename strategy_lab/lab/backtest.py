@@ -199,7 +199,7 @@ class Backtest:
         # threshold has its target multiplied by `cut` (0.5 or 0) until the next target refresh; the cut trades at once
         cpc = rc.changepoint
         cp_cut = np.ones(A)
-        cp_log = {"cuts": 0}
+        cp_log: dict[str, Any] = {"cuts": 0, "events": []}
         if cpc:
             from lab.changepoint import scores as cp_scores
             reset = np.array([(t.hour == rc.rebalance_hour_utc and t.minute == 0) for t in idx])
@@ -350,6 +350,7 @@ class Backtest:
                 cp_new = hit & alive_all[i]
                 cp_cut[cp_new] = float(cpc["cut"])
                 cp_log["cuts"] += int(cp_new.sum())
+                cp_log["events"] += [(str(ts), assets[j]) for j in np.where(cp_new)[0]]
                 tgt = tgt * cp_cut
             # 5) band check + per-leg plan (strategy_bot portfolio.py), then activity guard
             sizing = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq

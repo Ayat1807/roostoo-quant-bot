@@ -35,8 +35,15 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
   (leaderboard_b7.md, reports/stats_card_b7_finalists.md). Sweep 487-496 running. Block 4b final reports done (old objective:
   b4b_score / b4b_best_vol_target pass on noise-level margins but xsmom is retired; new objective: none).
 
+- STEP 1 (2026-10-07): forward test HMM2 + CUSUM implemented in strategy_bot (regime_live.py, flags regime_hmm /
+  changepoint_cut, config_testing_hmm_cusum.yaml, status.py lines, daily_check.py, shared-account guard,
+  tests/test_hmm_cusum.py PASS), reports/forward_test_plan.md, DEPLOY.md section 14.
+
 ## Running
-- sweeps: .cache/b6b_sweep.log, b6c_sweep.log, b6e_sweep.log -> b6d_sweep.log, b7_sweep.log (not adoptable; tables only).
+- sweeps (tables only): .cache/b6b_sweep.log, b6c_sweep.log, b6e_sweep.log -> b6d_sweep.log, b7_sweep.log.
 
 ## Next
-1. When sweeps finish: `python -m lab.b6 b|c|d|e` and `python -m lab.b7`; commit. Nothing else queued; the team decides.
+1. STEP 2 (deadline 2026-10-11): block 8 universe breadth / exposure (U1-U7 on s3v2e_core10 and on HMM2+CUSUM, 14 runs),
+   pre-register first; broad-down windows (BTC 14d < -5% AND > 70% of coins down); U6 floor firing stats; sweep best 2.
+2. STEP 3: no new trials after block 8; fold sweeps into reports; freeze the trial ledger.
+3. STEP 4: git-history secret scan + public-readiness checklist (stop and report if anything sensitive); finals_outline.md.

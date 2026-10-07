@@ -253,6 +253,15 @@ def render(cfg: dict[str, Any], d: dict[str, Any]) -> tuple[list[str], int]:
            f"{f' + fills since on {nf} pair(s)' if nf else ' (no fills since)'}")
     if not d["sleeve_mode"]:
         pr(f"Targets computed: {hb.get('target_time')}")
+    rg = hb.get("regime")
+    if rg:
+        pr(f"HMM regime: p_crisis {float(rg.get('p_crisis', 0)):.1%} on {rg.get('day')} "
+           f"(model {rg.get('month_model', rg.get('reason', ''))}) -> targets x {1 - 0.5 * float(rg.get('p_crisis', 0)):.2f}, "
+           f"short scale in bull {0.5 + 0.5 * float(rg.get('p_crisis', 0)):.2f}")
+    if hb.get("cuts") is not None:
+        cuts = hb.get("cuts") or {}
+        pr(f"CUSUM cuts since bar {hb.get('cut_reset_bar')}: "
+           + (", ".join(f"{p} x{f:g}" for p, f in cuts.items()) if cuts else "none active"))
     for s in d.get("sleeves", []):
         ld = s["last_decision"]
         pr(f"\nSleeve {s['name']}: weight {s['weight']:g}, {s['strategy']}, {s['execution']}, "

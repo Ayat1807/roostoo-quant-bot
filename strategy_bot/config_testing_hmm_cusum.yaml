@@ -1,0 +1,71 @@
+# strategy_bot TESTING forward test: s3v2e on core10 + HMM2 regime + CUSUM changepoint cut (strategy_lab b7_hmm2_cusum).
+# TESTING key only (.env). Never a competition config. Start: python bot.py --config config_testing_hmm_cusum.yaml --live
+# Own logs_testing_hmm/, state_testing_hmm/, KILL_testing_hmm. Forward-test plan: ../strategy_lab/reports/forward_test_plan.md
+# ONE ACCOUNT, ONE BOT: the testing key is a single Roostoo account. Do not run this next to another live bot on the same key
+# (both would trade the same coins and cancel each other's resting orders); the bot refuses to start if another running
+# bot's heartbeat shows the same key label (see allow_shared_account).
+
+dry_run: true              # true = log intended orders only (default). Live needs --live or false here.
+poll_s: 60
+
+universe: [BTC/USD, ETH/USD, SOL/USD, BNB/USD, XRP/USD, ADA/USD, DOGE/USD, AVAX/USD, LINK/USD, DOT/USD]
+
+strategy:                  # = the live competition strategy (s3v2e_core10)
+  name: s3v2
+  horizons: [24, 72, 168, 336]
+  vol_win: 336
+  regime_win: 336
+  target_vol: 0.40
+  short_scale_bull: 0.5          # raised toward 1.0 by the HMM crisis probability (regime_hmm)
+  max_w: 0.30
+  btc_pair: BTC/USD
+  vol_method: ewma
+  ewma_halflife: 168
+  ewma_window: 800
+
+allow_short: true
+liquidity_guard: {enabled: true, max_spread_bps: 15, min_volume_usd: 1000000}
+
+# --- forward-test candidate (strategy_bot/regime_live.py) ---
+regime_hmm:                # walk-forward 2-state HMM on BTC daily return / 7d vol; monthly refit; filtered probability
+  enabled: true
+  states: 2
+  crisis_cut: 0.5          # targets x (1 - 0.5 x p_crisis); short_scale_bull_eff = 0.5 + 0.5 x p_crisis
+changepoint_cut:           # CUSUM on standardised hourly returns, reset at each daily target
+  enabled: true
+  threshold: 4
+  cut: 0.5                 # a held coin whose CUSUM against its position exceeds 4 is cut to 50% until the next target
+  k: 0.5
+  halflife: 168
+
+capital_cap_usd: 10000
+
+# rebalance_hour_utc 1: targets on the bar opening 00:00 UTC (wall clock 01:00), exactly the strategy_lab convention
+# (b7_hmm2_cusum uses the 00:00 bar). The live competition bot decides at 00:00 wall clock (the 23:00 bar).
+rebalance_hour_utc: 1
+band: 0.06
+activity_guard_hour_utc: 20
+activity_guard: minimal
+guard_band: 0.01
+guard_max_frac: 0.02
+entry_order: limit
+limit_wait_s: 300
+limit_poll_s: 15
+
+dd_soft: -0.04
+dd_hard: -0.07
+cooloff_h: 24
+peak_days: 14
+
+allow_competition: false
+env_file: .env                 # the TESTING key pair
+allow_shared_account: false    # true only if you accept two bots trading one account (not recommended)
+
+bootstrap_hours: 2000
+paths:
+  log_dir: logs_testing_hmm
+  state_dir: state_testing_hmm
+  kill_file: KILL_testing_hmm
+bot_log:
+  max_bytes: 5000000
+  backups: 5

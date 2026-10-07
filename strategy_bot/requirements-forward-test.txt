@@ -1,0 +1,8 @@
+# Extra packages for the HMM2 + CUSUM forward test (config_testing_hmm_cusum.yaml, regime_live.py) only.
+# The live competition bot does not need them: pip install -r requirements-forward-test.txt
+-r requirements.txt
+hmmlearn==0.3.3
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+threadpoolctl==3.7.0
