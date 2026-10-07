@@ -97,18 +97,27 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
 
 
 def resolve_base(name: str) -> dict[str, Any]:
-    """Full declared spec of run `name` (its file's defaults merged) from any variants*.yaml."""
+    """Full declared spec of run `name` from any variants*.yaml: its file's defaults merged, and for a
+    derived run (`base:` in the run or in its file's defaults) the base run's full spec underneath."""
+    meta = ("name", "trial", "group", "note", "base")
     for f in sorted(ROOT.glob("variants*.yaml")):
         doc = yaml.safe_load(f.read_text(encoding="utf-8"))
         for r in doc.get("runs", []):
-            if r["name"] == name and "base" in r:          # derived run (e.g. block 4 overlays): chain
-                return {**resolve_base(r["base"]),
-                        **{k: v for k, v in r.items() if k not in ("name", "trial", "group", "note", "base")}}
-            if r["name"] == name and "base" not in r:
-                d = doc.get("defaults", {})
-                out = {**d, **{k: v for k, v in r.items() if k not in ("name", "trial", "group", "note")}}
-                out["params"] = {**d.get("params", {}), **r.get("params", {})}
-                return out
+            if r["name"] != name:
+                continue
+            d = {k: v for k, v in doc.get("defaults", {}).items() if k != "base"}
+            run = {k: v for k, v in r.items() if k not in meta}
+            if "base" in r:          # base named in the run (block 3 sweeps): defaults < base < run
+                layers = [d, resolve_base(r["base"]), run]
+            elif "base" in doc.get("defaults", {}):   # base in the file defaults (block 4c): base < defaults < run
+                layers = [resolve_base(doc["defaults"]["base"]), d, run]
+            else:
+                layers = [d, run]
+            out: dict[str, Any] = {}
+            for x in layers:
+                out.update(x)
+            out["params"] = {k: v for x in layers for k, v in (x.get("params") or {}).items()}
+            return out
     raise KeyError(f"base run {name!r} not declared")
 
 
@@ -136,11 +145,12 @@ def main() -> int:
     print(f"{len(runs)} runs ({len(names)} declared; trial ledger total {led['total_runs']})")
     cache: dict = {}
     for r in runs:
-        if "base" in r:       # sweep run: the base run's full spec + overrides (block 3 addendum)
-            r = {**resolve_base(r["base"]), **{k: v for k, v in r.items() if k != "base"}}
-        spec = {**defaults, **{k: v for k, v in r.items() if k != "name"}}
-        if "params" in defaults and "params" in r:
-            spec["params"] = {**defaults["params"], **r["params"]}
+        if "base" in r or "base" in defaults:    # derived run: base spec + file defaults + overrides
+            spec = resolve_base(r["name"])
+        else:
+            spec = {**defaults, **{k: v for k, v in r.items() if k != "name"}}
+            if "params" in defaults and "params" in r:
+                spec["params"] = {**defaults["params"], **r["params"]}
         if "combo" in r:
             spec = {k: v for k, v in r.items() if k != "name"}
         m = execute(r["name"], spec, btc, cache, baseline)

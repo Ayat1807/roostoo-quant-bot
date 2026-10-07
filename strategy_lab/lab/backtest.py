@@ -76,6 +76,7 @@ class RunConfig:
     execution: str = "band"         # band (hourly band checks) | scheduled (trade fully only at refresh)
     events: dict[str, Any] | None = None   # macro-event overlays (block 4, see _event_plan); None = off
     exits: dict[str, Any] | None = None    # intraday exits between decisions (block 4, see run()); None = off
+    record_positions: bool = False  # sparse per-coin weight / long and short P&L per hour (res["positions"])
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -180,6 +181,10 @@ class Backtest:
         exited = np.zeros(A, dtype=bool)
         x_pending: list[dict[str, Any]] = []
         x_log: list[dict[str, Any]] = []
+        pos_rows: list[tuple] = []          # (k, j, signed weight at bar end, long pnl, short pnl) if any != 0
+        hold_start = np.full(A, -1)         # bar index when the current position (either side) opened
+        needs_hold = getattr(self.strategy, "needs_holdings", False)
+        p_prev = None
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
                                                "turnover", "fees", "trades", "mult")}
         targets_log: list[dict[str, Any]] = []
@@ -191,6 +196,13 @@ class Backtest:
             # price: live close, else last close (delisted), else 0 (not listed yet; no
             # position can exist and the asset is masked from trading)
             p = np.nan_to_num(np.where(alive_all[i], px_all[i], last_px[i]), nan=0.0)
+            if rc.record_positions:
+                if p_prev is not None:
+                    dp = np.where((p > 0) & (p_prev > 0), p - p_prev, 0.0)
+                    pl_bar, ps_bar = lu * dp, -su * dp
+                else:
+                    pl_bar = ps_bar = np.zeros(A)
+                p_prev = p
             fees = turnover = 0.0
             ntr = 0
             # 1) forced exit of delisted assets (no more prices) at the last price
@@ -265,6 +277,13 @@ class Backtest:
                     try:
                         bpw = bp if self.volume is None else {
                             **bp, "_volume": self.volume.iloc[max(0, ti - rc.lookback_bars + 1):ti + 1][members]}
+                        if needs_hold:     # e.g. xsmom_ls big_gap_swap: the current book and holding time
+                            w_now = (lu - su) * p / max(eq, 1e-9)
+                            bpw = {**bpw, "_held": {assets[j]: float(w_now[j]) for j in np.where(np.abs(w_now) > 1e-4)[0]},
+                                   "_held_h": {assets[j]: (k - hold_start[j]) / self.bph
+                                               for j in np.where(hold_start >= 0)[0]}}
+                        if getattr(self.strategy, "needs_btc", False):   # e.g. xsmom_sz regime exposure
+                            bpw = {**bpw, "_btc": c[self.universe.btc_asset].iloc[max(0, ti - rc.lookback_bars + 1):ti + 1]}
                         w = self.strategy.target_weights(window, bpw)
                     except ValueError:  # not enough history yet
                         w = {}
@@ -276,6 +295,8 @@ class Backtest:
                                                for a in members if target[assets.index(a)]}})
             if not is_check:      # hold; record mark-to-market only
                 self._record(rec, k, eq, cash, lu, su, p, 0.0, 0.0, 0, mult)
+                if rc.record_positions:
+                    self._pos(pos_rows, k, lu, su, p, eq, pl_bar, ps_bar)
                 continue
             tgt = target * mult
             g = np.abs(tgt).sum()
@@ -316,18 +337,18 @@ class Backtest:
                 held = lw > exit_eps
                 np.maximum(x_high, np.where(held, p, 0.0), out=x_high)
                 if not sched:
-                    if xe["type"] == "trend_break":
-                        fire = held & (ema_f[i] < ema_s[i])
+                    if xe["type"] == "trend_break":     # long: EMA24 < EMA168; short (if any): EMA24 > EMA168
+                        fire = (held & (ema_f[i] < ema_s[i])) | ((sw > exit_eps) & (ema_f[i] > ema_s[i]))
                     elif xe["type"] == "stop":
                         fire = held & (x_entry > 0) & (p <= x_entry * (1 - float(xe["pct"])))
                     else:
                         fire = held & (x_high > 0) & (p <= x_high * (1 - float(xe["pct"])))
                     fire &= ~exited & alive_all[i]
                     for j in np.where(fire)[0]:
-                        x_pending.append({"time": str(ts), "j": int(j), "px": float(p[j]), "w": float(lw[j])})
+                        x_pending.append({"time": str(ts), "j": int(j), "px": float(p[j]), "w": float(cw[j])})
                     exited |= fire
                     trade |= fire
-                tgt = np.where(exited, np.minimum(tgt, 0.0), tgt)
+                tgt = np.where(exited, 0.0, tgt)
                 lu_before = lu.copy()
             trade &= alive_all[i]
             if trade.any():
@@ -349,6 +370,9 @@ class Backtest:
                     cash, f, tv, n = self._execute({j: tw_j}, lw, sw, sizing, p, cash, lu, su,
                                                    entry, coll, spot_fee, sfee, slip, mini, exact)
                     fees, turnover, ntr = fees + f, turnover + tv, ntr + n
+            nz = np.abs(lu - su) > 1e-15
+            hold_start[nz & (hold_start < 0)] = k
+            hold_start[~nz] = -1
             if xe:                           # entry price / high since entry of the long book
                 add = lu > lu_before + 1e-15
                 x_entry = np.where(add, (x_entry * lu_before + (lu - lu_before) * p) / np.maximum(lu, 1e-300), x_entry)
@@ -362,6 +386,8 @@ class Backtest:
             short_val = coll + su * (entry - p)
             eq_hist[k] = cash + float(np.dot(lu, p)) + float(short_val.sum())
             self._record(rec, k, eq_hist[k], cash, lu, su, p, turnover, fees, ntr, mult)
+            if rc.record_positions:
+                self._pos(pos_rows, k, lu, su, p, eq_hist[k], pl_bar, ps_bar)
         hourly = pd.DataFrame(rec, index=idx[i0:i1])
         if self.bph > 1:
             g = hourly.resample("1h")
@@ -371,7 +397,17 @@ class Backtest:
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
                 "trades_total": n_trades_total, "events": ev_log if ev is not None else None,
-                "extra": ({"exits": x_log} if xe else None)}
+                "extra": ({"exits": x_log} if xe else {}) | ({"strategy_stats": dict(self.strategy.stats)}
+                                                              if getattr(self.strategy, "stats", None) else {}) or None,
+                "positions": (pd.DataFrame(pos_rows, columns=["k", "j", "w", "pl", "ps"]).assign(
+                    time=lambda d: idx[i0:i1][d["k"].values], asset=lambda d: np.array(assets)[d["j"].values])
+                    .drop(columns=["k", "j"]) if rc.record_positions else None)}
+
+    @staticmethod
+    def _pos(rows: list, k: int, lu, su, p, eq, pl_bar, ps_bar) -> None:
+        w = (lu - su) * p / max(eq, 1e-9)
+        for j in np.where((np.abs(w) > 1e-9) | (pl_bar != 0) | (ps_bar != 0))[0]:
+            rows.append((k, int(j), float(w[j]), float(pl_bar[j]), float(ps_bar[j])))
 
     # ------------------------------------------------------------------ #
     def _event_plan(self, idx: pd.DatetimeIndex, assets: list[str]) -> dict[str, Any]:

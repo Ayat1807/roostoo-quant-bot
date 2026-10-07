@@ -1,0 +1,64 @@
+# Research block 4c: LONG/SHORT + intraday HYSTERESIS for the live strategy (xsmom on R1 = b3_xsmom_r1,
+# trial 243 = control). Declared 2026-10-07 BEFORE any run in this file (team request 2026-10-07, STEP 3).
+# Trial counter continues: 291-330 (40 new); global declared 290 + 40 = 330.
+#
+# Strategy: strategies/xsmom_ls.py (defaults == live xsmom, checked on real closes). Everything as b3_xsmom_r1
+# (R1 universe, decision on the 14:00 UTC bar, scheduled execution, brake, no guard, realistic costs: taker
+# 0.10% + 2 bps slippage on spot; shorts 0.10% on open AND on close + slippage) except:
+#   ls_combined      short-eligible: EMA24 < EMA168 AND 72h momentum < -2%; long-eligible as live; all eligible
+#                    ranked together by |mom72 / vol72|; one combined top 5 at +-15%, max gross 75%    291
+#   ls_cap2 / cap3   ls_combined with at most 2 (3) shorts                                           292, 293
+#   ls_gated         ls_combined, shorts only while BTC < its 30-day mean (720 hourly closes)        294
+#   ls_gated_cap2    gated + at most 2 shorts                                                         295
+# Hysteresis (on the live long-only strategy AND on the best ls variant):
+#   trend_break_exit hourly, either side (long: EMA24 < EMA168; short: EMA24 > EMA168), the coin stays out
+#                    until the next target refresh (cooldown). On live = b4x_trend_break (trial 277, re-used).
+#   big_gap_swap     replace a holding only if a coin not held has |score| >= 1.5x (also 2x) the holding's AND
+#                    the holding fell out of the top 8 AND it was held >= 12h; a holding no longer eligible on its
+#                    side is dropped (as live); free slots filled by the best-ranked coins not held
+#   both             trend_break_exit + big_gap_swap 1.5x
+#   check interval   swap and both also with the target refresh (= check) every 1h, 2h, 4h (daily = base)
+#   on live:   swap15, swap20, both at daily (296-298) and at 1h / 2h / 4h (299-307)
+#   on best ls: trend, swap15, swap20, both at daily (308-311); swap15, swap20, both at 1h / 2h / 4h (312-320)
+#   "best ls" = the ls variant (291-295) with the highest OOS P(14d >= +10%) among those meeting both constraints in
+#   both halves, ties IS; none qualifies -> highest OOS P(>= +10%) regardless. Resolved by
+#   `python -m lab.b4c --resolve-ls` after 291-295 have run (written below before running 308-320).
+# FREQUENCY SWEEP (standing rule), 321-330: the best 2 runs of this block (291-320 at daily refresh, i.e. excluding
+#   the 1h/2h/4h check-interval runs) by the same ranking; each at 1h, 2h, 4h, 6h, 12h. `python -m lab.b4c
+#   --resolve-sweep`. Sweep runs are not adoptable by themselves.
+#
+# JUDGING: data to 2026-06-30, both halves (IS 2020-02-15 -> 2024-12-31, OOS 2025-01-01 -> 2026-06-30; Jul-Oct 2026
+# informational). Primary P(14d >= +10%) and P(>= +8%); constraints P(14d <= -10%) <= 10% and worst 14d >= -20%.
+# ADOPT RULE: P(14d >= +10%) strictly above the control AND P(>= +8%) not below it in both halves, constraints met in
+# both halves; several -> highest OOS P(>= +10%), ties IS. Adopted -> strategy_bot behind a config flag + tests, no
+# deploy, with its own stats card.
+# REPORT: share of time net short, short trades (episodes) and hit rate, short vs long P&L, rule-firing counts
+# (swaps, holdings kept by hysteresis, trend exits), plus the standard metrics. Runs record sparse positions.
+
+declared_trials: 40
+
+defaults:
+  base: b3_xsmom_r1
+  strategy: xsmom_ls
+  allow_short: true
+  record_positions: true
+
+runs:
+  - {name: b4c_ls_combined, trial: 291, group: ls, params: {shorts: combined}}
+  - {name: b4c_ls_cap2, trial: 292, group: ls, params: {shorts: combined, max_shorts: 2}}
+  - {name: b4c_ls_cap3, trial: 293, group: ls, params: {shorts: combined, max_shorts: 3}}
+  - {name: b4c_ls_gated, trial: 294, group: ls, params: {shorts: combined, short_gate: btc_below_30d}}
+  - {name: b4c_ls_gated_cap2, trial: 295, group: ls, params: {shorts: combined, short_gate: btc_below_30d, max_shorts: 2}}
+  - {name: b4c_live_swap15, trial: 296, group: hyst_live, params: {swap_mult: 1.5}}
+  - {name: b4c_live_swap20, trial: 297, group: hyst_live, params: {swap_mult: 2.0}}
+  - {name: b4c_live_both, trial: 298, group: hyst_live, params: {swap_mult: 1.5}, exits: {type: trend_break}}
+  - {name: b4c_live_swap15_c1h, trial: 299, group: hyst_live, params: {swap_mult: 1.5}, rebalance_every_h: 1}
+  - {name: b4c_live_swap15_c2h, trial: 300, group: hyst_live, params: {swap_mult: 1.5}, rebalance_every_h: 2}
+  - {name: b4c_live_swap15_c4h, trial: 301, group: hyst_live, params: {swap_mult: 1.5}, rebalance_every_h: 4}
+  - {name: b4c_live_swap20_c1h, trial: 302, group: hyst_live, params: {swap_mult: 2.0}, rebalance_every_h: 1}
+  - {name: b4c_live_swap20_c2h, trial: 303, group: hyst_live, params: {swap_mult: 2.0}, rebalance_every_h: 2}
+  - {name: b4c_live_swap20_c4h, trial: 304, group: hyst_live, params: {swap_mult: 2.0}, rebalance_every_h: 4}
+  - {name: b4c_live_both_c1h, trial: 305, group: hyst_live, params: {swap_mult: 1.5}, exits: {type: trend_break}, rebalance_every_h: 1}
+  - {name: b4c_live_both_c2h, trial: 306, group: hyst_live, params: {swap_mult: 1.5}, exits: {type: trend_break}, rebalance_every_h: 2}
+  - {name: b4c_live_both_c4h, trial: 307, group: hyst_live, params: {swap_mult: 1.5}, exits: {type: trend_break}, rebalance_every_h: 4}
+  # 308-320 (hysteresis on the best ls variant) and 321-330 (sweep): resolved by lab/b4c.py, appended below
