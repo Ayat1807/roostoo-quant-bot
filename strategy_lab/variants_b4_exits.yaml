@@ -36,3 +36,14 @@ runs:
   - {name: b4x_stop6, trial: 279, group: exits, base: b3_xsmom_r1, exits: {type: stop, pct: 0.06}}
   - {name: b4x_trail5, trial: 280, group: exits, base: b3_xsmom_r1, exits: {type: trailing, pct: 0.05}}
   # sweep slots 281-290: resolved by lab/b4x.py --resolve (appended below, before running them)
+  # resolved 2026-10-07 03:25 UTC by lab/b4x.py --resolve: best 2 = ['b4e_derisk_50', 'b4e_combined_50'] (OOS / IS P>=10%: b4e_derisk_50 10.3% / 15.0%, b4e_combined_50 10.3% / 14.9%)
+  - {name: b4s_b4e_derisk_50_r1h, trial: 281, group: sweep, base: b4e_derisk_50, rebalance_every_h: 1}
+  - {name: b4s_b4e_derisk_50_r2h, trial: 282, group: sweep, base: b4e_derisk_50, rebalance_every_h: 2}
+  - {name: b4s_b4e_derisk_50_r4h, trial: 283, group: sweep, base: b4e_derisk_50, rebalance_every_h: 4}
+  - {name: b4s_b4e_derisk_50_r6h, trial: 284, group: sweep, base: b4e_derisk_50, rebalance_every_h: 6}
+  - {name: b4s_b4e_derisk_50_r12h, trial: 285, group: sweep, base: b4e_derisk_50, rebalance_every_h: 12}
+  - {name: b4s_b4e_combined_50_r1h, trial: 286, group: sweep, base: b4e_combined_50, rebalance_every_h: 1}
+  - {name: b4s_b4e_combined_50_r2h, trial: 287, group: sweep, base: b4e_combined_50, rebalance_every_h: 2}
+  - {name: b4s_b4e_combined_50_r4h, trial: 288, group: sweep, base: b4e_combined_50, rebalance_every_h: 4}
+  - {name: b4s_b4e_combined_50_r6h, trial: 289, group: sweep, base: b4e_combined_50, rebalance_every_h: 6}
+  - {name: b4s_b4e_combined_50_r12h, trial: 290, group: sweep, base: b4e_combined_50, rebalance_every_h: 12}

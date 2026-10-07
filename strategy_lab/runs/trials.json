@@ -1,5 +1,5 @@
 {
- "total_runs": 295,
+ "total_runs": 299,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -71,6 +71,10 @@
   "b4e_fast_2h",
   "b4e_fast_4h",
   "b4e_fast_6h",
+  "b4x_stop4",
+  "b4x_stop6",
+  "b4x_trail5",
+  "b4x_trend_break",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -278,7 +282,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-06 16:02 UTC",
+ "updated": "2026-10-07 03:22 UTC",
  "corrections": [
   {
    "date": "2026-10-05",

@@ -1,0 +1,45 @@
+# Block 4a addendum: intraday exits + frequency sweep (live strategy xsmom on R1)
+
+_Generated 2026-10-07 03:25 UTC. Rules in `variants_b4_exits.yaml` (declared before any run). Judged on data to 2026-06-30, both halves; Jul-Oct 2026 informational only._
+
+**Trials:** 290 declared across all blocks; luck threshold about 2.7 standard errors.
+
+**Exit adopt rule:** P(14d >= +10%) strictly above the control and P(>= +8%) not below, both halves, both constraints met in both halves.
+
+**Exit adopted: none**
+
+| run | IS P>=10% / P>=8% / P<=-10% / worst / median | OOS P>=10% / P>=8% / P<=-10% / worst / median | event windows P>=10% IS / OOS | meets | fees/yr OOS | trades/day OOS | INFO P>=10% / median |
+|---|---|---|---|---|---|---|---|
+| b3_xsmom_r1 (control) | 15% / 18% / 3% / -19.1% / -0.9% | 9% / 11% / 2% / -12.0% / -2.5% | 15% / 8% | yes | 14.1% | 5.0 | 15% / -1.3% |
+| b4e_fast_2h | 14% / 17% / 2% / -17.3% / -0.7% | 8% / 10% / 2% / -11.8% / -2.2% | 13% / 8% | yes | 20.3% | 11.6 | 15% / -2.1% |
+| b4e_fast_4h | 15% / 18% / 3% / -18.0% / -0.7% | 9% / 11% / 2% / -12.2% / -2.3% | 14% / 8% | yes | 17.9% | 8.2 | 15% / -2.3% |
+| b4e_fast_6h | 14% / 18% / 3% / -18.6% / -0.9% | 9% / 11% / 1% / -12.0% / -2.7% | 14% / 8% | yes | 17.3% | 7.2 | 15% / -1.9% |
+| b4e_fast_12h | 15% / 19% / 3% / -18.3% / -0.8% | 9% / 11% / 1% / -11.8% / -2.4% | 15% / 9% | yes | 15.2% | 5.7 | 15% / -2.3% |
+| b4e_derisk_50 | 15% / 18% / 3% / -19.4% / -0.9% | 10% / 12% / 2% / -12.0% / -2.3% | 15% / 10% | yes | 13.4% | 5.0 | 15% / -1.3% |
+| b4e_derisk_25 | 15% / 18% / 2% / -20.6% / -0.9% | 10% / 12% / 3% / -12.0% / -2.1% | 15% / 10% | **no** | 13.8% | 5.2 | 15% / -1.0% |
+| b4e_breakout | 15% / 18% / 3% / -19.1% / -0.9% | 8% / 11% / 2% / -12.0% / -2.5% | 15% / 8% | yes | 14.1% | 5.0 | 15% / -1.3% |
+| b4e_combined_50 | 15% / 18% / 3% / -19.4% / -0.9% | 10% / 12% / 2% / -12.0% / -2.3% | 15% / 10% | yes | 13.4% | 5.0 | 15% / -1.3% |
+| b4e_combined_25 | 15% / 18% / 2% / -20.6% / -0.9% | 10% / 12% / 3% / -12.0% / -2.3% | 14% / 10% | **no** | 13.7% | 5.2 | 15% / -1.1% |
+| b4x_trend_break | 15% / 18% / 2% / -20.1% / -0.9% | 8% / 11% / 2% / -12.0% / -2.6% | 15% / 8% | **no** | 14.6% | 5.2 | 15% / -0.5% |
+| b4x_stop4 | 14% / 17% / 1% / -15.5% / -1.0% | 7% / 11% / 1% / -12.0% / -2.5% | 14% / 8% | yes | 14.3% | 5.0 | 15% / +0.1% |
+| b4x_stop6 | 14% / 17% / 1% / -19.1% / -1.0% | 8% / 10% / 2% / -12.0% / -2.6% | 14% / 6% | yes | 14.2% | 5.1 | 15% / -2.4% |
+| b4x_trail5 | 9% / 12% / 0% / -11.9% / -1.2% | 4% / 6% / 0% / -10.9% / -1.9% | 8% / 3% | yes | 16.9% | 5.0 | 15% / -0.4% |
+
+## How often the exits fired; loss avoided vs profit given up
+
+Each exit: exited weight x the coin's return from the exit to the next daily decision. Loss avoided = the coin fell further (sum, % of equity); profit given up = it rose. Net = avoided - given up.
+
+| run | period | exits | per month | loss avoided (n) | profit given up (n) | net |
+|---|---|---|---|---|---|---|
+| b4x_trend_break | IS | 284 | 4.8 | +30.0% (137) | +31.7% (145) | -1.7% |
+| b4x_trend_break | OOS | 141 | 7.9 | +17.9% (72) | +14.2% (69) | +3.7% |
+| b4x_trend_break | INFO | 18 | 5.7 | +1.0% (7) | +1.1% (11) | -0.2% |
+| b4x_stop4 | IS | 874 | 14.9 | +123.6% (405) | +156.3% (466) | -32.7% |
+| b4x_stop4 | OOS | 226 | 12.6 | +35.3% (117) | +27.3% (108) | +8.0% |
+| b4x_stop4 | INFO | 30 | 9.6 | +5.3% (16) | +3.5% (14) | +1.7% |
+| b4x_stop6 | IS | 434 | 7.4 | +56.1% (189) | +84.5% (243) | -28.4% |
+| b4x_stop6 | OOS | 124 | 6.9 | +18.1% (68) | +15.7% (56) | +2.5% |
+| b4x_stop6 | INFO | 17 | 5.6 | +1.8% (9) | +1.6% (8) | +0.2% |
+| b4x_trail5 | IS | 2250 | 38.4 | +389.5% (1068) | +572.1% (1173) | -182.6% |
+| b4x_trail5 | OOS | 571 | 31.8 | +107.3% (307) | +86.4% (264) | +20.8% |
+| b4x_trail5 | INFO | 115 | 36.6 | +18.5% (58) | +26.4% (57) | -7.9% |

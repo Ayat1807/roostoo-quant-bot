@@ -79,6 +79,8 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
         h = res["hourly"]
     HCACHE.mkdir(parents=True, exist_ok=True)
     h.to_pickle(HCACHE / f"{name}.pkl")
+    if res.get("positions") is not None:       # sparse per-coin positions (record_positions)
+        res["positions"].to_pickle(HCACHE / f"{name}_pos.pkl")
     base = load_hourly(baseline) if name != baseline else None
     sc = scorecard(h, btc, base)
     out_dir = RUNS / name
@@ -99,6 +101,9 @@ def resolve_base(name: str) -> dict[str, Any]:
     for f in sorted(ROOT.glob("variants*.yaml")):
         doc = yaml.safe_load(f.read_text(encoding="utf-8"))
         for r in doc.get("runs", []):
+            if r["name"] == name and "base" in r:          # derived run (e.g. block 4 overlays): chain
+                return {**resolve_base(r["base"]),
+                        **{k: v for k, v in r.items() if k not in ("name", "trial", "group", "note", "base")}}
             if r["name"] == name and "base" not in r:
                 d = doc.get("defaults", {})
                 out = {**d, **{k: v for k, v in r.items() if k not in ("name", "trial", "group", "note")}}
