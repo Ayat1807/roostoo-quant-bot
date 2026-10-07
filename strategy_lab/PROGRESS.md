@@ -29,13 +29,16 @@ recommended variant gets a stats card (`python -m lab.stats_card <run> [others]`
   (variants_b5_shorts.yaml, 394-408; judging in lab/b5.py). References re-run with positions (lab/b5_refs.py, b5ref__*).
 - Block 4d runs 344-348 done (report not yet written; to be judged under the NEW objective too).
 
+- Block 5 COMPLETE `c08c4a3`: none adopted (no run beats s3v2e_core10 on both median 14d composite and mean 14d in both
+  halves). s3v2e_core10 itself meets every new requirement; live xsmom R1 fails (OOS Sharpe -0.79, down windows -3.2%).
+  leaderboard_b5.md, reports/stats_card_b5_finalists.md.
+- Block 4d results `755375a`: none adopted (old and new objective; leaderboard_b4d_entry.md, _newobj.md).
+
 ## Running
-- block 5: `.cache/b5_run.log` (394-401), `.cache/b5_refs.log`.
+- block 4b sizing/exposure/coins: `.cache/b4b_run.log`; block 4d sweep 349-358: `.cache/b4d_sweep.log`.
 
 ## Next (in order)
-1. Block 5: `python -m lab.b5 --resolve-f` -> commit -> `python -m lab.runner variants_b5_shorts.yaml --group F`;
-   `--resolve-sweep` -> commit -> `--group sweep`; `python -m lab.b5` -> leaderboard_b5.md; stats cards
-   (`python -m lab.stats_card <run> b3_s3v2e_core10 b3_xsmom_r1`) for finalists. If adopted: strategy_bot flags + tests +
-   testing config (cap 10000, own paths) + EC2 commands; no competition config.
-2. Block 4d: `python -m lab.b4gen 4d` (old objective) + `python -m lab.b5 <4d runs>` (new objective); sweep resolution.
-3. Block 4b: run, report under both objectives.
+1. Block 4b: `python -m lab.b4gen 4b --resolve-best-sizing` -> commit -> `--group exposure_best`; `--resolve-sweep` -> commit ->
+   `--group sweep`; reports: `python -m lab.b4gen 4b` (old objective) and `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10
+   <4b runs> --out leaderboard_b4b_newobj.md` (new objective).
+2. Block 4d: when the sweep finishes, `python -m lab.b4gen 4d` again; commit.
