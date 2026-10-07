@@ -278,8 +278,10 @@ class Backtest:
                         bpw = bp if self.volume is None else {
                             **bp, "_volume": self.volume.iloc[max(0, ti - rc.lookback_bars + 1):ti + 1][members]}
                         if needs_hold:     # e.g. xsmom_ls big_gap_swap: the current book and holding time
-                            w_now = (lu - su) * p / max(eq, 1e-9)
-                            bpw = {**bpw, "_held": {assets[j]: float(w_now[j]) for j in np.where(np.abs(w_now) > 1e-4)[0]},
+                            sz = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
+                            w_now = (lu - su) * p / max(sz, 1e-9)          # same basis as the trade check
+                            bpw = {**bpw, "_mult": mult,
+                                   "_held": {assets[j]: float(w_now[j]) for j in np.where(np.abs(w_now) > 1e-4)[0]},
                                    "_held_h": {assets[j]: (k - hold_start[j]) / self.bph
                                                for j in np.where(hold_start >= 0)[0]}}
                         if getattr(self.strategy, "needs_btc", False):   # e.g. xsmom_sz regime exposure

@@ -1,3 +1,6 @@
+# SUPERSEDED 2026-10-07 BEFORE ANY RUN by variants_b4c_lsx.yaml (team spec for block 4c). Nothing in this file
+# was ever run, no result was seen, so its 40 declared trials are withdrawn from the global count (file moved out
+# of the variants*.yaml glob). Trial numbers 291-330 are reassigned to variants_b4c_lsx.yaml.
 # Research block 4c: LONG/SHORT + intraday HYSTERESIS for the live strategy (xsmom on R1 = b3_xsmom_r1,
 # trial 243 = control). Declared 2026-10-07 BEFORE any run in this file (team request 2026-10-07, STEP 3).
 # Trial counter continues: 291-330 (40 new); global declared 290 + 40 = 330.

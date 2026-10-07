@@ -20,8 +20,15 @@ frequency sweep for the best 2 of each block; every recommended variant gets a s
   (+ s3v2e_core10, xsmom_tm10 side by side), stats_card_xsmom_tm10_liq.md; competition configs carry `stats_card:`,
   enforced by strategy_bot/tests/test_safety.py. Stress curves cached as .cache/runs/<name>__stress.pkl.
 
+- 2026-10-07 block 4a exits (277-280): none adopted; sweep 281-290 (derisk_50 / combined_50 at 1-12h): all worse.
+  strategy_bot: optional sleeve flag event_refresh (b4e_fast_12h, OFF everywhere) + tests/test_event_refresh.py (uncommitted
+  until the regression check: test_replay / test_sleeves fail also on HEAD? -> see below).
+- 2026-10-07 block 4c draft (v1) superseded before any run by the team spec: variants_b4c_lsx.yaml (trials 291-343),
+  strategies/xsmom_lsx.py (defaults == live, smoke-tested).
+
 ## Running
-- nothing
+- block 4c stage A (291-298)
+- HEAD worktree ../tc_head: test_replay + test_sleeves on committed code (are the failures pre-existing?)
 
 ## Next
 2. STEP 2 rest: intraday exits (trend_break_exit, stop_loss_exit 4%/6%, trailing_exit 5%) pre-registered as a

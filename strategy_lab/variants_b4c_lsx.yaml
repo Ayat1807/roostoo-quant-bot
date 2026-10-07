@@ -1,0 +1,60 @@
+# Research block 4c: LONG/SHORT xsmom with INTRADAY RE-EVALUATION (team spec 2026-10-07). Declared BEFORE any run in
+# this file. Replaces the earlier block-4c draft (reports/superseded/variants_b4c_ls_v1.yaml, never run).
+# Trials 291-343 (53 new); global declared 290 + 53 = 343.
+#
+# Strategy: strategies/xsmom_lsx.py (its docstring is part of this declaration; defaults == live xsmom, checked).
+# Common: universe R1 (as b3_xsmom_r1), control = b3_xsmom_r1 (live, trial 243); daily decision on the 14:00 UTC bar
+# (wall clock 15:00); scheduled execution (full trade to target at the daily decision; at checks only coins that
+# change trade); drawdown brake as live; costs: taker 0.10% + 2 bps slippage on spot, shorts 0.10% on open AND close
+# + slippage. Data to 2026-06-30, both halves (IS 2020-02-15 -> 2024-12-31, OOS 2025-01-01 -> 2026-06-30);
+# Jul-Oct 2026 informational only.
+# Definitions: long eligible EMA24 > EMA168 AND mom72 > +2%; short eligible EMA24 < EMA168 AND mom72 < -2%;
+# score(w) = w x (mom24 / vol24) + (1 - w) x (mom72 / vol72); longs by score desc, shorts by score asc. Up to 5 longs and
+# up to S shorts, 15% each, eligible coins only; gross cap G (all scaled down equally if exceeded).
+#
+# STAGE A (daily decision only, w = 0), trials 291-298: short gate {none, BTC < 30d mean (720 hourly closes)} x
+#   S {2, 3} x G {75%, 90%}, min_positions 0 (cash allowed). Trial 299: the best of 291-298 with min_positions 1 (if
+#   nothing is eligible, the single strongest |score| ready coin, in its direction (a short only if the gate allows),
+#   at 7.5%). Resolved by `python -m lab.b4c --resolve-a1`.
+#   STAGE A WINNER = best of 291-299 by the selection rule.
+# SELECTION RULE (stages A and B): highest OOS P(14d >= +10%) among runs meeting both constraints in both halves; ties ->
+#   higher OOS median 14d; none meets them -> highest OOS P(>= +10%) regardless (reported as failing).
+# STAGE B (on the Stage A winner), trials 300-326: checks every {2h, 4h, 6h} x w {0, 0.3, 0.5} x swap margin m
+#   {1.25, 1.5, 2.0} with the fixed rules in xsmom_lsx (exit on failed eligibility; swap if |score| >= m x the weakest
+#   holding's AND it ranks outside the top K + 2 of its side; flip = reverse a coin closed by exit if it ranks in the
+#   top of the other side (free slot, or the margin m against that side's weakest); minimum holding 6h for swaps / flips;
+#   a coin closed at a check is not re-entered for one full interval; free slots wait for 15:00; full daily
+#   re-selection at 15:00 UTC). Resolved by `python -m lab.b4c --resolve-b` (names b4c_B_c<h>_w<w>_m<m>).
+#   STAGE B WINNER = best of 300-326 by the selection rule = the FINAL candidate.
+# STAGE C (robustness of the Stage B winner), trials 327-333: one parameter at a time: interval +/- one step on the
+#   ladder 1h, 2h, 4h, 6h, 8h; w +/- 0.2 (within [0, 1]); m +/- 0.25; min hold 12h instead of 6h. A neighbour that
+#   equals a Stage B run re-uses it (its slot stays declared, unused). `python -m lab.b4c --resolve-c`.
+# ADOPT RULE: the final candidate (a) beats the control in both halves: OOS and IS P(14d >= +10%) strictly above the
+#   control's and P(>= +8%) not below, both constraints met in both halves; AND (b) at least half of its Stage C
+#   neighbours also beat the control by (a). Passing -> strategy_bot option xsmom_ls behind flags (defaults = live),
+#   parity / restart / 30-day replay tests, config_testing_xsmom_ls.yaml for the TESTING key only; no competition config.
+# FREQUENCY SWEEP (standing rule), trials 334-343: the best 2 Stage A runs (291-299) by the selection rule with the
+#   full re-selection every 1h, 2h, 4h, 6h, 12h (no intraday rules). `python -m lab.b4c --resolve-sweep`. Not adoptable
+#   by themselves.
+# REPORT: per-stage tables, winners, exit / swap / flip counts, share of time net short, short episodes and hit rate,
+#   short vs long P&L, correlation of daily returns with the live strategy, stats cards (lab/stats_card.py) for the final
+#   candidate and the control side by side.
+
+declared_trials: 53
+
+defaults:
+  base: b3_xsmom_r1
+  strategy: xsmom_lsx
+  allow_short: true
+  record_positions: true
+
+runs:
+  - {name: b4c_A_ng_S2_G75, trial: 291, group: A, params: {n_short: 2, gross_cap: 0.75, short_gate: none}}
+  - {name: b4c_A_ng_S2_G90, trial: 292, group: A, params: {n_short: 2, gross_cap: 0.90, short_gate: none}}
+  - {name: b4c_A_ng_S3_G75, trial: 293, group: A, params: {n_short: 3, gross_cap: 0.75, short_gate: none}}
+  - {name: b4c_A_ng_S3_G90, trial: 294, group: A, params: {n_short: 3, gross_cap: 0.90, short_gate: none}}
+  - {name: b4c_A_g_S2_G75, trial: 295, group: A, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}}
+  - {name: b4c_A_g_S2_G90, trial: 296, group: A, params: {n_short: 2, gross_cap: 0.90, short_gate: btc_below_30d}}
+  - {name: b4c_A_g_S3_G75, trial: 297, group: A, params: {n_short: 3, gross_cap: 0.75, short_gate: btc_below_30d}}
+  - {name: b4c_A_g_S3_G90, trial: 298, group: A, params: {n_short: 3, gross_cap: 0.90, short_gate: btc_below_30d}}
+  # 299 (min_positions 1), 300-326 (stage B), 327-333 (stage C), 334-343 (sweep): resolved by lab/b4c.py, appended below
