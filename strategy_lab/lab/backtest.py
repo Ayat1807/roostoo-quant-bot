@@ -77,6 +77,7 @@ class RunConfig:
     events: dict[str, Any] | None = None   # macro-event overlays (block 4, see _event_plan); None = off
     exits: dict[str, Any] | None = None    # intraday exits between decisions (block 4, see run()); None = off
     record_positions: bool = False  # sparse per-coin weight / long and short P&L per hour (res["positions"])
+    entry_limit: dict[str, Any] | None = None   # patient entry limits (block 4d): {offset, through}; None = off
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -126,6 +127,10 @@ class Backtest:
                 .reindex(index=self.closes.index, columns=self.closes.columns).fillna(0.0)
         self.start, self.end = start, end
         self.specs = self.universe.specs()
+        self.lows = None
+        if rc.entry_limit:                  # hourly lows (lab/lows.py) for limit fills
+            from lab.lows import load_lows
+            self.lows = load_lows(list(self.closes.columns), self.closes.index).values
 
     # ------------------------------------------------------------------ #
     def run(self) -> dict[str, Any]:
@@ -183,6 +188,12 @@ class Backtest:
         x_log: list[dict[str, Any]] = []
         pos_rows: list[tuple] = []          # (k, j, signed weight at bar end, long pnl, short pnl) if any != 0
         hold_start = np.full(A, -1)         # bar index when the current position (either side) opened
+        # patient entry limits: a NEW long entry at a scheduled trade rests as a limit at decision price x (1 - offset)
+        # until the next target refresh; it fills (at the limit, maker fee, no slippage) at the first later hourly bar
+        # whose low <= limit x (1 - through); otherwise it is cancelled at the next refresh. Other trades as usual.
+        el = rc.entry_limit
+        pend: dict[int, dict[str, Any]] = {}
+        el_log: list[dict[str, Any]] = []
         needs_hold = getattr(self.strategy, "needs_holdings", False)
         p_prev = None
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
@@ -261,6 +272,10 @@ class Backtest:
                         cash_mode = True
                         ev_log["breakout_down"].append(str(ts))
                 sched = sched or extra
+            if el and sched:
+                for j, x in pend.items():
+                    el_log.append({**x, "filled": None})
+                pend.clear()
             if xe and sched:
                 for x in x_pending:          # what the exited coin did until this refresh
                     r = (p[x["j"]] / x["px"] - 1) if x["px"] > 0 and p[x["j"]] > 0 else 0.0
@@ -352,6 +367,33 @@ class Backtest:
                     trade |= fire
                 tgt = np.where(exited, 0.0, tgt)
                 lu_before = lu.copy()
+            if el:
+                sizing_el = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
+                for j in list(pend):                     # fills of resting entry limits
+                    x = pend[j]
+                    if tgt[j] <= 0:                      # target gone (brake / KILL / refresh): cancel
+                        el_log.append({**x, "filled": None})
+                        pend.pop(j)
+                        continue
+                    lo = self.lows[i, j]
+                    if alive_all[i] and np.isfinite(lo) and lo <= x["limit"] * (1 - float(el.get("through", 0.001))):
+                        ap = amount_precision(assets[j], x["limit"], self.specs)
+                        q = floor_qty(min(tgt[j] * sizing_el, cash / (1 + costs["maker"])) / x["limit"], ap)
+                        if q > 0 and q * x["limit"] > mini:
+                            cost = q * x["limit"]
+                            f = cost * costs["maker"]
+                            cash -= cost + f
+                            lu[j] += q
+                            fees, turnover, ntr = fees + f, turnover + cost, ntr + 1
+                            el_log.append({**x, "filled": str(ts)})
+                        pend.pop(j)
+                if trade.any():
+                    lw_now = lu * p / sizing
+                    new = trade & (lw_now <= exit_eps) & (tgt > 0) & (su <= 0)
+                    for j in np.where(new)[0]:
+                        if j not in pend:
+                            pend[int(j)] = {"placed": str(ts), "asset": assets[j], "limit": float(p[j]) * (1 - float(el["offset"]))}
+                    trade &= ~new
             trade &= alive_all[i]
             if trade.any():
                 cash, f, tv, n = self._execute({j: tgt[j] for j in np.where(trade)[0]}, lw, sw, sizing,
@@ -399,7 +441,7 @@ class Backtest:
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
                 "trades_total": n_trades_total, "events": ev_log if ev is not None else None,
-                "extra": ({"exits": x_log} if xe else {}) | ({"strategy_stats": dict(self.strategy.stats)}
+                "extra": ({"exits": x_log} if xe else {}) | ({"entry_limits": el_log} if el else {}) | ({"strategy_stats": dict(self.strategy.stats)}
                                                               if getattr(self.strategy, "stats", None) else {}) or None,
                 "positions": (pd.DataFrame(pos_rows, columns=["k", "j", "w", "pl", "ps"]).assign(
                     time=lambda d: idx[i0:i1][d["k"].values], asset=lambda d: np.array(assets)[d["j"].values])

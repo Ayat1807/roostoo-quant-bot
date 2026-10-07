@@ -1,0 +1,39 @@
+# Research block 4d: ENTRY TIMING for the live strategy (xsmom on R1 = b3_xsmom_r1, trial 243 = control). Team request
+# 2026-10-07 (STEP 4). Declared BEFORE any run in this file. Trials 344-358 (15 new); global declared 343 + 15 = 358.
+#
+# Strategy: strategies/xsmom_entry.py (docstring is part of this declaration; with entry_filter none == live, checked on
+# real closes). Everything else as b3_xsmom_r1 (R1, 14:00 UTC bar decision, scheduled execution, brake, costs).
+# Filters apply to NEW entries only (coins not held at the decision); held coins still in the live top 5 are kept; a
+# filtered coin is skipped and the next ranked eligible coin is considered:
+#   pullback_entry      new coin only if its last-24h return <= 0                                   344
+#   not_extended 6%/10% skip new coins more than 6% (10%) above their 72h low (lowest hourly close)   345, 346
+#   resistance_filter   skip new coins within 1.5% below a 30-day high (highest close of 720h) touched >= 2 times
+#                       (touch = run of closes >= high x (1 - 0.5%), runs < 24h apart = one touch)  347
+#   patient_limit       live selection; each new long entry is a limit order 0.75% below the decision price, resting
+#                       until the next decision; it fills (at the limit, maker fee 0.05%, no slippage) only at the first
+#                       later hourly bar whose LOW <= limit x (1 - 0.1%) (Binance hourly lows, lab/lows.py), else it is
+#                       cancelled at the next decision; all other trades as live (lab/backtest.py entry_limit)  348
+# FREQUENCY SWEEP (standing rule), 349-358: the best 2 of 344-348 by the selection rule at 1h, 2h, 4h, 6h, 12h target
+#   refresh (`python -m lab.b4d --resolve-sweep`); not adoptable by themselves.
+# JUDGING / SELECTION / ADOPT: data to 2026-06-30, both halves; Jul-Oct informational. Selection: highest OOS P(14d >= +10%)
+#   among runs meeting P(14d <= -10%) <= 10% and worst 14d >= -20% in both halves, ties higher OOS median 14d.
+#   Adopt: P(>= +10%) strictly above the control AND P(>= +8%) not below in both halves, constraints met in both halves.
+# REPORT: standard metrics, fill rate (patient_limit), average entry price vs the 3-day high (entry close or limit fill /
+#   highest close of the previous 72h - 1, per new entry, mean per half, control included), and big winning trends missed:
+#   coins the control newly entered at a decision that then rose >= +20% (close) within 14 days, which the variant did not
+#   hold in the 24h after that decision (count and mean 14d gain).
+
+declared_trials: 15
+
+defaults:
+  base: b3_xsmom_r1
+  strategy: xsmom_entry
+  record_positions: true
+
+runs:
+  - {name: b4d_pullback, trial: 344, group: entry, params: {entry_filter: pullback}}
+  - {name: b4d_not_ext6, trial: 345, group: entry, params: {entry_filter: not_extended, ext: 0.06}}
+  - {name: b4d_not_ext10, trial: 346, group: entry, params: {entry_filter: not_extended, ext: 0.10}}
+  - {name: b4d_resistance, trial: 347, group: entry, params: {entry_filter: resistance}}
+  - {name: b4d_patient_limit, trial: 348, group: entry, params: {entry_filter: none}, entry_limit: {offset: 0.0075, through: 0.001}}
+  # 349-358 sweep slots: resolved by lab/b4d.py --resolve-sweep, appended below

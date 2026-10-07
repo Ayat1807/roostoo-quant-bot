@@ -1,5 +1,5 @@
 {
- "total_runs": 318,
+ "total_runs": 345,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -71,6 +71,33 @@
   "b4c_A_ng_S2_G90",
   "b4c_A_ng_S3_G75",
   "b4c_A_ng_S3_G90",
+  "b4c_B_c2_w00_m125",
+  "b4c_B_c2_w00_m150",
+  "b4c_B_c2_w00_m200",
+  "b4c_B_c2_w03_m125",
+  "b4c_B_c2_w03_m150",
+  "b4c_B_c2_w03_m200",
+  "b4c_B_c2_w05_m125",
+  "b4c_B_c2_w05_m150",
+  "b4c_B_c2_w05_m200",
+  "b4c_B_c4_w00_m125",
+  "b4c_B_c4_w00_m150",
+  "b4c_B_c4_w00_m200",
+  "b4c_B_c4_w03_m125",
+  "b4c_B_c4_w03_m150",
+  "b4c_B_c4_w03_m200",
+  "b4c_B_c4_w05_m125",
+  "b4c_B_c4_w05_m150",
+  "b4c_B_c4_w05_m200",
+  "b4c_B_c6_w00_m125",
+  "b4c_B_c6_w00_m150",
+  "b4c_B_c6_w00_m200",
+  "b4c_B_c6_w03_m125",
+  "b4c_B_c6_w03_m150",
+  "b4c_B_c6_w03_m200",
+  "b4c_B_c6_w05_m125",
+  "b4c_B_c6_w05_m150",
+  "b4c_B_c6_w05_m200",
   "b4e_breakout",
   "b4e_combined_25",
   "b4e_combined_50",
@@ -301,7 +328,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 06:49 UTC",
+ "updated": "2026-10-07 06:51 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
@@ -330,5 +357,6 @@
    "run": "d_4h_r6h",
    "reason": "backtester skipped target refreshes on non-check bars (check_every_h=4 with 6h refresh), so the first result equalled d_4h_r12h; fixed in lab/backtest.py (203ed09) and re-run under the same trial number"
   }
- ]
+ ],
+ "note_race": "2026-10-07: two runners started together; the 9 b4c_B_c2_* runs were added by hand (bump lost in the race)"
 }

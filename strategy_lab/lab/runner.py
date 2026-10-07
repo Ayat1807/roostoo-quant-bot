@@ -39,13 +39,27 @@ def load_hourly(name: str) -> pd.DataFrame | None:
 
 
 def bump_trials(names: list[str]) -> dict[str, Any]:
+    import os
     path = RUNS / "trials.json"
-    led = json.loads(path.read_text()) if path.exists() else {"total_runs": 0, "distinct": []}
-    led["total_runs"] += len(names)
-    led["distinct"] = sorted(set(led["distinct"]) | set(names))
-    led["updated"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
     RUNS.mkdir(exist_ok=True)
-    path.write_text(json.dumps(led, indent=1))
+    lock = RUNS / "trials.json.lock"         # parallel runners: one ledger update at a time
+    for _ in range(600):
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            time.sleep(0.1)
+    else:
+        raise RuntimeError(f"trial ledger locked for 60 s: remove {lock} if no runner is active")
+    try:
+        led = json.loads(path.read_text()) if path.exists() else {"total_runs": 0, "distinct": []}
+        led["total_runs"] += len(names)
+        led["distinct"] = sorted(set(led["distinct"]) | set(names))
+        led["updated"] = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+        path.write_text(json.dumps(led, indent=1))
+    finally:
+        os.close(fd)
+        os.remove(lock)
     return led
 
 

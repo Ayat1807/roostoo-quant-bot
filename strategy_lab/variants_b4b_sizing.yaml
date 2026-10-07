@@ -1,0 +1,56 @@
+# Research block 4b: POSITION SIZING, TOTAL EXPOSURE and NUMBER OF COINS for the live strategy (xsmom on R1 =
+# b3_xsmom_r1, trial 243 = control: top 5 x 15%, max gross 75%). Team request 2026-10-06 (TASK 3) / 2026-10-07 (STEP 5).
+# Declared BEFORE any run in this file. Trials 359-393 (35 new); global declared 358 + 35 = 393.
+#
+# Strategy: strategies/xsmom_sz.py (its docstring is part of this declaration; defaults == live xsmom, tests/test_xsmom_sz.py).
+# Same eligibility and ranking as live; everything else as b3_xsmom_r1 (R1, 14:00 UTC bar, scheduled execution, brake,
+# costs). Slot rule: the selected coins get G x (n selected / K) in total; equal sizing = G / K each.
+#   Sizing (K 5, G 75%): score (~ mom72/vol72), inv_vol (~ 1/vol72), score_x_invvol (~ mom72/vol72^2), each with no cap,
+#     a 25% and a 20% per-coin cap (water filling, rest cash)                                       359-367
+#   Exposure on live sizing: breadth (G = 75% x min(1, eligible share of ready coins / 0.5)), vol_target (ex-ante vol of
+#     the last 168h covariance = 40% annualised, gross cap 90%), regime (G 90% if BTC > 30d mean and BTC 14d return > 0,
+#     else 50%), conviction (G = 75% x clip(avg selected score / its 1y median at the same hour, 0.5, 1.2), cap 90%;
+#     lookback 10760 bars = 2000 + 1 year)                                                          368-371
+#   Exposure on the BEST SIZING (best of 359-367 by the selection rule; `python -m lab.b4b --resolve-best-sizing`)  372-375
+#   Coins (equal weight): topK K 3 / 7 / 10 at G 75% (K 5 = control), K 7 / 10 at G 90%                 376-380
+#     all_eligible: every eligible coin, G 75%, per-coin cap 15% (and 10%)                            381, 382
+#     breadth_K: K = 3 if <= 3 coins qualify, 5 if 4-6, 8 if >= 7, G 75%                              383
+# FREQUENCY SWEEP (standing rule), 384-393: the best 2 of 359-383 by the selection rule at 1h, 2h, 4h, 6h, 12h
+#   (`python -m lab.b4b --resolve-sweep`); not adoptable by themselves.
+# JUDGING / SELECTION / ADOPT as block 4d (data to 2026-06-30, both halves; selection = highest OOS P(>= +10%) among runs
+#   meeting both constraints in both halves, ties OOS median; adopt = P(>= +10%) strictly above the control and P(>= +8%)
+#   not below in both halves with constraints met). Adopted -> strategy_bot flag + tests, never deployed.
+# REPORT: standard metrics plus average coins held, max single-coin weight, and the worst single-coin contribution in the
+#   5 worst 14-day windows of each half (coin P&L over the window / equity at the window start).
+
+declared_trials: 35
+
+defaults:
+  base: b3_xsmom_r1
+  strategy: xsmom_sz
+  record_positions: true
+
+runs:
+  - {name: b4b_score, trial: 359, group: sizing, params: {sizing: score}}
+  - {name: b4b_inv_vol, trial: 360, group: sizing, params: {sizing: inv_vol}}
+  - {name: b4b_score_x_invvol, trial: 361, group: sizing, params: {sizing: score_x_invvol}}
+  - {name: b4b_score_cap25, trial: 362, group: sizing, params: {sizing: score, coin_cap: 0.25}}
+  - {name: b4b_inv_vol_cap25, trial: 363, group: sizing, params: {sizing: inv_vol, coin_cap: 0.25}}
+  - {name: b4b_score_x_invvol_cap25, trial: 364, group: sizing, params: {sizing: score_x_invvol, coin_cap: 0.25}}
+  - {name: b4b_score_cap20, trial: 365, group: sizing, params: {sizing: score, coin_cap: 0.20}}
+  - {name: b4b_inv_vol_cap20, trial: 366, group: sizing, params: {sizing: inv_vol, coin_cap: 0.20}}
+  - {name: b4b_score_x_invvol_cap20, trial: 367, group: sizing, params: {sizing: score_x_invvol, coin_cap: 0.20}}
+  - {name: b4b_live_breadth, trial: 368, group: exposure, params: {exposure: breadth}}
+  - {name: b4b_live_vol_target, trial: 369, group: exposure, params: {exposure: vol_target}}
+  - {name: b4b_live_regime, trial: 370, group: exposure, params: {exposure: regime}}
+  - {name: b4b_live_conviction, trial: 371, group: exposure, params: {exposure: conviction}, lookback_bars: 10760}
+  # 372-375: exposure on the best sizing, resolved by lab/b4b.py --resolve-best-sizing, appended below
+  - {name: b4b_top3, trial: 376, group: coins, params: {top_n: 3}}
+  - {name: b4b_top7, trial: 377, group: coins, params: {top_n: 7}}
+  - {name: b4b_top10, trial: 378, group: coins, params: {top_n: 10}}
+  - {name: b4b_top7_g90, trial: 379, group: coins, params: {top_n: 7, gross: 0.90}}
+  - {name: b4b_top10_g90, trial: 380, group: coins, params: {top_n: 10, gross: 0.90}}
+  - {name: b4b_all_elig_cap15, trial: 381, group: coins, params: {select: all_eligible, coin_cap: 0.15}}
+  - {name: b4b_all_elig_cap10, trial: 382, group: coins, params: {select: all_eligible, coin_cap: 0.10}}
+  - {name: b4b_breadth_k, trial: 383, group: coins, params: {select: breadth_k}}
+  # 384-393 sweep slots: resolved by lab/b4b.py --resolve-sweep, appended below
