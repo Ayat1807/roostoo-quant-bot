@@ -1,5 +1,5 @@
 {
- "total_runs": 477,
+ "total_runs": 491,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -253,6 +253,20 @@
   "b6s_b6c_hrp_r2h",
   "b6s_b6c_hrp_r4h",
   "b6s_b6c_hrp_r6h",
+  "b6s_b6e_trend_top10_r12h",
+  "b6s_b6e_trend_top10_r1h",
+  "b6s_b6e_trend_top10_r2h",
+  "b6s_b6e_trend_top10_r4h",
+  "b6s_b6e_trend_top10_r6h",
+  "b6s_b6e_trend_top15_r12h",
+  "b6s_b6e_trend_top15_r1h",
+  "b6s_b6e_trend_top15_r2h",
+  "b6s_b6e_trend_top15_r4h",
+  "b6s_b6e_trend_top15_r6h",
+  "b7_erc_cusum",
+  "b7_hmm2_cusum",
+  "b7_hmm2_erc",
+  "b7_hmm2_erc_cusum",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -460,7 +474,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 10:46 UTC",
+ "updated": "2026-10-07 11:00 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
