@@ -42,3 +42,14 @@ runs:
   # 419 (A4) and 420-429 (sweep): resolved by lab/b6.py, appended below
   # resolved 2026-10-07 10:27 UTC by lab/b6.py a --resolve-a4: best A3 = b6a_A3_cusum4_c50
   - {name: b6a_A4_tstat_cusum4_c50, trial: 419, group: A4, params: {signal: tstat, tstat_cap: 2.0}, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
+  # resolved 2026-10-07 10:28 UTC by lab/b6.py a --resolve-sweep: best 2 = ['b6a_A3_cusum4_c50', 'b6a_A3_bocpd05_c50']
+  - {name: b6s_b6a_A3_cusum4_c50_r1h, trial: 420, group: sweep, base: b6a_A3_cusum4_c50, rebalance_every_h: 1}
+  - {name: b6s_b6a_A3_cusum4_c50_r2h, trial: 421, group: sweep, base: b6a_A3_cusum4_c50, rebalance_every_h: 2}
+  - {name: b6s_b6a_A3_cusum4_c50_r4h, trial: 422, group: sweep, base: b6a_A3_cusum4_c50, rebalance_every_h: 4}
+  - {name: b6s_b6a_A3_cusum4_c50_r6h, trial: 423, group: sweep, base: b6a_A3_cusum4_c50, rebalance_every_h: 6}
+  - {name: b6s_b6a_A3_cusum4_c50_r12h, trial: 424, group: sweep, base: b6a_A3_cusum4_c50, rebalance_every_h: 12}
+  - {name: b6s_b6a_A3_bocpd05_c50_r1h, trial: 425, group: sweep, base: b6a_A3_bocpd05_c50, rebalance_every_h: 1}
+  - {name: b6s_b6a_A3_bocpd05_c50_r2h, trial: 426, group: sweep, base: b6a_A3_bocpd05_c50, rebalance_every_h: 2}
+  - {name: b6s_b6a_A3_bocpd05_c50_r4h, trial: 427, group: sweep, base: b6a_A3_bocpd05_c50, rebalance_every_h: 4}
+  - {name: b6s_b6a_A3_bocpd05_c50_r6h, trial: 428, group: sweep, base: b6a_A3_bocpd05_c50, rebalance_every_h: 6}
+  - {name: b6s_b6a_A3_bocpd05_c50_r12h, trial: 429, group: sweep, base: b6a_A3_bocpd05_c50, rebalance_every_h: 12}

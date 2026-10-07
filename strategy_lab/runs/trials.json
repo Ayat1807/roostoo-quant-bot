@@ -1,5 +1,5 @@
 {
- "total_runs": 438,
+ "total_runs": 439,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -209,6 +209,7 @@
   "b6a_A3_cusum4_c50",
   "b6a_A3_cusum8_c0",
   "b6a_A3_cusum8_c50",
+  "b6a_A4_tstat_cusum4_c50",
   "b6b_corr",
   "b6b_hmm2",
   "b6b_hmm2_corr",
@@ -421,7 +422,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 10:26 UTC",
+ "updated": "2026-10-07 10:27 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
