@@ -14,19 +14,25 @@ Fitted models: expanding walk-forward, purge/embargo, min 6-month train, 1-month
 Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
 
 ## Done (newest last)
-- Blocks 4a (events/exits), 4c (long/short xsmom), 5 (down-market designs): none adopted. leaderboard_b4_*.md, leaderboard_b5.md.
+- Blocks 4a (events/exits), 4c (long/short xsmom), 4d (entry timing), 5 (down-market designs): none adopted.
 - `8592182` competition switch prepared; deployed by the team 2026-10-07 10:04 UTC; `d154e7a` docs (README history, DEPLOY 13).
-- Block 4d (entry timing) 344-358 incl. sweep done, none adopted under the old objective.
-- Block 4b (sizing) 359-383 done (best sizing b4b_score); sweep 384-393 to resolve and run.
+- Block 4b (sizing) 359-383 done (best sizing b4b_score; old objective: nothing beat live); sweep 384-393 running.
+- Block 6 (s3v2e upgrades), all pre-registered (global declared 482):
+  - A `variants_b6a_signal.yaml` 409-429: 409-419 run, NOT adopted (best cusum4_c50 meets all, never beats the reference's
+    mean 14d return in both halves); sweep 420-429 running.
+  - B `variants_b6b_regime.yaml` 430-444 (walk-forward HMM, data/regime/): 430-434 run, NOT adopted (hmm2 closest: comp
+    better both halves, mean ties); sweep 435-444 running.
+  - C `variants_b6c_alloc.yaml` 445-457 (ERC / HRP / shrunk Kelly): 445-447 running.
+  - E `variants_b6e_universe.yaml` 458-470 (TREND screen): not run yet. reports/screen_track_e.md: screen does NOT persist OOS.
+  - D `variants_b6d_meta.yaml` 471-482: `python -m lab.meta` running (dataset + walk-forward -> data/meta/preds.csv,
+    reports/meta_track_d.md); then run 471-472.
 
 ## Running
-- (see Next)
+- logs: .cache/b4b_sweep.log, b6a_sweep.log, b6b_sweep.log, b6c_run.log, meta.log
 
 ## Next (in order)
-1. Block 4b: `python -m lab.b4gen 4b --resolve-sweep` -> commit -> `--group sweep`; reports `python -m lab.b4gen 4b` and
-   `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out leaderboard_b4b_newobj.md`; commit.
-2. Block 4d: `python -m lab.b4gen 4d` + `python -m lab.b5 ... --out leaderboard_b4d_entry_newobj.md` incl. sweep runs; commit.
-3. NEW PROGRAM (block 6, upgrades of s3v2e_core10), order A, B, C, E, D; pre-register each track before running:
-   A signal / turning points (A1 continuous t-stat, A2 EMA speed ensemble, A3 changepoint exit CUSUM + BOCPD, A4 = A1 + A3);
-   B regime (HMM 2/3 states, correlation-state filter); C allocation (ERC, HRP, shrunk Kelly); E universe screening;
-   D meta-labeling (LightGBM, walk-forward). Implement a passing variant behind a config flag + tests; never deploy.
+1. When each finishes: resolve its sweep (`python -m lab.b6 <track> --resolve-sweep`), commit, run `--group sweep`;
+   report `python -m lab.b6 <track>` -> leaderboard_b6<track>.md; stats cards for finalists (`python -m lab.stats_card`).
+2. Track E runs 458-460, then D runs 471-472 (after lab.meta). 4b: `python -m lab.b4gen 4b` + b5 report (newobj).
+3. Final block-6 summary: per track verdict, down-window results, stats cards, ideas needing more time (Deep Momentum
+   Networks etc.) for the finals presentation. Implement a passing variant behind a config flag + tests; never deploy.
