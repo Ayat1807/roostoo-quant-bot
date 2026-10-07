@@ -102,3 +102,21 @@ All three finalists are profitable in down markets in both halves, and so is the
   - Its mean 14d return is slightly lower than the reference's in both halves.
 
 **Recommendation for the finals:** keep s3v2e_core10. The upgrades mainly reshape risk (smaller drawdowns, better risk-adjusted windows) rather than add return, and none of them is statistically distinguishable from the reference.
+
+## s3v2e_core10 vs HMM2 + CUSUM in a market like now (secondary check, team request 2026-10-07)
+**Analogs:** the 30 historical states nearest to 2026-10-04 (lab/analogs.py, outcomes to 2026-06-30). They are at least 14 days apart, 2021-04 to 2026-05, mostly 2023–2024.
+
+| | s3v2e_core10 | HMM2 + CUSUM |
+|---|---|---|
+| analogs, 14d: mean / median / P(>0) / worst | +0.39% / −0.31% / 43% / −3.85% | +0.44% / −0.09% / 47% / −3.78% |
+| analogs, 3d: mean / median / P(>0) / worst | −0.22% / −0.13% / 33% / −1.76% | −0.17% / −0.15% / 30% / −1.63% |
+| all 3d windows IS: mean / median / P(>0) / worst | +0.13% / −0.05% / 43% / −4.00% | +0.11% / −0.05% / 43% / −4.02% |
+| all 3d windows OOS: mean / median / P(>0) / worst | +0.17% / −0.07% / 43% / −3.69% | +0.16% / −0.05% / 42% / −3.12% |
+
+Paired comparison in the analog windows (HMM2 + CUSUM minus s3v2e):
+- **14 days:** +0.05pp on average, better in 57% of the 30 analogs (t +0.47).
+- **3 days:** +0.06pp, better in 60% (t +2.18).
+
+Both are below the luck threshold of 2.9, and this is a secondary metric chosen after the fact.
+
+**Reading:** in markets like now both are close to flat over 14 days, and slightly negative over 3 days. HMM2 + CUSUM loses a little less in the bad analogs (it was better in most of the negative cases) and gives up some of the best ones: +7.3% vs +8.2%, +3.6% vs +5.0%. That is the same risk-reshaping pattern as on the full sample, too small to justify a switch.
