@@ -88,3 +88,23 @@ runs:
   - {name: b4c_B_c6_w05_m125, trial: 324, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 6}
   - {name: b4c_B_c6_w05_m150, trial: 325, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 6}
   - {name: b4c_B_c6_w05_m200, trial: 326, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 6}
+  # resolved 2026-10-07 07:24 UTC by lab/b4c.py --resolve-c: stage B winner = b4c_B_c4_w05_m125 (OOS P>=10% 9.0%, meets True); neighbours below
+  # neighbour c: same as stage B run b4c_B_c2_w05_m125 (re-used; slot 327 unused)
+  # neighbour c: same as stage B run b4c_B_c6_w05_m125 (re-used; slot 328 unused)
+  # neighbour w: same as stage B run b4c_B_c4_w03_m125 (re-used; slot 329 unused)
+  - {name: b4c_C_w_c4_w07_m125_h6, trial: 330, group: C, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.7, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_C_m_c4_w05_m100_h6, trial: 331, group: C, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.5, swap_m: 1.0, min_hold_h: 6}, rebalance_every_h: 4}
+  # neighbour m: same as stage B run b4c_B_c4_w05_m150 (re-used; slot 332 unused)
+  - {name: b4c_C_h_c4_w05_m125_h12, trial: 333, group: C, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.5, swap_m: 1.25, min_hold_h: 12}, rebalance_every_h: 4}
+  # stage C winner under test: b4c_B_c4_w05_m125; neighbour slots 327-333 of 327-333 used
+  # resolved 2026-10-07 07:24 UTC by lab/b4c.py --resolve-sweep: best 2 stage A = ['b4c_A1_minpos', 'b4c_A_g_S2_G75']
+  - {name: b4s_b4c_A1_minpos_r1h, trial: 334, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}, rebalance_every_h: 1}
+  - {name: b4s_b4c_A1_minpos_r2h, trial: 335, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}, rebalance_every_h: 2}
+  - {name: b4s_b4c_A1_minpos_r4h, trial: 336, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}, rebalance_every_h: 4}
+  - {name: b4s_b4c_A1_minpos_r6h, trial: 337, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}, rebalance_every_h: 6}
+  - {name: b4s_b4c_A1_minpos_r12h, trial: 338, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}, rebalance_every_h: 12}
+  - {name: b4s_b4c_A_g_S2_G75_r1h, trial: 339, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}, rebalance_every_h: 1}
+  - {name: b4s_b4c_A_g_S2_G75_r2h, trial: 340, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}, rebalance_every_h: 2}
+  - {name: b4s_b4c_A_g_S2_G75_r4h, trial: 341, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}, rebalance_every_h: 4}
+  - {name: b4s_b4c_A_g_S2_G75_r6h, trial: 342, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}, rebalance_every_h: 6}
+  - {name: b4s_b4c_A_g_S2_G75_r12h, trial: 343, group: sweep, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d}, rebalance_every_h: 12}
