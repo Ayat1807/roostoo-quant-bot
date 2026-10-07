@@ -185,6 +185,9 @@ def test_joint(c: pd.DataFrame, days: int) -> bool:
                                    for d in tgt)
     days_with = {o["time"][:10] for o in orders}
     all_days = {str(d.date()) for d in hours}
+    # a final partial day that ends before the activity-guard hour cannot have been forced to trade yet
+    if (hours[-1] + pd.Timedelta(hours=1)).hour <= int(sim.cfg["activity_guard_hour_utc"]) and len(all_days) > 1:
+        all_days.discard(str(hours[-1].date()))
     gross_max = max(sum(abs(v) for v in e["exposure"].values()) for e in eq)
     untagged = [o for o in orders if not o.get("sleeves") and o["action"] not in ("MARKET_FALLBACK",)]
     print(f"\n   {len(orders)} orders over {days} days; xsmom decision trades on {len(x_times)} steps; "
@@ -316,6 +319,7 @@ def test_migration(c: pd.DataFrame) -> bool:
     for h in hours[hours >= start]:
         if "n0" not in out and sim.now["t"] < at <= h + pd.Timedelta(minutes=59):
             out["single_target"] = dict(sim.bot.target)
+            out["held_before"] = {p for p, v in sim.ex.pair_exposure().items() if v > sim.ex.unsellable(p) * 1.01}
             n_orders = len([o for o in sim.read("orders") if "response" in o])
             out["n0"] = sim.restart(at, new)
             new_orders = [o for o in sim.read("orders") if "response" in o][n_orders:]
@@ -364,7 +368,7 @@ def test_migration(c: pd.DataFrame) -> bool:
         "(sleeve capital 0.5 x $10k vs the old $3k sizing)": out["s3v2_resize_ok"],
         f"no 'repair' orders at the switch ({out['repair_tags']})": out["repair_tags"] == 0,
         "books start at min(equity, cap) in total, existing positions assigned to s3v2":
-            abs(out["capital"] - cap_cfg) / cap_cfg < 0.01 and len(out["s3v2_units"]) > 0,
+            abs(out["capital"] - cap_cfg) / cap_cfg < 0.01 and out["held_before"] <= set(out["s3v2_units"]),
         "capital_cap change alone: both sleeves restored, 0 orders":
             out["cap_restored"] == ["s3v2", "xsmom"] and out["n_cap"] == 0 and out["cap_orders"] == 0,
     })

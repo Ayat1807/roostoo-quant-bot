@@ -34,7 +34,7 @@ from infra import JsonlLogs, build_client, setup_logging, utc_iso, write_json_at
 from market_data import BarStore
 from portfolio import Portfolio
 from risk import RiskManager
-from sleeves import SleeveBook, SleeveSpec, apply_fills, decision_slot, desired_units
+from sleeves import SleeveBook, SleeveSpec, apply_fills, desired_units, event_days, sleeve_slot
 from universe_r1 import R1Universe
 from roostoo_client import KeySafetyError, mask_key, num
 from strategies import get_strategy
@@ -99,6 +99,11 @@ class StrategyBot:
             if len({s.name for s in self.sleeve_specs}) != len(self.sleeve_specs):
                 raise ValueError("sleeve names must be unique")
         self.sleeve_strats = {s.name: get_strategy(s.strategy["name"]) for s in self.sleeve_specs or []}
+        # event_refresh (optional, off by default): the calendar must exist, else refuse to start
+        self.ev_days = {s.name: event_days(HERE / s.event_refresh["calendar"],
+                                           list(s.event_refresh.get("types", ["CPI", "FOMC_DECISION", "FOMC_MINUTES"])),
+                                           int(s.event_refresh.get("days_after", 2)))
+                        for s in self.sleeve_specs or [] if s.event_refresh}
         self.books: dict[str, SleeveBook] = {}
         self.sleeves_file = self.state_dir / "sleeves.json"
         self._sleeve_started: set[str] = set()
@@ -359,8 +364,11 @@ class StrategyBot:
         # a rule-based universe is fingerprinted by its rule, not its monthly member list, so a
         # new month's list takes effect at the next decision (as in the lab), not off-schedule
         uni = self.r1s[spec.name].rule() if spec.name in self.r1s else sorted(spec.universe)
-        return {"strategy": spec.strategy, "allow_short": bool(self.cfg["allow_short"]),
-                "universe": uni, "execution": spec.execution, "decision_hour_utc": spec.decision_hour_utc}
+        fp = {"strategy": spec.strategy, "allow_short": bool(self.cfg["allow_short"]),
+              "universe": uni, "execution": spec.execution, "decision_hour_utc": spec.decision_hour_utc}
+        if spec.event_refresh:              # only when set: existing books keep their fingerprint
+            fp["event_refresh"] = spec.event_refresh
+        return fp
 
     def required_pairs(self) -> list[str]:
         """Pairs that must have ticker data for a step: in sleeve mode the sleeves' current
@@ -397,8 +405,8 @@ class StrategyBot:
     def _sleeve_targets(self, spec: SleeveSpec, book: SleeveBook, now: pd.Timestamp,
                         tick: dict[str, Any]) -> bool:
         """Refresh the sleeve's targets if due. Returns True if computed now (a decision)."""
-        slot = decision_slot(now, spec.decision_hour_utc)
-        decide = now.floor("h").hour == spec.decision_hour_utc
+        slot = sleeve_slot(now, spec, self.ev_days.get(spec.name))
+        decide = now.floor("h") == slot
         fp = self._sleeve_fp(spec)
         first = spec.name not in self._sleeve_started
         self._sleeve_started.add(spec.name)
@@ -414,7 +422,7 @@ class StrategyBot:
             return False
         if first and book.target is None and not decide and self._adopt_single_targets(spec, book, slot, fp):
             return False
-        reason = "daily" if decide else ("first start" if first else "config changed")
+        reason = ("daily" if slot.hour == spec.decision_hour_utc else "event refresh") if decide             else ("first start" if first else "config changed")
         if book.target is not None and book.fingerprint != fp:
             log.warning("sleeve %s: config changed since %s; fresh targets", spec.name, book.computed_at)
         # scheduled sleeves always decide on their decision bar (the bar completed at the slot,

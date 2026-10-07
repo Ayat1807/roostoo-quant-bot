@@ -36,6 +36,20 @@ The organisers noted that judges discount strategies that rely on queue-free sim
 - **Liquidity guard:** at each decision the bot skips coins whose Roostoo spread is wider than 15 bps or whose 24h volume is under $1M. It never builds a position the real book couldn't absorb.
 - **No dependence on fill timing:** a rested limit order that fills late is logged (`LIMIT_LATE_FILL`). The bot never resends an order after a timeout, and it re-reads the account before every decision.
 
+## Optional: event_refresh (OFF in every shipped config)
+
+A scheduled sleeve can make extra decisions on macro-event days. This is strategy_lab block 4a `b4e_fast_12h`. It passed the pre-registered adopt rule, but only by 1 window in-sample and 2 windows OOS (4 events), so treat the result as noise. Do not enable it without a team decision.
+
+```yaml
+sleeves:
+  - name: xsmom
+    ...
+    event_refresh: {calendar: data/events.csv, every_h: 12, days_after: 2,
+                    types: [CPI, FOMC_DECISION, FOMC_MINUTES]}
+```
+
+With `every_h: 12` the sleeve also decides at 03:00 UTC on the UTC date of each CPI release, FOMC decision or FOMC minutes and on the 2 days after. That decision uses the 02:00 UTC bar and trades fully, like the daily 15:00 decision. `data/events.csv` is a copy of `strategy_lab/data/events.csv`, built from the official BLS and Fed calendars by `python -m lab.events`. A missing calendar stops the bot at start. Tests: `python -m tests.test_event_refresh`.
+
 ## Tests
 
 ```bash
@@ -46,4 +60,7 @@ python -m tests.test_xsmom_parity  # xsmom == teammate's target_at_signal_time
 python -m tests.test_restart       # mid-day restart keeps targets, late-fill logging
 python -m tests.test_replay        # 30-day single-strategy replay incl. KILL
 python -m tests.test_sleeves       # sleeves: migration, 30-day replay, parity, restart, xsmom-only
+python -m tests.test_competition   # competition config: R1 parity, target parity, replay, restart
+python -m tests.test_status        # status.py (display only) vs the mock account
+python -m tests.test_event_refresh # optional event_refresh sleeve option
 ```

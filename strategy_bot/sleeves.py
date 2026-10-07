@@ -20,6 +20,7 @@ This module is pure (no I/O): the bot feeds it prices and persists `state()`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -38,6 +39,7 @@ class SleeveSpec:
     decision_hour_utc: int = 0         # wall-clock hour of the decision step
     fee_rate: float = 0.001            # book-keeping fee (taker), as in the backtests
     universe_rule: dict[str, Any] | None = None   # e.g. {type: R1, n: 15, ...} (universe_r1.py)
+    event_refresh: dict[str, Any] | None = None   # extra decisions on macro-event days (see sleeve_slot)
 
     @classmethod
     def from_cfg(cls, d: dict[str, Any], default_strategy: dict[str, Any], default_universe: list[str],
@@ -47,7 +49,8 @@ class SleeveSpec:
                 universe=list(d.get("universe") or default_universe),
                 execution=str(d.get("execution", "band")), band=float(d.get("band", default_band)),
                 decision_hour_utc=int(d.get("decision_hour_utc", default_hour)),
-                fee_rate=float(d.get("fee_rate", 0.001)), universe_rule=d.get("universe_rule"))
+                fee_rate=float(d.get("fee_rate", 0.001)), universe_rule=d.get("universe_rule"),
+                event_refresh=d.get("event_refresh"))
         if s.universe_rule is not None:
             if str(s.universe_rule.get("type")) != "R1":
                 raise ValueError(f"sleeve {s.name}: universe_rule type must be R1")
@@ -56,6 +59,11 @@ class SleeveSpec:
             raise ValueError(f"sleeve {s.name}: execution must be band|scheduled")
         if not 0 < s.weight <= 1:
             raise ValueError(f"sleeve {s.name}: weight must be in (0, 1]")
+        if s.event_refresh is not None:
+            e = s.event_refresh
+            if s.execution != "scheduled" or not e.get("calendar") or 24 % int(e.get("every_h", 0) or 25):
+                raise ValueError(f"sleeve {s.name}: event_refresh needs execution scheduled, a calendar file "
+                                 "and every_h dividing 24")
         return s
 
 
@@ -92,6 +100,29 @@ def decision_slot(now: pd.Timestamp, hour: int) -> pd.Timestamp:
     """Most recent decision time (wall clock `hour`:00 UTC) <= now."""
     slot = now.floor("D") + pd.Timedelta(hours=hour)
     return slot if slot <= now else slot - pd.Timedelta(days=1)
+
+
+def event_days(path: Path, types: list[str], days_after: int) -> set:
+    """UTC dates of the calendar's events of `types` and the `days_after` days after each."""
+    df = pd.read_csv(path)
+    t = pd.to_datetime(df.loc[df["type"].isin(types), "time_utc"], utc=True)
+    return {(x.floor("D") + pd.Timedelta(days=d)).date() for x in t for d in range(int(days_after) + 1)}
+
+
+def sleeve_slot(now: pd.Timestamp, spec: SleeveSpec, ev_days: set | None = None) -> pd.Timestamp:
+    """Most recent decision time <= now: the daily decision_hour_utc, plus with event_refresh
+    {every_h: N} extra decisions every N hours from it (wall clock) on event days (strategy_lab
+    block 4a b4e_fast_<N>h: refreshes anchored at the 14:00 bar, event day by the step's UTC date)."""
+    slot = decision_slot(now, spec.decision_hour_utc)
+    e = spec.event_refresh
+    if not e or not ev_days:
+        return slot
+    every = int(e["every_h"])
+    for k in range(1, 24 // every):
+        t = decision_slot(now, (spec.decision_hour_utc + k * every) % 24)
+        if t > slot and t.date() in ev_days:
+            slot = t
+    return slot
 
 
 def desired_units(spec: SleeveSpec, book: SleeveBook, px: dict[str, float], mult: float,

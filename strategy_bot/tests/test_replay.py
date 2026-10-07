@@ -91,6 +91,9 @@ def replay(c: pd.DataFrame, days: int, allow_short: bool, kill_day: int | None,
     errors = read("errors") + [o for o in read("orders") if o.get("error")]
     days_with_orders = {o["time"][:10] for o in orders}
     all_days = {str(d.date()) for d in hours}
+    # a final partial day that ends before the activity-guard hour cannot have been forced to trade yet
+    if (hours[-1] + pd.Timedelta(hours=1)).hour <= int(cfg["activity_guard_hour_utc"]) and len(all_days) > 1:
+        all_days.discard(str(hours[-1].date()))
     shorts_opened = sum(1 for o in orders if o["action"] == "OPEN_SHORT")
     fallbacks = sum(1 for o in orders if o["action"] == "MARKET_FALLBACK")
     targets = [d for d in read("decisions") if d.get("event") == "targets"]
