@@ -19,16 +19,15 @@ recommended variant gets a stats card (`python -m lab.stats_card <run> [others]`
   Stage A winner (rule) = b4c_A1_minpos. Stage B (300-326) resolved.
 - `d3eb3a1` blocks 4d (entry timing, 344-358) and 4b (sizing/exposure/coins, 359-393) pre-registered.
 
-## Running (started 2026-10-07 ~07:00 UTC; slow machine, ~2-8 min per run)
-- block 4c stage B: `.cache/b4c_B1.log` (2h-check runs), `.cache/b4c_B2.log` (4h/6h). Ledger repaired after a parallel race.
-- `python -m lab.lows` (hourly lows for patient_limit, .cache/klines_hl/), log .cache/lows.log.
+- Block 4c COMPLETE (291-343): NOT ADOPTED. Final candidate b4c_B_c4_w05_m125 (4h checks, w 0.5, m 1.25) fails IS
+  P(>=10%) (12% vs live 15%), ties OOS (9%); 0 of 7 neighbours beat live. leaderboard_b4c_lsx.md,
+  reports/stats_card_b4c_B_c4_w05_m125.md (vs live and stage A winner). Every frequency-sweep run worse.
+- `04b8018` strategy_bot: event_refresh option (off) + test fixes; all bot suites pass.
+- hourly lows downloaded (.cache/klines_hl, 65 coins).
+
+## Running
+- block 4d: `.cache/b4d.log` (b4d__control reproduction with positions, then 344-348).
 
 ## Next (in order)
-1. Block 4c: `python -m lab.b4c --resolve-c` -> commit -> run group C; `--resolve-sweep` -> commit -> run group sweep;
-   `python -m lab.b4c` (report, leaderboard_b4c_lsx.md); stats card final candidate + control. Implement in strategy_bot ONLY
-   if the adopt rule incl. the plateau test passes (config_testing_xsmom_ls.yaml, testing key, cap 10000).
-2. strategy_bot (uncommitted): event_refresh sleeve option (bot.py, sleeves.py, data/events.csv, README,
-   tests/test_event_refresh.py PASS) + test fixes for the new partial day of data (tests/test_replay.py, tests/test_sleeves.py:
-   same failures on HEAD, data artifacts). Re-run test_replay, test_sleeves, test_competition, then commit.
-3. Block 4d: run b4d__control (b3_xsmom_r1 with record_positions, not a trial) + 344-348; `python -m lab.b4gen 4d`.
+3. Block 4d: when 344-348 finish: `python -m lab.b4gen 4d --resolve-sweep` -> commit -> run group sweep -> `python -m lab.b4gen 4d`.
 4. Block 4b: run 359-371, 376-383; `python -m lab.b4gen 4b --resolve-best-sizing`; run 372-375; sweep; report.

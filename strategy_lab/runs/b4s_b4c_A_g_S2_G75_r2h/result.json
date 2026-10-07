@@ -1,0 +1,221 @@
+{
+ "name": "b4s_b4c_A_g_S2_G75_r2h",
+ "group": null,
+ "note": null,
+ "trial": null,
+ "spec": {
+  "strategy": "xsmom_lsx",
+  "start": "2020-02-15",
+  "band": 0.06,
+  "brake": true,
+  "allow_short": true,
+  "activity_guard": "off",
+  "params": {
+   "horizons": [
+    24,
+    72,
+    168,
+    336
+   ],
+   "vol_win": 336,
+   "regime_win": 336,
+   "target_vol": 0.4,
+   "short_scale_bull": 0.5,
+   "max_w": 0.3,
+   "btc_pair": "BTCUSDT",
+   "n_short": 2,
+   "gross_cap": 0.75,
+   "short_gate": "btc_below_30d"
+  },
+  "universe": {
+   "type": "satellite",
+   "rule": "R1",
+   "n_liquid": 15,
+   "k": 5,
+   "min_history_days": 90,
+   "min_quote_volume_usd": 10000000.0,
+   "crash_guard": false,
+   "exclude_core": false
+  },
+  "execution": "scheduled",
+  "rebalance_hour_utc": 14,
+  "lookback_bars": 2000,
+  "record_positions": true,
+  "rebalance_every_h": 2,
+  "name": "b4s_b4c_A_g_S2_G75_r2h"
+ },
+ "runtime_s": 164.7,
+ "assets_loaded": 46,
+ "scorecard": {
+  "periods": {
+   "full": {
+    "return": -0.7056044213107344,
+    "ann_ret": -0.16819941478555833,
+    "vol": 0.3722725797823331,
+    "sharpe": -0.30828793742905736,
+    "sortino": -0.4281946904342164,
+    "mdd": -0.9548709175883311,
+    "calmar": -0.17614885078956122,
+    "composite": -0.31660891263927216,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "in_sample": {
+    "return": -0.0963711476696889,
+    "ann_ret": -0.020542911700003108,
+    "vol": 0.3979652739131494,
+    "sharpe": 0.1471405526568969,
+    "sortino": 0.20449573396025567,
+    "mdd": -0.8662082679275723,
+    "calmar": -0.023715903508001145,
+    "composite": 0.11882568832877101,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2024-12-31 23:00:00+00:00"
+   },
+   "out_of_sample": {
+    "return": -0.6734101925702007,
+    "ann_ret": -0.4709293878980626,
+    "vol": 0.2891354788679943,
+    "sharpe": -2.057106861295659,
+    "sortino": -2.847570849177,
+    "mdd": -0.7293302645078505,
+    "calmar": -0.645701146401547,
+    "composite": -1.949870741979962,
+    "start": "2025-01-01 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "oos_12m_ref": {
+    "return": -0.4592117152632972,
+    "ann_ret": -0.4592117152632972,
+    "vol": 0.26345022447784927,
+    "sharpe": -2.2014116688734338,
+    "sortino": -3.0269961263524108,
+    "mdd": -0.5513119956236705,
+    "calmar": -0.8329434492783254,
+    "composite": -2.121104985986492,
+    "start": "2025-10-01 00:00:00+00:00",
+    "end": "2026-10-01 00:00:00+00:00"
+   }
+  },
+  "rolling_14d": {
+   "full": {
+    "n_windows": 2410,
+    "median_return": -0.023212550561802547,
+    "pct_positive": 0.34730290456431534,
+    "worst_return": -0.18483443923030052,
+    "best_return": 0.5593826364550045,
+    "worst_dd": -0.21483802433191124,
+    "median_dd": -0.06848557888995865,
+    "median_composite": -3.854985206547431,
+    "mean_composite": 4.173887396835318,
+    "median_sharpe": -2.0830338528324663,
+    "median_active_days": 14.0,
+    "min_active_days": 0,
+    "pct_windows_all_days_active": 0.8597510373443984
+   },
+   "out_of_sample": {
+    "n_windows": 628,
+    "median_return": -0.035009610762931576,
+    "pct_positive": 0.2531847133757962,
+    "worst_return": -0.15108364635411775,
+    "best_return": 0.24116474250948206,
+    "worst_dd": -0.15546903001895107,
+    "median_dd": -0.0694233662138477,
+    "median_composite": -6.072514382519036,
+    "mean_composite": 0.7445498796900991,
+    "median_sharpe": -4.014230763731372,
+    "median_active_days": 14.0,
+    "min_active_days": 11,
+    "pct_windows_all_days_active": 0.8439490445859873
+   },
+   "in_sample": {
+    "n_windows": 1768,
+    "median_return": -0.01846263914382129,
+    "pct_positive": 0.3834841628959276,
+    "worst_return": -0.18483443923030052,
+    "best_return": 0.5593826364550045,
+    "worst_dd": -0.21483802433191124,
+    "median_dd": -0.06812660239833201,
+    "median_composite": -2.885317478412881,
+    "mean_composite": 5.4847457327855595,
+    "median_sharpe": -1.350200698748743,
+    "median_active_days": 14.0,
+    "min_active_days": 0,
+    "pct_windows_all_days_active": 0.8642533936651584
+   }
+  },
+  "regimes": {
+   "shock": {
+    "days": 176,
+    "share_days": 0.07263722657862154,
+    "mean_daily": 0.00925605559385682,
+    "hit_rate": 0.5852272727272727,
+    "ann_sharpe": 5.151210201650397,
+    "cum_return": 3.5818891211858945
+   },
+   "bull": {
+    "days": 687,
+    "share_days": 0.2835328105654148,
+    "mean_daily": 0.002000660623075389,
+    "hit_rate": 0.45269286754002913,
+    "ann_sharpe": 1.7108872142684963,
+    "cum_return": 2.337338990981021
+   },
+   "bear": {
+    "days": 400,
+    "share_days": 0.1650846058605035,
+    "mean_daily": -0.003437673111579051,
+    "hit_rate": 0.34,
+    "ann_sharpe": -4.792926969371513,
+    "cum_return": -0.7570903561327875
+   },
+   "chop": {
+    "days": 1160,
+    "share_days": 0.47874535699546017,
+    "mean_daily": -0.002085595461703604,
+    "hit_rate": 0.34913793103448276,
+    "ann_sharpe": -2.846797487767194,
+    "cum_return": -0.9207422702473325
+   }
+  },
+  "regime_share_oos": {
+   "chop": 0.609,
+   "bull": 0.178,
+   "bear": 0.17,
+   "shock": 0.044
+  },
+  "activity": {
+   "trades_total": 105566,
+   "trades_per_day": 43.5503300330033,
+   "active_day_share": 0.9657590759075908,
+   "turnover_per_year_x_equity": 567.2771299837307,
+   "fees_total_usd": 265002.0517811052,
+   "fees_per_year_pct_equity": 0.5672771299837307,
+   "avg_gross_exposure": 0.35457593444332963,
+   "time_brake_active": 0.5250055873605309
+  },
+  "corr_daily_vs_s3v2": 0.4951486524956914
+ },
+ "last_targets": {
+  "time": "2026-10-04 14:00:00+00:00",
+  "members": 15,
+  "target": {
+   "SOLUSDT": 0.15,
+   "BNBUSDT": 0.15,
+   "SUIUSDT": 0.15,
+   "WLDUSDT": 0.15
+  }
+ },
+ "events_log": null,
+ "extra": {
+  "strategy_stats": {
+   "daily": 28532,
+   "checks": 0,
+   "exits": 0,
+   "flips": 0,
+   "swaps": 0,
+   "fallback_min_pos": 0,
+   "short_slots_daily": 20480
+  }
+ }
+}
