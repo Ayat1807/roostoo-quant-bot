@@ -54,3 +54,8 @@ runs:
   - {name: b4b_all_elig_cap10, trial: 382, group: coins, params: {select: all_eligible, coin_cap: 0.10}}
   - {name: b4b_breadth_k, trial: 383, group: coins, params: {select: breadth_k}}
   # 384-393 sweep slots: resolved by lab/b4b.py --resolve-sweep, appended below
+  # resolved 2026-10-07 09:04 UTC by lab/b4gen.py 4b --resolve-best-sizing: best sizing = b4b_score
+  - {name: b4b_best_breadth, trial: 372, group: exposure_best, params: {sizing: score, exposure: breadth}}
+  - {name: b4b_best_vol_target, trial: 373, group: exposure_best, params: {sizing: score, exposure: vol_target}}
+  - {name: b4b_best_regime, trial: 374, group: exposure_best, params: {sizing: score, exposure: regime}}
+  - {name: b4b_best_conviction, trial: 375, group: exposure_best, params: {sizing: score, exposure: conviction}, lookback_bars: 10760}
