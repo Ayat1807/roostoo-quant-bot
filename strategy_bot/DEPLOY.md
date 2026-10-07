@@ -198,6 +198,8 @@ Tests: `python -m tests.test_sleeves` and `python -m tests.test_xsmom_parity`.
 
 ## 12. Competition go-live (config_competition.yaml: xsmom on R1)
 
+**Required before any competition config:** a committed stats card next to it (`stats_card:` in the config, generated with `python -m lab.stats_card <run> [comparison runs]` in strategy_lab). `tests/test_safety.py` fails if a config with `allow_competition: true` has none.
+
 `config_competition.yaml` runs **one sleeve: xsmom on the R1 universe**. That's the top 15 Roostoo crypto pairs by 30-day Binance dollar volume with ≥90 days of history, ≥$10M/day and a live Roostoo spread ≤5 bps, re-selected on the 1st of each month.
 
 - **Sizing:** weight 1.0, full equity (`capital_cap_usd: null`).

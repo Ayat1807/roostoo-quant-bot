@@ -79,6 +79,7 @@ python -m tests.test_strategies   # every strategy returns valid weights; s3v2x 
 ## Honesty rules
 
 - **Frequency sweep (standing rule, from block 3):** every strategy that becomes a candidate is also run with its target refresh at 1h, 2h, 4h, 6h, 12h and daily.
+- **Stats card (required, from block 4):** no config is marked "competition" without a committed stats card (`python -m lab.stats_card <run> ...`, `reports/stats_card_<run>.md`): IS / OOS / Jul-Oct, Sharpe, Sortino, Calmar, composite (whole period and median 14d), drawdown, P(14d) metrics, fees, activity, the stress result and the luck threshold. Every recommended variant gets one.
   - Signal horizons stay fixed in calendar time; only `rebalance_every_h` changes, anchored at the strategy's own clock (`rebalance_hour_utc`).
   - Report them side by side: fees/yr, trades/day, P(14d ≥ +10%) and P(14d ≤ −10%), per half.
   - Declare the sweep runs as trials before running them (see `variants_b3_addendum.yaml`, `lab/b3_sweep.py`).

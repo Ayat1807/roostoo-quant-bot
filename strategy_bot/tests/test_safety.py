@@ -126,7 +126,29 @@ def test_env_file_gate() -> bool:
     return ok1 and ok2
 
 
+def test_stats_card_rule() -> bool:
+    """Team rule: no config marked "competition" (allow_competition: true) without a committed stats
+    card next to it: `stats_card:` must name a file (repo-relative) that exists and is tracked by git
+    (generate with `python -m lab.stats_card <run>` in strategy_lab)."""
+    import subprocess
+    import yaml
+    here = Path(__file__).resolve().parent.parent
+    repo = here.parent
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=repo, capture_output=True, text=True).stdout.split())
+    ok = True
+    for f in sorted(here.glob("config*.yaml")):
+        cfg = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        if not cfg.get("allow_competition"):
+            continue
+        card = cfg.get("stats_card")
+        good = bool(card) and (repo / card).is_file() and str(card).replace("\\", "/") in tracked
+        ok &= good
+        print(f"[{'PASS' if good else 'FAIL'}] {f.name}: competition config has a committed stats card ({card})")
+    return ok
+
+
 if __name__ == "__main__":
-    ok = test_no_resend_after_timeout() & test_key_gate() & test_plugin_contract() & test_env_file_gate()
+    ok = test_no_resend_after_timeout() & test_key_gate() & test_plugin_contract() & test_env_file_gate() \
+        & test_stats_card_rule()
     print(f"\nsafety tests: {'PASS' if ok else 'FAIL'}")
     sys.exit(0 if ok else 1)

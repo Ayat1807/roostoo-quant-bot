@@ -70,6 +70,7 @@ peak_days: 14
 # --- key safety ---
 allow_competition: true    # competition key allowed (10-second warning at start)
 env_file: .env.competition   # competition key pair (git-ignored); the testing bot keeps .env
+stats_card: strategy_lab/reports/stats_card_xsmom_r1.md   # REQUIRED for competition configs (tests/test_safety.py)
 
 # --- files (relative to strategy_bot/) ---
 bootstrap_hours: 2000          # 2000 bars: xsmom's EMA168 matches the lab / teammate exactly
