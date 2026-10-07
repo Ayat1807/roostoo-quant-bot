@@ -17,7 +17,7 @@ import yaml
 from lab import ROOT
 from lab.b5 import LIVE, REF, judge, rank, report
 
-TRACKS = {"a": ("variants_b6a_signal.yaml", 420), "b": ("variants_b6b_regime.yaml", None),
+TRACKS = {"a": ("variants_b6a_signal.yaml", 420), "b": ("variants_b6b_regime.yaml", 435),
           "c": ("variants_b6c_alloc.yaml", None), "e": ("variants_b6e_universe.yaml", None),
           "d": ("variants_b6d_meta.yaml", None)}
 

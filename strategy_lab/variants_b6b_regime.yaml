@@ -1,0 +1,30 @@
+# Research block 6, TRACK B: regime scaling of s3v2e_core10 (reference b3_s3v2e_core10). Declared BEFORE any run in this
+# file. Trials 430-444 (15 new); global declared 429 + 15 = 444.
+#
+# Regime inputs are FITTED, so they are produced walk-forward (lab/regime_hmm.py, data/regime/*.csv, committed): Gaussian HMM
+# on daily BTC [return, 7d realised vol], 2 and 3 states, expanding window refit every month, 1-day embargo, first fit after
+# 6 months of data (2020-08; earlier days unscaled), FILTERED probabilities only (no smoothing, no future data). Declared
+# state labels: crisis = highest mean vol; 3 states: trend = larger |mean return| of the other two. Correlation state:
+# average pairwise 30d correlation of the core10 hourly returns above its own expanding 80th percentile (>= 180 days).
+# Declared mapping (strategies/s3v2x_regime.py): short_scale_bull_eff = 0.5 + 0.5 x p_crisis; gross x (1 - 0.5 p_crisis) x
+# (1 + 0.25 p_trend) x (0.7 if correlation state high and the filter is on); gross > 1 scaled to 1.
+#   HMM2                 430      HMM3                 431      corr filter only     432
+#   HMM2 + corr filter   433      HMM3 + corr filter   434
+# FREQUENCY SWEEP (standing rule), 435-444: best 2 of 430-434 at 1h, 2h, 4h, 6h, 12h target refresh
+#   (`python -m lab.b6 b --resolve-sweep --sweep-start 435`); not adoptable by themselves.
+# JUDGING, ranking, adopt rule, secondary 3-day metrics: as track A (lab/b5.py, team objective, data to 2026-06-30).
+
+declared_trials: 15
+
+defaults:
+  base: b3_s3v2e_core10
+  strategy: s3v2x_regime
+  record_positions: true
+
+runs:
+  - {name: b6b_hmm2, trial: 430, group: B, params: {regime_hmm: 2}}
+  - {name: b6b_hmm3, trial: 431, group: B, params: {regime_hmm: 3}}
+  - {name: b6b_corr, trial: 432, group: B, params: {corr_filter: true}}
+  - {name: b6b_hmm2_corr, trial: 433, group: B, params: {regime_hmm: 2, corr_filter: true}}
+  - {name: b6b_hmm3_corr, trial: 434, group: B, params: {regime_hmm: 3, corr_filter: true}}
+  # 435-444 sweep: resolved by lab/b6.py b --resolve-sweep --sweep-start 435, appended below

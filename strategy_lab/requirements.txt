@@ -10,3 +10,5 @@ requests==2.34.2
 six==1.17.0
 tzdata==2026.5
 urllib3==2.8.0
+
+# research-only extras (lab tracks B / D): hmmlearn==0.3.3 scikit-learn==1.9.1 scipy==1.18.1 lightgbm==4.7.0
