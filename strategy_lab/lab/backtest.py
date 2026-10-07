@@ -75,6 +75,7 @@ class RunConfig:
     engine_mode: bool = False
     execution: str = "band"         # band (hourly band checks) | scheduled (trade fully only at refresh)
     events: dict[str, Any] | None = None   # macro-event overlays (block 4, see _event_plan); None = off
+    exits: dict[str, Any] | None = None    # intraday exits between decisions (block 4, see run()); None = off
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -161,6 +162,24 @@ class Backtest:
         ev = self._event_plan(idx, assets) if rc.events else None
         cash_mode = False           # breakout overlay: BTC fell > threshold after an event
         ev_log: dict[str, Any] = {"breakout_up": [], "breakout_down": [], "derisk_bars": 0, "fast_refreshes": 0}
+        # intraday exits (rc.exits, long book only; checked at every hourly close between target refreshes):
+        #   trend_break  EMA24 < EMA168 (hourly closes) on a held coin -> sell it
+        #   stop         close <= entry x (1 - pct); entry = average buy price of the current holding
+        #   trailing     close <= highest close since entry x (1 - pct)
+        # an exited coin stays out until the next target refresh (the daily decision); each exit is
+        # logged with what the coin did from the exit to that refresh (loss avoided / profit given up)
+        xe = rc.exits
+        if xe:
+            if xe["type"] not in ("trend_break", "stop", "trailing"):
+                raise ValueError(f"exits.type must be trend_break|stop|trailing, got {xe['type']!r}")
+            if xe["type"] == "trend_break":
+                ema_f = c.ewm(span=24, adjust=False, min_periods=24).mean().values
+                ema_s = c.ewm(span=168, adjust=False, min_periods=168).mean().values
+        x_entry = np.zeros(A)
+        x_high = np.zeros(A)
+        exited = np.zeros(A, dtype=bool)
+        x_pending: list[dict[str, Any]] = []
+        x_log: list[dict[str, Any]] = []
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
                                                "turnover", "fees", "trades", "mult")}
         targets_log: list[dict[str, Any]] = []
@@ -230,6 +249,13 @@ class Backtest:
                         cash_mode = True
                         ev_log["breakout_down"].append(str(ts))
                 sched = sched or extra
+            if xe and sched:
+                for x in x_pending:          # what the exited coin did until this refresh
+                    r = (p[x["j"]] / x["px"] - 1) if x["px"] > 0 and p[x["j"]] > 0 else 0.0
+                    x_log.append({"time": x["time"], "asset": assets[x["j"]], "w": x["w"], "ret_to_refresh": r,
+                                  "pnl_frac": x["w"] * r})   # > 0 profit given up, < 0 loss avoided
+                x_pending.clear()
+                exited[:] = False
             if target is None or sched:
                 ti = i if (sched or target is not None) else self._last_sched(i)
                 members = self.universe.members(idx[ti], assets, alive_all[ti])
@@ -286,6 +312,23 @@ class Backtest:
                     sched_mult = (mult, ev_key)
             else:
                 trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
+            if xe:
+                held = lw > exit_eps
+                np.maximum(x_high, np.where(held, p, 0.0), out=x_high)
+                if not sched:
+                    if xe["type"] == "trend_break":
+                        fire = held & (ema_f[i] < ema_s[i])
+                    elif xe["type"] == "stop":
+                        fire = held & (x_entry > 0) & (p <= x_entry * (1 - float(xe["pct"])))
+                    else:
+                        fire = held & (x_high > 0) & (p <= x_high * (1 - float(xe["pct"])))
+                    fire &= ~exited & alive_all[i]
+                    for j in np.where(fire)[0]:
+                        x_pending.append({"time": str(ts), "j": int(j), "px": float(p[j]), "w": float(lw[j])})
+                    exited |= fire
+                    trade |= fire
+                tgt = np.where(exited, np.minimum(tgt, 0.0), tgt)
+                lu_before = lu.copy()
             trade &= alive_all[i]
             if trade.any():
                 cash, f, tv, n = self._execute({j: tgt[j] for j in np.where(trade)[0]}, lw, sw, sizing,
@@ -306,6 +349,13 @@ class Backtest:
                     cash, f, tv, n = self._execute({j: tw_j}, lw, sw, sizing, p, cash, lu, su,
                                                    entry, coll, spot_fee, sfee, slip, mini, exact)
                     fees, turnover, ntr = fees + f, turnover + tv, ntr + n
+            if xe:                           # entry price / high since entry of the long book
+                add = lu > lu_before + 1e-15
+                x_entry = np.where(add, (x_entry * lu_before + (lu - lu_before) * p) / np.maximum(lu, 1e-300), x_entry)
+                x_high = np.where(add & (lu_before <= 1e-15), p, x_high)
+                gone = lu <= 1e-15
+                x_entry[gone] = 0.0
+                x_high[gone] = 0.0
             if ntr:
                 last_trade_day = ts.date()
             n_trades_total += ntr
@@ -320,7 +370,8 @@ class Backtest:
                                axis=1)[list(rec)]
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
-                "trades_total": n_trades_total, "events": ev_log if ev is not None else None}
+                "trades_total": n_trades_total, "events": ev_log if ev is not None else None,
+                "extra": ({"exits": x_log} if xe else None)}
 
     # ------------------------------------------------------------------ #
     def _event_plan(self, idx: pd.DatetimeIndex, assets: list[str]) -> dict[str, Any]:

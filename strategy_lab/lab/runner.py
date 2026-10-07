@@ -86,7 +86,8 @@ def execute(name: str, spec: dict[str, Any], btc: pd.Series, closes_cache: dict,
     meta = {"name": name, "group": spec.get("group"), "note": spec.get("note"),
             "trial": spec.get("trial"), "spec": s, "runtime_s": round(time.time() - t0, 1),
             "assets_loaded": len(res["assets"]), "scorecard": sc,
-            "last_targets": res["targets"][-1] if res["targets"] else None}
+            "last_targets": res["targets"][-1] if res["targets"] else None,
+            "events_log": res.get("events"), "extra": res.get("extra")}
     (out_dir / "result.json").write_text(json.dumps(meta, indent=1, default=str))
     (out_dir / "summary.md").write_text(to_markdown(name, s, sc), encoding="utf-8")
     h["equity"].resample("1D").last().to_csv(out_dir / "equity_daily.csv", header=["equity"])

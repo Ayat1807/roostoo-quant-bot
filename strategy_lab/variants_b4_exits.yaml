@@ -1,0 +1,38 @@
+# Research block 4a ADDENDUM: intraday EXITS for the live strategy (xsmom on R1 = b3_xsmom_r1, trial 243),
+# plus the standing frequency sweep for the best 2 of block 4a. Declared 2026-10-07 BEFORE any run in this
+# file (team request 2026-10-07, STEP 2). The 9 event runs (variants_b4_events.yaml) are finished.
+# Trial counter continues: 277-290 (14 new); global declared 276 + 14 = 290.
+#
+# Exits (lab/backtest.py rc.exits): entries unchanged (xsmom decision on the 14:00 UTC bar = 15:00 wall clock);
+# checked at every hourly close between decisions, on held coins only; an exited coin stays out until the next
+# daily decision (no re-entry before it); exit fills at that hourly close with the usual costs.
+#   trend_break_exit  EMA24 < EMA168 on the coin's hourly closes -> sell                       trial 277
+#   stop_loss_exit    close <= entry x (1 - 4%) (and 6%); entry = average buy price of the
+#                     current holding (adds at later decisions average in)                     trials 278, 279
+#   trailing_exit     close <= highest hourly close since entry x (1 - 5%)                     trial 280
+# Reported per exit run: how often it fired (per half), and loss avoided vs profit given up: for each exit,
+# exited weight x the coin's return from the exit to the next daily decision (< 0 = loss avoided,
+# > 0 = profit given up), summed per half (in % of equity) and counted.
+#
+# Judging: standard objective, data to 2026-06-30, both halves (IS 2020-02-15 -> 2024-12-31, OOS 2025-01-01 ->
+# 2026-06-30; Jul-Oct 2026 informational): P(14d >= +10%) and P(>= +8%) primary; constraints P(14d <= -10%)
+# <= 10% and worst 14d >= -20% in both halves. Also reported on event-containing windows (block 4a view).
+# ADOPT RULE (exits): P(14d >= +10%) strictly above the control AND P(14d >= +8%) not below it, in both halves,
+# with both constraints met in both halves. Several -> highest OOS P(>= +10%), ties IS.
+#
+# FREQUENCY SWEEP (standing rule), trials 281-290: the best 2 runs of block 4a (9 event runs + 4 exit runs,
+# excluding the b4e_fast_* runs, which are themselves refresh variants) ranked by OOS P(14d >= +10%) on all
+# windows among runs meeting both constraints in both halves, ties IS P(>= +10%); fewer than 2 qualify -> fill by
+# OOS P(>= +10%) regardless. Each gets target refresh 1h, 2h, 4h, 6h, 12h (daily = its own run), everything else
+# unchanged (an exited coin stays out until the next refresh). Resolved by `python -m lab.b4x --resolve` from
+# data to 2026-06-30 only, written below as runs b4s_<run>_r<N>h, then run. Sweep runs are not eligible to be
+# adopted by themselves (a sweep winner needs a separate team decision).
+
+declared_trials: 14
+
+runs:
+  - {name: b4x_trend_break, trial: 277, group: exits, base: b3_xsmom_r1, exits: {type: trend_break}}
+  - {name: b4x_stop4, trial: 278, group: exits, base: b3_xsmom_r1, exits: {type: stop, pct: 0.04}}
+  - {name: b4x_stop6, trial: 279, group: exits, base: b3_xsmom_r1, exits: {type: stop, pct: 0.06}}
+  - {name: b4x_trail5, trial: 280, group: exits, base: b3_xsmom_r1, exits: {type: trailing, pct: 0.05}}
+  # sweep slots 281-290: resolved by lab/b4x.py --resolve (appended below, before running them)
