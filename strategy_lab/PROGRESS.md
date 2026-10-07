@@ -34,11 +34,15 @@ recommended variant gets a stats card (`python -m lab.stats_card <run> [others]`
   leaderboard_b5.md, reports/stats_card_b5_finalists.md.
 - Block 4d results `755375a`: none adopted (old and new objective; leaderboard_b4d_entry.md, _newobj.md).
 
+- `8592182` COMPETITION SWITCH prepared (team decision): config_competition_s3v2e.yaml (s3v2e core10), stats card,
+  DEPLOY.md section 13, tests/test_competition_s3v2e.py PASS, test_safety PASS. The user deploys.
+- Block 4b: 359-371, 376-383 done; 372-375 resolved (best sizing b4b_score).
+
 ## Running
-- block 4b sizing/exposure/coins: `.cache/b4b_run.log`; block 4d sweep 349-358: `.cache/b4d_sweep.log`.
+- block 4b exposure_best 372-375: `.cache/b4b_run2.log`; block 4d sweep 349-358: `.cache/b4d_sweep.log`.
 
 ## Next (in order)
-1. Block 4b: `python -m lab.b4gen 4b --resolve-best-sizing` -> commit -> `--group exposure_best`; `--resolve-sweep` -> commit ->
-   `--group sweep`; reports: `python -m lab.b4gen 4b` (old objective) and `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10
-   <4b runs> --out leaderboard_b4b_newobj.md` (new objective).
-2. Block 4d: when the sweep finishes, `python -m lab.b4gen 4d` again; commit.
+1. Block 4b: `python -m lab.b4gen 4b --resolve-sweep` -> commit -> `python -m lab.runner variants_b4b_sizing.yaml --group sweep`;
+   reports `python -m lab.b4gen 4b` and `python -m lab.b5 b4d__control b5ref__b3_s3v2e_core10 <4b runs> --out
+   leaderboard_b4b_newobj.md`; commit.
+2. Block 4d: after the sweep, `python -m lab.b4gen 4d` and the b5 new-objective report again; commit.
