@@ -1,5 +1,5 @@
 {
- "total_runs": 363,
+ "total_runs": 371,
  "distinct": [
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
@@ -139,6 +139,14 @@
   "b4x_stop6",
   "b4x_trail5",
   "b4x_trend_break",
+  "b5_betahedge_btc30",
+  "b5_betahedge_btc7d",
+  "b5_breakdown_10",
+  "b5_breakdown_15",
+  "b5_s3v2e_ssb075",
+  "b5_s3v2e_ssb100",
+  "b5_slowshort_10",
+  "b5_slowshort_15",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -346,7 +354,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-07 08:21 UTC",
+ "updated": "2026-10-07 08:24 UTC",
  "corrections": [
   {
    "date": "2026-10-05",

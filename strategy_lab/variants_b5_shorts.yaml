@@ -49,3 +49,12 @@ runs:
   - {name: b5_breakdown_15, trial: 400, group: E, base: b3_xsmom_r1, strategy: breakdown_short, allow_short: true, rebalance_every_h: 1, record_positions: true, params: {wa: 0.15}}
   - {name: b5_breakdown_10, trial: 401, group: E, base: b3_xsmom_r1, strategy: breakdown_short, allow_short: true, rebalance_every_h: 1, record_positions: true, params: {wa: 0.10}}
   # 402-404 (combos) and 405-408 (sweep): resolved by lab/b5.py, appended below
+  # resolved 2026-10-07 08:35 UTC by lab/b5.py --resolve-f: best C = b5_slowshort_10, best E = b5_breakdown_10
+  - {name: b5_combo_s3v2e70_C30, trial: 402, group: F, combo: {books: [[b3_s3v2e_core10, 0.7], [b5_slowshort_10, 0.3]]}}
+  - {name: b5_combo_s3v2e70_E30, trial: 403, group: F, combo: {books: [[b3_s3v2e_core10, 0.7], [b5_breakdown_10, 0.3]]}}
+  - {name: b5_combo_s3v2e50_x30_C20, trial: 404, group: F, combo: {books: [[b3_s3v2e_core10, 0.5], [b3_xsmom_r1, 0.3], [b5_slowshort_10, 0.2]]}}
+  # resolved 2026-10-07 08:35 UTC by lab/b5.py --resolve-sweep: best 2 of B-E = ['b5_s3v2e_ssb100', 'b5_s3v2e_ssb075']
+  - {name: b5s_b5_s3v2e_ssb100_r4h, trial: 405, group: sweep, base: b5_s3v2e_ssb100, rebalance_every_h: 4}
+  - {name: b5s_b5_s3v2e_ssb100_r12h, trial: 406, group: sweep, base: b5_s3v2e_ssb100, rebalance_every_h: 12}
+  - {name: b5s_b5_s3v2e_ssb075_r4h, trial: 407, group: sweep, base: b5_s3v2e_ssb075, rebalance_every_h: 4}
+  - {name: b5s_b5_s3v2e_ssb075_r12h, trial: 408, group: sweep, base: b5_s3v2e_ssb075, rebalance_every_h: 12}
