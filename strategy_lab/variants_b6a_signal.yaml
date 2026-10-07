@@ -1,0 +1,42 @@
+# Research block 6, TRACK A: signal / turning points for s3v2e_core10 (reference b3_s3v2e_core10 = the LIVE competition
+# strategy since 2026-10-07). Team program 2026-10-07. Declared BEFORE any run in this file.
+# Trials 409-429 (21 new); global declared 408 + 21 = 429.
+#
+# Every run = b3_s3v2e_core10 (s3v2x with EWMA vol 168h, core10, band 0.06 hourly checks, targets daily at 00:00 UTC,
+# minimal guard, brake, shorts at half size in bull; realistic costs) with ONE change:
+#   A1 continuous_signal: per horizon t = log return / (std of the last 336 hourly returns x sqrt(h)), clipped to [-2, 2],
+#      divided by 2, averaged over the 4 horizons (s3v2x signal "tstat", tstat_cap 2)                       409
+#   A2 speed_ensemble: equal-weight vote of sign(EMA fast - EMA slow) for (8/24), (24/96), (48/192), (96/384) hours
+#      (s3v2x signal "ema_ensemble"; lookback 2000 bars so the slow EMAs are settled)                         410
+#   A3 changepoint_exit (lab/changepoint.py, backtest `changepoint`): per coin, score against the position on standardised
+#      hourly returns; above the threshold, that coin's target x cut until the next daily target (traded at once):
+#      CUSUM (k 0.5, reset at each daily target) threshold 4 / 8; BOCPD (hazard 1/168, P(change within 6h)) threshold
+#      0.5 / 0.8; cut 50% / 0%                                                                                411-418
+#   A4 = A1 + the best A3 (by the ranking below; `python -m lab.b6 a --resolve-a4`)                           419
+# FREQUENCY SWEEP (standing rule), 420-429: the best 2 of 409-419 at 1h, 2h, 4h, 6h, 12h target refresh
+#   (`python -m lab.b6 a --resolve-sweep`); not adoptable by themselves.
+# JUDGING = block 5 / team objective (lab/b5.py): primary median 14d composite + mean 14d return; requirements in both
+#   halves: mean 14d return > 0 in DOWN windows (BTC 14d < -5%), P(14d <= -10%) <= 5%, worst 14d >= -15%; OOS Sharpe >= 1.
+#   Adopt: all requirements + higher median 14d composite AND higher mean 14d return than b3_s3v2e_core10 in both halves.
+#   Ranking: OOS median 14d composite among runs meeting all requirements (ties OOS mean 14d), then the rest.
+#   Secondary (reported, not a gate): 3-day horizon metrics overall and in the 30 analog windows. Data to 2026-06-30;
+#   Jul-Oct 2026 informational. Nothing here is fitted (thresholds are a declared grid), so no walk-forward is needed.
+
+declared_trials: 21
+
+defaults:
+  base: b3_s3v2e_core10
+  record_positions: true
+
+runs:
+  - {name: b6a_A1_tstat, trial: 409, group: A1, params: {signal: tstat, tstat_cap: 2.0}}
+  - {name: b6a_A2_ema_ens, trial: 410, group: A2, lookback_bars: 2000, params: {signal: ema_ensemble}}
+  - {name: b6a_A3_cusum4_c50, trial: 411, group: A3, changepoint: {method: cusum, threshold: 4, cut: 0.5}}
+  - {name: b6a_A3_cusum4_c0, trial: 412, group: A3, changepoint: {method: cusum, threshold: 4, cut: 0.0}}
+  - {name: b6a_A3_cusum8_c50, trial: 413, group: A3, changepoint: {method: cusum, threshold: 8, cut: 0.5}}
+  - {name: b6a_A3_cusum8_c0, trial: 414, group: A3, changepoint: {method: cusum, threshold: 8, cut: 0.0}}
+  - {name: b6a_A3_bocpd05_c50, trial: 415, group: A3, changepoint: {method: bocpd, threshold: 0.5, cut: 0.5}}
+  - {name: b6a_A3_bocpd05_c0, trial: 416, group: A3, changepoint: {method: bocpd, threshold: 0.5, cut: 0.0}}
+  - {name: b6a_A3_bocpd08_c50, trial: 417, group: A3, changepoint: {method: bocpd, threshold: 0.8, cut: 0.5}}
+  - {name: b6a_A3_bocpd08_c0, trial: 418, group: A3, changepoint: {method: bocpd, threshold: 0.8, cut: 0.0}}
+  # 419 (A4) and 420-429 (sweep): resolved by lab/b6.py, appended below

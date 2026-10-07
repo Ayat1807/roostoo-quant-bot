@@ -78,6 +78,7 @@ class RunConfig:
     exits: dict[str, Any] | None = None    # intraday exits between decisions (block 4, see run()); None = off
     record_positions: bool = False  # sparse per-coin weight / long and short P&L per hour (res["positions"])
     entry_limit: dict[str, Any] | None = None   # patient entry limits (block 4d): {offset, through}; None = off
+    changepoint: dict[str, Any] | None = None   # block 6 A3: {method cusum|bocpd, threshold, cut, k}; None = off
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "RunConfig":
@@ -194,6 +195,15 @@ class Backtest:
         el = rc.entry_limit
         pend: dict[int, dict[str, Any]] = {}
         el_log: list[dict[str, Any]] = []
+        # changepoint cut (block 6 A3, lab/changepoint.py): a held coin whose score against its position exceeds the
+        # threshold has its target multiplied by `cut` (0.5 or 0) until the next target refresh; the cut trades at once
+        cpc = rc.changepoint
+        cp_cut = np.ones(A)
+        cp_log = {"cuts": 0}
+        if cpc:
+            from lab.changepoint import scores as cp_scores
+            reset = np.array([(t.hour == rc.rebalance_hour_utc and t.minute == 0) for t in idx])
+            cp_dn, cp_up = cp_scores(c, cpc["method"], reset, float(cpc.get("k", 0.5)))
         needs_hold = getattr(self.strategy, "needs_holdings", False)
         p_prev = None
         rec = {k: np.zeros(i1 - i0) for k in ("equity", "cash", "long", "short", "gross",
@@ -272,6 +282,8 @@ class Backtest:
                         cash_mode = True
                         ev_log["breakout_down"].append(str(ts))
                 sched = sched or extra
+            if cpc and sched:
+                cp_cut[:] = 1.0
             if el and sched:
                 for j, x in pend.items():
                     el_log.append({**x, "filled": None})
@@ -330,6 +342,15 @@ class Backtest:
                         tgt = tgt * (ev["max_gross"] / g)
                 g0 = np.abs(target * mult).sum()
                 ev_key = (cash_mode, round(float(np.abs(tgt).sum() / g0), 9) if g0 > 0 else 1.0)
+            cp_new = np.zeros(A, dtype=bool)
+            if cpc:
+                lw0, sw0 = lu * p / max(eq, 1e-9), su * p / max(eq, 1e-9)
+                thr = float(cpc["threshold"])
+                hit = (((lw0 > exit_eps) & (cp_dn[i] > thr)) | ((sw0 > exit_eps) & (cp_up[i] > thr))) & (cp_cut == 1.0)                     & (not sched)
+                cp_new = hit & alive_all[i]
+                cp_cut[cp_new] = float(cpc["cut"])
+                cp_log["cuts"] += int(cp_new.sum())
+                tgt = tgt * cp_cut
             # 5) band check + per-leg plan (strategy_bot portfolio.py), then activity guard
             sizing = min(eq, rc.capital_cap_usd) if rc.capital_cap_usd else eq
             guard_hour = (exact and rc.activity_guard != "off" and ts.hour == rc.guard_hour_utc and ts.minute == 0
@@ -350,6 +371,7 @@ class Backtest:
                     sched_mult = (mult, ev_key)
             else:
                 trade = (np.abs(tgt - cw) > band) | ((tgt == 0) & holding) | hedged
+            trade |= cp_new
             if xe:
                 held = lw > exit_eps
                 np.maximum(x_high, np.where(held, p, 0.0), out=x_high)
@@ -441,7 +463,8 @@ class Backtest:
         return {"config": rc, "hourly": hourly, "targets": targets_log,
                 "assets": assets, "runtime_s": round(time.time() - t0, 1),
                 "trades_total": n_trades_total, "events": ev_log if ev is not None else None,
-                "extra": ({"exits": x_log} if xe else {}) | ({"entry_limits": el_log} if el else {}) | ({"strategy_stats": dict(self.strategy.stats)}
+                "extra": ({"exits": x_log} if xe else {}) | ({"entry_limits": el_log} if el else {}) |
+                         ({"changepoint": cp_log} if cpc else {}) | ({"strategy_stats": dict(self.strategy.stats)}
                                                               if getattr(self.strategy, "stats", None) else {}) or None,
                 "positions": (pd.DataFrame(pos_rows, columns=["k", "j", "w", "pl", "ps"]).assign(
                     time=lambda d: idx[i0:i1][d["k"].values], asset=lambda d: np.array(assets)[d["j"].values])

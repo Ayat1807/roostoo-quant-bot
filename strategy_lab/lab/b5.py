@@ -72,6 +72,25 @@ def judge(name: str) -> dict:
     return out
 
 
+def three_day(h: pd.DataFrame, analog_days: list[pd.Timestamp]) -> dict:
+    """Secondary check (block 6): 3-day returns, windows stepping daily from 00:00 UTC, per half and after the analogs."""
+    eq = h["equity"]
+    out = {}
+    for k, (a, e) in HALVES.items():
+        x = eq.loc[a:e]
+        if len(x) < 24 * 4:
+            continue
+        starts = pd.date_range(x.index[0].ceil("D"), x.index[-1] - pd.Timedelta(days=3), freq="1D")
+        r = pd.Series([eq.asof(s + pd.Timedelta(days=3)) / eq.asof(s) - 1 for s in starts], dtype=float)
+        out[k] = {"mean": float(r.mean()), "median": float(r.median()), "pos": float((r > 0).mean()), "worst": float(r.min())}
+    r = pd.Series([eq.asof(d + pd.Timedelta(days=3)) / eq.asof(d) - 1 for d in analog_days
+                   if d + pd.Timedelta(days=3) <= min(eq.index[-1], OOS_END)], dtype=float)
+    if len(r):
+        out["analogs"] = {"mean": float(r.mean()), "median": float(r.median()), "pos": float((r > 0).mean()),
+                          "worst": float(r.min()), "n": int(len(r))}
+    return out
+
+
 def beats_ref(j: dict, r: dict) -> bool:
     return all(j[k]["comp"] > r[k]["comp"] and j[k]["mean"] > r[k]["mean"] for k in ("IS", "OOS"))
 
@@ -201,6 +220,12 @@ def report(names: list[str], out: str = "leaderboard_b5.md") -> int:
                  f"{pct(d['long_pnl']) if d else 'n/a'} | {pct(d['short_pnl']) if d else 'n/a'} | "
                  f"{pr(d['hit']) if d else 'n/a'} | {pr(d['net_short']) if d else 'n/a'} | "
                  f"{'' if n == LIVE else format(corr(n, live_d) or 0, '.2f')} | {format(corr(n, btc_d) or 0, '.2f')} |")
+    L += ["\n## Secondary: 3-day horizon (mean / median / P(> 0) / worst)\n",
+          "| run | IS | OOS | 30 analog windows |", "|---|---|---|---|"]
+    for n in have:
+        td = three_day(load_hourly(n), analog_days)
+        c3 = lambda d: f"{pct(d['mean'])} / {pct(d['median'])} / {pr(d['pos'])} / {pct(d['worst'])}" if d else ""
+        L.append(f"| {labels.get(n, n)} | {c3(td.get('IS'))} | {c3(td.get('OOS'))} | {c3(td.get('analogs'))} |")
     (ROOT / out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"adopted: {adopt}; ranking: {rank(trials, J)[:5]}")
     return 0

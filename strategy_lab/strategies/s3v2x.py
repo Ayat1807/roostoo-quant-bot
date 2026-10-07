@@ -5,7 +5,7 @@
   parking_asset: e.g. PAXGUSDT. Capital not allocated by the signal (1 - gross) is put
              into this asset (x parking_frac) instead of USD. It is excluded from the
              signal and the vol/N computation. PAXG = tokenised gold, listed on Roostoo.
-  signal:    "sign" (live) or "tstat": per horizon t = r_h / (sigma_bar * sqrt(h)), score_h =
+  signal:    "sign" (live), "ema_ensemble" (block 6 A2: mean of sign(EMA fast - EMA slow) over ema_pairs) or "tstat": per horizon t = r_h / (sigma_bar * sqrt(h)), score_h =
              clip(t, -tstat_cap, tstat_cap) / tstat_cap (s3v2_smooth).
   vol_method: "std" (live: std of the last vol_win bar returns) or "ewma" (EWMA std,
              halflife ewma_halflife bars; s3v2_ewma_vol).
@@ -50,6 +50,10 @@ class S3v2x(Strategy):
             cap = float(p["tstat_cap"])
             sig = sum((np.log(last / c.iloc[-1 - h]) / (sd * np.sqrt(h))).clip(-cap, cap) / cap
                       for h in horizons) / len(horizons)
+        elif p["signal"] == "ema_ensemble":      # block 6 A2: equal-weight vote of EMA crossovers (spans in bars)
+            pairs = p.get("ema_pairs") or [[8, 24], [24, 96], [48, 192], [96, 384]]
+            sig = sum(np.sign(c.ewm(span=f, adjust=False).mean().iloc[-1] - c.ewm(span=s_, adjust=False).mean().iloc[-1])
+                      for f, s_ in pairs) / len(pairs)
         else:
             sig = sum(np.sign(last / c.iloc[-1 - h] - 1) for h in horizons) / len(horizons)
         if p["vol_method"] == "ewma":
