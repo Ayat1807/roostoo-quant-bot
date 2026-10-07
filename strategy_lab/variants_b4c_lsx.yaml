@@ -60,3 +60,31 @@ runs:
   # 299 (min_positions 1), 300-326 (stage B), 327-333 (stage C), 334-343 (sweep): resolved by lab/b4c.py, appended below
   # resolved 2026-10-07 06:49 UTC by lab/b4c.py --resolve-a1: best of 291-298 = b4c_A_g_S2_G75 (OOS P>=10% 6.2%, OOS median -2.85%, meets True)
   - {name: b4c_A1_minpos, trial: 299, group: A, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}}
+  # resolved 2026-10-07 06:51 UTC by lab/b4c.py --resolve-b: stage A winner = b4c_A1_minpos (OOS P>=10% 6.6%, OOS median -2.68%, meets True)
+  - {name: b4c_B_c2_w00_m125, trial: 300, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.0, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w00_m150, trial: 301, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.0, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w00_m200, trial: 302, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.0, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w03_m125, trial: 303, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.3, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w03_m150, trial: 304, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.3, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w03_m200, trial: 305, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.3, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w05_m125, trial: 306, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.5, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w05_m150, trial: 307, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.5, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c2_w05_m200, trial: 308, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 2, w: 0.5, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 2}
+  - {name: b4c_B_c4_w00_m125, trial: 309, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.0, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w00_m150, trial: 310, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.0, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w00_m200, trial: 311, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.0, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w03_m125, trial: 312, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.3, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w03_m150, trial: 313, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.3, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w03_m200, trial: 314, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.3, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w05_m125, trial: 315, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.5, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w05_m150, trial: 316, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.5, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c4_w05_m200, trial: 317, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 4, w: 0.5, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 4}
+  - {name: b4c_B_c6_w00_m125, trial: 318, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.0, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w00_m150, trial: 319, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.0, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w00_m200, trial: 320, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.0, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w03_m125, trial: 321, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.3, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w03_m150, trial: 322, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.3, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w03_m200, trial: 323, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.3, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w05_m125, trial: 324, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 1.25, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w05_m150, trial: 325, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 1.5, min_hold_h: 6}, rebalance_every_h: 6}
+  - {name: b4c_B_c6_w05_m200, trial: 326, group: B, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1, check_h: 6, w: 0.5, swap_m: 2.0, min_hold_h: 6}, rebalance_every_h: 6}
