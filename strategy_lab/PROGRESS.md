@@ -25,9 +25,17 @@ recommended variant gets a stats card (`python -m lab.stats_card <run> [others]`
 - `04b8018` strategy_bot: event_refresh option (off) + test fixes; all bot suites pass.
 - hourly lows downloaded (.cache/klines_hl, 65 coins).
 
+- 2026-10-07 NEW TEAM OBJECTIVE (risk-adjusted composite + down markets): block 5 pre-registered `88b5606`
+  (variants_b5_shorts.yaml, 394-408; judging in lab/b5.py). References re-run with positions (lab/b5_refs.py, b5ref__*).
+- Block 4d runs 344-348 done (report not yet written; to be judged under the NEW objective too).
+
 ## Running
-- block 4d: `.cache/b4d.log` (b4d__control reproduction with positions, then 344-348).
+- block 5: `.cache/b5_run.log` (394-401), `.cache/b5_refs.log`.
 
 ## Next (in order)
-3. Block 4d: when 344-348 finish: `python -m lab.b4gen 4d --resolve-sweep` -> commit -> run group sweep -> `python -m lab.b4gen 4d`.
-4. Block 4b: run 359-371, 376-383; `python -m lab.b4gen 4b --resolve-best-sizing`; run 372-375; sweep; report.
+1. Block 5: `python -m lab.b5 --resolve-f` -> commit -> `python -m lab.runner variants_b5_shorts.yaml --group F`;
+   `--resolve-sweep` -> commit -> `--group sweep`; `python -m lab.b5` -> leaderboard_b5.md; stats cards
+   (`python -m lab.stats_card <run> b3_s3v2e_core10 b3_xsmom_r1`) for finalists. If adopted: strategy_bot flags + tests +
+   testing config (cap 10000, own paths) + EC2 commands; no competition config.
+2. Block 4d: `python -m lab.b4gen 4d` (old objective) + `python -m lab.b5 <4d runs>` (new objective); sweep resolution.
+3. Block 4b: run, report under both objectives.
