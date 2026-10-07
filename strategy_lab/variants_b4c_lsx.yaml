@@ -58,3 +58,5 @@ runs:
   - {name: b4c_A_g_S3_G75, trial: 297, group: A, params: {n_short: 3, gross_cap: 0.75, short_gate: btc_below_30d}}
   - {name: b4c_A_g_S3_G90, trial: 298, group: A, params: {n_short: 3, gross_cap: 0.90, short_gate: btc_below_30d}}
   # 299 (min_positions 1), 300-326 (stage B), 327-333 (stage C), 334-343 (sweep): resolved by lab/b4c.py, appended below
+  # resolved 2026-10-07 06:49 UTC by lab/b4c.py --resolve-a1: best of 291-298 = b4c_A_g_S2_G75 (OOS P>=10% 6.2%, OOS median -2.85%, meets True)
+  - {name: b4c_A1_minpos, trial: 299, group: A, params: {n_short: 2, gross_cap: 0.75, short_gate: btc_below_30d, min_positions: 1}}
