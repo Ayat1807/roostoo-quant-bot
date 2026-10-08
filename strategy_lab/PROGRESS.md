@@ -39,11 +39,14 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
   changepoint_cut, config_testing_hmm_cusum.yaml, status.py lines, daily_check.py, shared-account guard,
   tests/test_hmm_cusum.py PASS), reports/forward_test_plan.md, DEPLOY.md section 14.
 
+- STEP 2: block 8 (497-510) done, NOT adopted in either family (leaderboard_b8.md, reports/stats_card_b8_finalists.md);
+  sweep 511-520 running (.cache/b8_sweep.log).
+- STEP 3: all block 6 / 7 sweeps folded into the reports; trial ledger FROZEN at 520 declared trials.
+- STEP 4: history secret scan CLEAN (reports/public_readiness.md: open decisions = author email in history, teammate
+  consent, doc test vector); root README.md; reports/finals_outline.md ([FILL] items from daily_check.py).
+
 ## Running
-- sweeps (tables only): .cache/b6b_sweep.log, b6c_sweep.log, b6e_sweep.log -> b6d_sweep.log, b7_sweep.log.
+- block 8 sweep 511-520 (tables only).
 
 ## Next
-1. STEP 2 (deadline 2026-10-11): block 8 universe breadth / exposure (U1-U7 on s3v2e_core10 and on HMM2+CUSUM, 14 runs),
-   pre-register first; broad-down windows (BTC 14d < -5% AND > 70% of coins down); U6 floor firing stats; sweep best 2.
-2. STEP 3: no new trials after block 8; fold sweeps into reports; freeze the trial ledger.
-3. STEP 4: git-history secret scan + public-readiness checklist (stop and report if anything sensitive); finals_outline.md.
+1. When the block 8 sweep finishes: `python -m lab.b8`, commit. Nothing else queued; research is closed.

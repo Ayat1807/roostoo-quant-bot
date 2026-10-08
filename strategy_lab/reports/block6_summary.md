@@ -120,3 +120,24 @@ Paired comparison in the analog windows (HMM2 + CUSUM minus s3v2e):
 Both are below the luck threshold of 2.9, and this is a secondary metric chosen after the fact.
 
 **Reading:** in markets like now both are close to flat over 14 days, and slightly negative over 3 days. HMM2 + CUSUM loses a little less in the bad analogs (it was better in most of the negative cases) and gives up some of the best ones: +7.3% vs +8.2%, +3.6% vs +5.0%. That is the same risk-reshaping pattern as on the full sample, too small to justify a switch.
+
+## Block 8 (last block): universe breadth and exposure (variants_b8_breadth.yaml, leaderboard_b8.md, reports/stats_card_b8_finalists.md)
+**Not adopted**, in either family. Each family was judged against its own core10 baseline: s3v2e (live) against b3_s3v2e_core10, and HMM2 + CUSUM (forward test) against b7_hmm2_cusum.
+- **Wider universes (U1–U3: top 15 / 20 / 30 by volume, sizing divisor 10):**
+  - They raise average gross exposure (20% → 25–28% for s3v2e), fees (4.3% → 5.7–6.5% a year) and turnover.
+  - They lower OOS Sharpe (1.38 → 0.69–1.07) and the OOS mean 14-day return (+0.8% → +0.3–0.4%).
+  - In broad-down markets (BTC −5% or worse and more than 70% of coins down) they also earn less OOS: +0.9–1.7%, vs +1.9% for core10.
+- **Divisor N with band 0.04 (U4):** smaller gross (13%) and the lowest drawdowns, but half the return.
+- **80% gross cap (U5):** it rarely binds and lowers the OOS Sharpe.
+- **Band 0.04 on core10 (U7):** more trading, worse OOS. Worst 14 days −10.0% for s3v2e.
+- **Exposure floor (U6):**
+  - It fires on 42% of days and raises gross to the 50% floor.
+  - For s3v2e it improves the in-sample composite (−1.26 vs −1.61) but worsens OOS (−1.17 vs −0.28).
+  - For HMM2 + CUSUM it gives the best OOS composite of the block (+0.93), with a lower OOS mean return (+0.7% vs +0.8%) and a worse in-sample composite.
+  - On days it fires, the next-day mean barely changes (+0.03–0.08%) while the worst day deepens: s3v2e −5.0% vs −3.5% in-sample; HMM2 + CUSUM −4.0% vs −1.8% in-sample.
+- **Margins:** every t vs the own baseline is negative or near zero (min over halves −2.5 to −0.3).
+
+**Reading for the finals:** top teams' books look broader and more exposed, but on our data more coins and more exposure add costs and noise faster than return. The concentrated, low-gross core10 book stays the better risk-adjusted choice.
+
+## Research closed: trial ledger frozen at 520 declared trials (2026-10-08)
+No new trials after block 8. Remaining sweep runs are folded into the reports when they finish; they cannot change any verdict.

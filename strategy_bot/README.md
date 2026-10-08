@@ -42,6 +42,7 @@ Two strategies run as sleeves of one account (`config.yaml`, `sleeves.py`), each
 The organisers noted that judges discount strategies that rely on queue-free simulator fills. How the bot and its backtests handle execution:
 
 - **Backtests charge taker fees on every fill.** strategy_lab assumes 100% taker fills (0.10%) plus 2 bps slippage per fill, never maker rebates or queue priority. The live bot first rests a limit order at its side of the book (maker, 0.05%), then sends a market order for whatever hasn't filled after 5 minutes. Live fills therefore cost at most what the backtests assume.
+- **Live strategy (s3v2e on core10, since 2026-10-07):** under the same stress its OOS return is +31.2% vs +34.5% and its worst 14 days −4.2% vs −5.2% (`../strategy_lab/reports/stats_card_s3v2e_core10_competition.md`).
 - **Stress test:** 100% taker plus **5 bps extra slippage** per fill (7 bps total). The 14-day results barely change ([../strategy_lab/reports/robustness.md](../strategy_lab/reports/robustness.md)):
 
 | config | costs | OOS P(14d >= +10%) | OOS P(14d <= -10%) | OOS worst 14d | meets constraints (both halves) |
