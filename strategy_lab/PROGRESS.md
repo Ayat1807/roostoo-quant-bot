@@ -51,6 +51,10 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
 - Block 10 (intraday jump premise test, 0 trials, 5-minute Binance bars in .cache/klines_5m): NO-GO (IS jumps reverse,
   t -5.4 at 1h; OOS ~0); recorded as a finding (reports/jump_premise.md). No capture bot. Ledger still 520.
 
+- News risk layer (strategy_bot/news_layer.py, SHADOW on config_testing_hmm_cusum.yaml, tests/test_news_layer.py, DEPLOY.md
+  section 15, news_shadow_report.py). Block 11 (1 trial, 521): calendar + Fear & Greed rules barely change OOS, cost return IS
+  (reports/news_rules_dry_run.md). Veto rule: forward shadow log only.
+
 ## Running
 - block 8 sweep 511-520 (tables only).
 

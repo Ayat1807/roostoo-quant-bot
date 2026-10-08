@@ -25,6 +25,29 @@ against it (flag `changepoint_cut`). Both flags are off in every other config. P
 `../strategy_lab/reports/forward_test_plan.md`; procedure: DEPLOY.md section 14; daily comparison: `python daily_check.py`.
 One account = one bot: the bot refuses to start while another live bot uses the same key label.
 
+## News risk layer (SHADOW mode on the testing bot)
+
+`news_layer.py` (config `news_layer`) reads crypto news and macro context every 15 minutes:
+- **Sources:** CryptoPanic (optional token), CoinDesk and Cointelegraph RSS, the Crypto Fear & Greed index, and the CPI / FOMC calendar.
+- **Classification:** each relevant headline is classified by a small, pinned LLM (temperature 0, strict JSON, invalid answers skipped, daily cost cap).
+- **Rules:** fixed and deterministic.
+  - **Veto:** a coin with a severe, confident, negative hack / exploit / delisting / regulatory / depeg headline gets target 0 for 72h.
+  - **Calendar:** all targets ×0.7 from 24h before a CPI or FOMC release until 4h after.
+  - **Sentiment:** all targets ×0.8 when Fear & Greed is ≥ 85 or ≤ 10.
+
+**Why it can only reduce risk:**
+- **Fixed rules:** an LLM reading headlines is a weak, noisy signal and can be wrong. The layer therefore never chooses positions; it can only shrink or close what the strategy already holds.
+- **Enforced in code:** `adjust()` refuses any output whose weight exceeds the input or flips its sign.
+- **Worst case:** a false alarm costs some upside on one coin for up to 72 hours, or a 20–30% smaller book for a day. It cannot create a position, add leverage, or turn a long into a short.
+- **Failures:** news or LLM failures (timeouts, bad JSON, outages, cost cap) are logged and never block trading. Fetching runs in a background thread.
+
+**Why it is forward-tested in shadow mode first:**
+- **No honest backtest of the veto rule:** there is no free archive of timestamped headlines, and an LLM asked about 2025 events already knows how they ended.
+- **The deterministic rules were backtested:** see `../strategy_lab/reports/news_rules_dry_run.md`, which is not hindsight-contaminated.
+- **What the shadow log records:** in shadow mode (`shadow: true`) trading is unchanged. Every headline, LLM answer, rule and would-be change is logged to `<logs>/news_shadow.jsonl`, with a daily summary.
+- **Review:** after a few days, `python news_shadow_report.py --config <config>` lists every veto with what the coin actually did (false alarm or not), how often the rules fired, the LLM cost, and the would-be P&L difference.
+- **Rollout:** the layer goes live only after that review and a team decision. It is never on the competition bot until then, and `tests/test_safety.py` enforces that.
+
 ## Previous testing configuration (from 2026-10-06, replaced by the forward test)
 
 Two strategies run as sleeves of one account (`config.yaml`, `sleeves.py`), each on its own book:
@@ -89,4 +112,5 @@ python -m tests.test_status        # status.py (display only) vs the mock accoun
 python -m tests.test_event_refresh # optional event_refresh sleeve option
 python -m tests.test_competition_s3v2e # live competition config: parity, replay, restart, old-bot KILL
 python -m tests.test_hmm_cusum     # forward test: HMM / CUSUM / target parity, replay, restart, guards
+python -m tests.test_news_layer    # news layer: mocked feeds / LLM, veto, failures, cost cap, shadow replay
 ```

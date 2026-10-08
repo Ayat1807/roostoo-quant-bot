@@ -162,3 +162,16 @@ The team's hypothesis was that coins make large idiosyncratic moves while BTC is
 - **Fading the jumps does not work either.** The in-sample reversal before costs (about +0.26% at 1h) barely covers the 0.25% round trip, and OOS it is negative.
 - **Outcome:** no capture bot was designed; 0 trials, the ledger stays at 520.
 - **Combined lesson with block 9** (daily residual moves): idiosyncratic crypto moves are frequent but not predictably persistent at any horizon from 1 hour to 3 days, net of realistic costs.
+
+## Block 11: news risk layer, historical dry run of the deterministic rules (variants_b11_news.yaml, reports/news_rules_dry_run.md)
+Not hindsight-contaminated: the calendar and Fear & Greed rules use no LLM.
+- **Rules tested:**
+  - calendar: CPI / FOMC within 24h or less than 4h after → ×0.7. Active in about 6% of hours.
+  - Fear & Greed ≥ 85 or ≤ 10 → ×0.8. About 5–6% of days.
+- **Result:** together they barely change OOS and cost return in-sample.
+  - OOS (Jan 2025 – Jun 2026): return +34.9% vs +34.5%, max drawdown −11.6% vs −12.0%, Sharpe 1.38 for both.
+  - In-sample: +83.3% vs +97.8%, with no drawdown benefit.
+  - Median 14d composite is worse in both halves.
+- **Consistent with block 4a:** CPI / FOMC de-risking was noise there too.
+- **The headline veto rule** cannot be backtested honestly (no free headline archive; LLM recall is hindsight). It is judged only on the forward shadow log of the testing bot.
+- **Trial ledger:** 521 declared (block 11 added 1; blocks 9 and 10 were measurements with 0 trials).

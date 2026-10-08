@@ -56,6 +56,7 @@ def report(title: str, checks: dict) -> bool:
 def sim_cfg() -> dict:
     cfg = load_config(HERE / CFG)
     cfg.update(dry_run=False, poll_s=0, limit_wait_s=0, limit_poll_s=0)
+    cfg.pop("news_layer", None)          # offline: the news layer (shadow only) is tested in tests/test_news_layer.py
     return cfg
 
 

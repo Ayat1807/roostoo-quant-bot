@@ -129,6 +129,14 @@ class StrategyBot:
         self.hmm = None
         self.regime_info: dict[str, Any] | None = None
         self.cuts_file = self.state_dir / "cuts.json"
+        # optional news risk layer (news_layer.py): reduce-only, shadow mode logs what it WOULD do
+        self.news_cfg = cfg.get("news_layer") if (cfg.get("news_layer") or {}).get("enabled") else None
+        if self.news_cfg and self.sleeve_specs:
+            raise ValueError("news_layer is a single-strategy option (no sleeves)")
+        self.news = None
+        self.news_info: dict[str, Any] | None = None
+        self._news_day: str | None = None
+        self._news_acc = {"steps": 0, "fired": 0, "g_eff": 0.0, "g_would": 0.0}
         self.cuts: dict[str, float] = {}
         self.cut_reset_bar: str | None = None
 
@@ -169,6 +177,9 @@ class StrategyBot:
         if self.bars is None:
             self.bars = BarStore(self.pairs, self.state_dir / "bars.csv", self.log_dir / "api_log.jsonl")
             self.bars.load_or_bootstrap(int(cfg["bootstrap_hours"]), self.clock())
+        if self.news_cfg and self.news is None:
+            from news_layer import NewsLayer
+            self.news = NewsLayer(self.news_cfg, self.pairs, self.log_dir, self.state_dir, HERE, clock=self.clock)
         if self.hmm_cfg and self.hmm is None:
             from market_data import fetch_binance_hourly
             from regime_live import HMM_START, RegimeHMM
@@ -406,6 +417,38 @@ class StrategyBot:
             log.info("changepoint cut: %s (since bar %s)", new, self.cut_reset_bar)
         return new
 
+    # ----- news layer (optional) --------------------------------------------- #
+
+    def _news_record(self, now: pd.Timestamp, eff: dict[str, float], would: dict[str, float], info: dict,
+                     band: float) -> None:
+        cur = (self.port.last_snapshot or {}).get("weights") or {}
+        trades = lambda tgt: {p for p in tgt if abs(tgt[p] - cur.get(p, 0.0)) > band
+                              or (tgt[p] == 0 and abs(cur.get(p, 0.0)) > 1e-4)}
+        changed = {p: [round(eff[p], 5), round(would[p], 5)] for p in eff if abs(eff[p] - would[p]) > 1e-12}
+        g_eff, g_would = sum(abs(v) for v in eff.values()), sum(abs(v) for v in would.values())
+        day = str(now.date())
+        if self._news_day is not None and day != self._news_day and self._news_acc["steps"]:
+            a = self._news_acc
+            self.news._log({"event": "daily_summary", "day": self._news_day, **self.news.day_stats.get(self._news_day, {}),
+                            "steps": a["steps"], "steps_with_rule": a["fired"],
+                            "avg_gross_actual": round(a["g_eff"] / a["steps"], 4),
+                            "avg_gross_would": round(a["g_would"] / a["steps"], 4),
+                            "llm_cost_usd": round(self.news.cost.get("usd", 0.0), 4)})
+            self._news_acc = {"steps": 0, "fired": 0, "g_eff": 0.0, "g_would": 0.0}
+        self._news_day = day
+        a = self._news_acc
+        a["steps"] += 1
+        a["fired"] += bool(info["fired"])
+        a["g_eff"] += g_eff
+        a["g_would"] += g_would
+        self.news_info = {**info, "gross_actual": round(g_eff, 4), "gross_would": round(g_would, 4),
+                          "shadow": bool(self.news.c["shadow"])}
+        self.news._log({"event": "step", "shadow": bool(self.news.c["shadow"]), "fired": info["fired"],
+                        "mult": info["mult"], "vetoed": info["vetoed"], "gross_actual": round(g_eff, 4),
+                        "gross_would": round(g_would, 4), "changed": changed,
+                        "would_trade_extra": sorted(trades(would) - trades(eff)),
+                        "would_skip": sorted(trades(eff) - trades(would))})
+
     # ----- hourly decision ------------------------------------------------- #
 
     def step(self, tick: dict[str, Any], reason: str) -> int:
@@ -439,6 +482,14 @@ class StrategyBot:
         new_cuts = {} if fresh else self.check_cuts(equity, expo)     # no cut on the bar of a new target (as the lab)
         eff = {p: w * self.mult * self.cuts.get(p, 1.0) for p, w in self.target.items()}
         n = 0
+        if self.news is not None:
+            try:
+                would, info = self.news.adjust(eff, now)
+                self._news_record(now, eff, would, info, band)
+                if not self.news.c["shadow"]:
+                    eff = would                 # live mode (not enabled anywhere yet): trade the reduced targets
+            except Exception as exc:            # the news layer can never block trading
+                self.logs.error("news_layer", exc)
         if new_cuts:                      # a cut trades at once, whatever the band
             n += self.port.rebalance(eff, tick, 0.0, f"{why} changepoint_cut", only=set(new_cuts))
         n += self.port.rebalance(eff, tick, band, why)
@@ -696,6 +747,11 @@ class StrategyBot:
         """One ticker call; on a completed hour (or a new KILL file) run a decision step."""
         now = self.clock()
         tick = self.c.ticker()["Data"]
+        if self.news is not None:
+            try:
+                self.news.maybe_refresh(now)     # background thread: never blocks this poll
+            except Exception as exc:
+                self.logs.error("news_layer", exc)
         missing = [p for p in self.required_pairs() if p not in tick]
         prices = {p: num(tick[p], "LastPrice") for p in self.pairs if p in tick}
         closed = self.bars.on_ticker(now, prices)
@@ -727,7 +783,7 @@ class StrategyBot:
             "equity": snap.get("equity"), "sizing_equity": snap.get("sizing_equity"),
             "usd": snap.get("usd"), "brake": self.brake, "mult": self.mult,
             "target": self.target, "target_time": self.target_time,
-            "regime": self.regime_info, "cuts": self.cuts if self.cp_cfg else None,
+            "regime": self.regime_info, "cuts": self.cuts if self.cp_cfg else None, "news": self.news_info,
             "cut_reset_bar": self.cut_reset_bar if self.cp_cfg else None,
             "actual": snap.get("weights"), "last_trade_day": self.last_trade_day,
             "last_action": self.last_action, "pairs": self.pairs})

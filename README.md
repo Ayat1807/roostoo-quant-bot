@@ -37,7 +37,7 @@ A trend-following crypto trading bot for the Roostoo mock exchange, and the rese
 A forward test of s3v2e + HMM2 regime + CUSUM changepoint cut runs on the testing key (plan: [forward_test_plan.md](strategy_lab/reports/forward_test_plan.md)).
 
 ## Research summary
-- **Scale:** 520 pre-registered trials in 12 blocks; the ledger is frozen (`strategy_lab/runs/trials.json`). With that many trials, the best result is expected to look about 2.9 standard errors better than its true value. No variant beat the live strategy by more than |t| = 1.5.
+- **Scale:** 521 pre-registered trials (`strategy_lab/runs/trials.json`); after block 8 only two premise tests (0 trials) and the news-layer dry run (1 trial) were added. With that many trials, the best result is expected to look about 2.9 standard errors better than its true value. No variant beat the live strategy by more than |t| = 1.5.
 - **Objective:** first P(14-day return ≥ +10%), then the team's risk-adjusted objective: median 14-day composite (0.4 Sortino + 0.3 Sharpe + 0.3 Calmar) and mean 14-day return, with positive returns in down markets.
 - **Tested and rejected, with numbers:**
   - event-day trading (CPI, FOMC);

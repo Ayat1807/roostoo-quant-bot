@@ -258,6 +258,25 @@ def render(cfg: dict[str, Any], d: dict[str, Any]) -> tuple[list[str], int]:
         pr(f"HMM regime: p_crisis {float(rg.get('p_crisis', 0)):.1%} on {rg.get('day')} "
            f"(model {rg.get('month_model', rg.get('reason', ''))}) -> targets x {1 - 0.5 * float(rg.get('p_crisis', 0)):.2f}, "
            f"short scale in bull {0.5 + 0.5 * float(rg.get('p_crisis', 0)):.2f}")
+    nw = hb.get("news")
+    if nw:
+        pr(f"News layer ({'SHADOW' if nw.get('shadow') else 'LIVE'}): gross actual {nw.get('gross_actual', 0):.1%} vs "
+           f"would-be {nw.get('gross_would', 0):.1%}; rules: {', '.join(nw.get('fired') or []) or 'none'}")
+        shadow = tail_jsonl(d["log_dir"] / "news_shadow.jsonl", 10**9,
+                            lambda r: r.get("event") in ("item", "daily_summary", "cost_cap", "llm_invalid")
+                            or (r.get("event") == "step" and r.get("fired")))[-5:]
+        for r in shadow:
+            if r["event"] == "item":
+                o = r.get("llm") or {}
+                pr(f"  {r['time'][:16]} {r.get('source')}: {r.get('headline', '')[:70]} -> {o.get('coin')} {o.get('event_type')} "
+                   f"{o.get('direction')} sev {o.get('severity')} conf {o.get('confidence')}"
+                   f"{' => ' + r['rule'] if r.get('rule') else ''}")
+            elif r["event"] == "step":
+                pr(f"  {r['time'][:16]} would: {', '.join(r.get('fired') or [])}; gross {r.get('gross_actual', 0):.1%} -> "
+                   f"{r.get('gross_would', 0):.1%}; extra trades {r.get('would_trade_extra')}")
+            else:
+                pr(f"  {r['time'][:16]} {r['event']}: " + ", ".join(f"{k}={v}" for k, v in r.items()
+                                                                   if k not in ("time", "ts", "event"))[:150])
     if hb.get("cuts") is not None:
         cuts = hb.get("cuts") or {}
         pr(f"CUSUM cuts since bar {hb.get('cut_reset_bar')}: "

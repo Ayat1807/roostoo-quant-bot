@@ -38,6 +38,19 @@ changepoint_cut:           # CUSUM on standardised hourly returns, reset at each
   k: 0.5
   halflife: 168
 
+# --- news risk layer (news_layer.py): SHADOW mode = trading unchanged, would-be changes logged to
+#     logs_testing_hmm/news_shadow.jsonl. Reduce-only. Needs NEWS_LLM_API_KEY (and optionally CRYPTOPANIC_TOKEN) in .env ---
+news_layer:
+  enabled: true
+  shadow: true
+  poll_min: 15
+  llm_model: claude-haiku-4-5-20251001   # pinned model version; temperature 0
+  daily_cost_cap_usd: 1.0                # classification stops for the rest of the UTC day at this cost
+  max_items_per_poll: 20
+  veto_hours: 72
+  calendar_mult: 0.7                     # CPI / FOMC within 24h, until 4h after
+  fng_mult: 0.8                          # Fear & Greed >= 85 or <= 10
+
 capital_cap_usd: 10000
 
 # rebalance_hour_utc 1: targets on the bar opening 00:00 UTC (wall clock 01:00), exactly the strategy_lab convention

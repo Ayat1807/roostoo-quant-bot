@@ -146,6 +146,9 @@ def test_stats_card_rule() -> bool:
         good = bool(card) and (repo / card).is_file() and str(card).replace("\\", "/") in tracked
         ok &= good
         print(f"[{'PASS' if good else 'FAIL'}] {f.name}: competition config has a committed stats card ({card})")
+        no_news = not (cfg.get("news_layer") or {}).get("enabled")
+        ok &= no_news
+        print(f"[{'PASS' if no_news else 'FAIL'}] {f.name}: news layer off (only after the testing shadow log is reviewed)")
     return ok
 
 

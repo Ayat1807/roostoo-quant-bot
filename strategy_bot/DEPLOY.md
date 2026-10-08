@@ -347,3 +347,41 @@ tail -n 30 logs_testing_hmm/bot.log
 
 **Stop / kill switch:** graceful stop `tmux send-keys -t testing_hmm C-c`; flatten and idle `touch KILL_testing_hmm`.
 **Back to the old testing bot:** stop this one, `rm KILL`, start section 6's `strategy` command.
+
+## 15. News risk layer, SHADOW mode on the testing forward-test bot (`testing_hmm`)
+
+The layer is in `config_testing_hmm_cusum.yaml` with `news_layer: {enabled: true, shadow: true}`: trading is unchanged,
+would-be changes go to `logs_testing_hmm/news_shadow.jsonl`. **Never on the competition bot** until the shadow log has been
+reviewed (`tests/test_safety.py` fails if a competition config enables it). Design: README "News risk layer".
+
+**1. Keys (testing `.env` only; never in chat or git):**
+```bash
+cd ~/Trading_Competition/strategy_bot && nano .env
+#   NEWS_LLM_API_KEY=<Anthropic API key for the news classifier>
+#   CRYPTOPANIC_TOKEN=<CryptoPanic API token>        (optional; without it only RSS + Fear & Greed are used)
+chmod 600 .env; git check-ignore -v .env           # must print the ignore rule
+```
+
+**2. Update and restart the forward-test bot (restart-safe: targets, CUSUM cuts and the HMM model are restored):**
+```bash
+cd ~/Trading_Competition && git pull && cd strategy_bot && .venv/bin/python -m tests.test_safety
+tmux send-keys -t testing_hmm C-c; sleep 15; tmux ls        # "testing_hmm" gone (else: tmux kill-session -t testing_hmm)
+tmux new-session -d -s testing_hmm -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_testing_hmm_cusum.yaml --live'
+```
+
+**3. Check (first news refresh within ~1 minute of the first poll, then every 15 minutes):**
+```bash
+.venv/bin/python status.py --config config_testing_hmm_cusum.yaml     # "News layer (SHADOW)" line + last 5 shadow decisions
+tail -n 5 logs_testing_hmm/news_shadow.jsonl; grep '"news:' logs_testing_hmm/errors.jsonl | tail -n 5
+```
+If `NEWS_LLM_API_KEY` is missing, the bot logs a warning and fetches headlines without classifying them (no vetoes);
+calendar and Fear & Greed rules still run in shadow.
+
+**4. After 3 days:**
+```bash
+.venv/bin/python news_shadow_report.py --config config_testing_hmm_cusum.yaml --days 3
+```
+Vetoes with what each coin did (false alarm or not), how often the calendar / Fear & Greed rules fired, LLM cost, and the
+would-be P&L difference.
+
+**Turn it off:** set `news_layer: {enabled: false}` and restart, or stop the bot. The layer never changes trades in shadow mode.

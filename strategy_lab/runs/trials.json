@@ -1,6 +1,7 @@
 {
- "total_runs": 525,
+ "total_runs": 536,
  "distinct": [
+  "b11_news_rules",
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
   "b3_c50_s3v2e_xsmom_tm10",
@@ -301,6 +302,16 @@
   "b8_s_U5",
   "b8_s_U6",
   "b8_s_U7",
+  "b8s_b8_h_U6_r12h",
+  "b8s_b8_h_U6_r1h",
+  "b8s_b8_h_U6_r2h",
+  "b8s_b8_h_U6_r4h",
+  "b8s_b8_h_U6_r6h",
+  "b8s_b8_s_U3_r12h",
+  "b8s_b8_s_U3_r1h",
+  "b8s_b8_s_U3_r2h",
+  "b8s_b8_s_U3_r4h",
+  "b8s_b8_s_U3_r6h",
   "b_r1_bo",
   "b_r1_bo_dual",
   "b_r1_bo_gated",
@@ -508,7 +519,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-08 03:12 UTC",
+ "updated": "2026-10-08 07:49 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
