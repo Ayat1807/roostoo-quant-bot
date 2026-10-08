@@ -45,6 +45,9 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
 - STEP 4: history secret scan CLEAN (reports/public_readiness.md: open decisions = author email in history, teammate
   consent, doc test vector); root README.md; reports/finals_outline.md ([FILL] items from daily_check.py).
 
+- Block 9 STEP 0 (residual-momentum premise test, 0 trials): NO-GO (moves frequent, no continuation after costs in either
+  half); STEP 1 not declared or run. reports/residual_premise.md. Ledger still 520.
+
 ## Running
 - block 8 sweep 511-520 (tables only).
 

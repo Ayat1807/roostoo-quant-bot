@@ -141,3 +141,12 @@ Both are below the luck threshold of 2.9, and this is a secondary metric chosen 
 
 ## Research closed: trial ledger frozen at 520 declared trials (2026-10-08)
 No new trials after block 8. Remaining sweep runs are folded into the reports when they finish; they cannot change any verdict.
+
+## Block 9 STEP 0: residual-momentum premise test (variants_b9_residual.yaml, reports/residual_premise.md): NO-GO
+The team's hypothesis was that coins make large idiosyncratic moves while BTC is calm, and that a BTC-neutral book can capture them.
+- **Half true:** such moves are common. A residual 3-day move of ±10% or more with BTC within ±3% happens on 53% of calm-BTC days in-sample and 75% OOS, a median of 3 (IS) to 7 (OOS) coins per calm week.
+- **But they do not continue after costs.** The next-3-day residual return in the move's direction, net of a hedged round trip:
+  - all events: −0.29% in-sample (t −0.71), −0.35% OOS (t −0.67);
+  - the attention subset the sleeve would trade (volume ≥ 2× and no single-day spike over 25%): −0.21% (t −0.33) and −0.06% (t −0.06).
+- **No split survives both halves.** Up moves reverse OOS (−1.09%). The single-day-spike subset flips sign (+3.66% IS, −2.68% OOS).
+- **Rule result:** the declared GO rule (mean net > 0 with t ≥ 2 in both halves) fails everywhere. STEP 1 (the sleeve) was not declared and not run; no trials were added (the ledger stays at 520).
