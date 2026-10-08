@@ -1,0 +1,29 @@
+# Research block 10: INTRADAY JUMP premise test (team request 2026-10-08). A measurement, NOT a strategy trial: 0 trials.
+# Definitions fixed here BEFORE downloading or computing (lab/jump_premise.py, report reports/jump_premise.md). Live bot untouched.
+#
+# DATA: Binance spot 5-minute klines (data.binance.vision monthly files), 2023-01 to 2026-09, for the Roostoo crypto pool.
+#   Why 5-minute and not 1-minute: the capture bot under consideration polls every 5 minutes, so it can only act on what a
+#   5-minute close shows; 1-minute detection would credit moves such a bot cannot catch (and 1-minute data for ~65 coins is
+#   ~130M rows, beyond this machine). Bars are labelled by open time; a decision at bar t uses its close.
+# UNIVERSE: as block 9 (point-in-time, monthly): Roostoo pairs, >= 90 days of history, 30d mean daily quote volume >= $5M on the
+#   previous day; spread <= 5 bps has no history (not applied); survivorship caveat (today's Roostoo list).
+# BETA: per coin, cov / var of HOURLY log returns vs BTC over the 30 days ending at the previous full hour (point-in-time).
+# EVENT at bar t: residual 2h move R2 = sum over the last 24 bars (t-23..t) of (r_i - beta x r_BTC) (log 5m returns),
+#   |R2| >= 5%, AND quote volume of those 24 bars >= 3 x (2 x the coin's average HOURLY quote volume over the previous 30 days).
+#   After an event the same coin cannot trigger again for 12 hours (non-overlapping).
+# OUTCOME: residual return over the NEXT h hours, h = 1, 3, 6, 12, from the close of bar t, in the direction of the move:
+#   C_h = sign(R2) x sum over the next 12h-bars of (r_i - beta x r_BTC). Net: C_h - 0.25% (the team's round-trip cost); also
+#   reported with a BTC hedge leg: C_h - 0.25% x (1 + |beta|).
+# SUBSETS (reported): volume >= 3x (all) and >= 5x; |move| 5-10% / 10-20% / >= 20%; up vs down; UTC time of day (0-6, 6-12, 12-18,
+#   18-24 h). Halves: IS 2023-01-01 to 2024-12-31, OOS 2025-01-01 to 2026-06-30; Jul-Sep 2026 informational.
+# STATISTICS: mean, median, hit rate, t-stat with standard errors clustered by event day.
+# GO / NO-GO (fixed now): the subset a bot would trade = ALL events as defined above (volume >= 3x, |move| >= 5%), with the
+#   team's 0.25% cost. GO only if, for at least one horizon, mean net > 0 with t >= 2 in BOTH halves. (4 horizons are tested,
+#   so one passing at t = 2 by chance is plausible; a GO would be reported with that caveat.) Otherwise the block stops and is
+#   recorded as a finding. Also reported: events per week, and capacity = 5% participation of the coin's quote volume in the
+#   3 bars after the signal (15 minutes), median and 10th percentile, in USD.
+# A GO leads to a separately declared design block (5-minute polling, limit-at-touch entries, time-based exits).
+
+declared_trials: 0
+
+runs: []
