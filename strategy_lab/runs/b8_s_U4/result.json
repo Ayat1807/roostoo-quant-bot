@@ -1,0 +1,220 @@
+{
+ "name": "b8_s_U4",
+ "group": null,
+ "note": null,
+ "trial": null,
+ "spec": {
+  "record_positions": true,
+  "strategy": "s3v2x",
+  "start": "2020-02-15",
+  "band": 0.04,
+  "brake": true,
+  "allow_short": true,
+  "activity_guard": "minimal",
+  "params": {
+   "horizons": [
+    24,
+    72,
+    168,
+    336
+   ],
+   "vol_win": 336,
+   "regime_win": 336,
+   "target_vol": 0.4,
+   "short_scale_bull": 0.5,
+   "max_w": 0.3,
+   "btc_pair": "BTCUSDT",
+   "vol_method": "ewma",
+   "ewma_halflife": 168,
+   "n_divisor": null
+  },
+  "universe": {
+   "type": "satellite",
+   "rule": "R1",
+   "n_liquid": 20,
+   "min_history_days": 90,
+   "min_quote_volume_usd": 10000000.0,
+   "crash_guard": false,
+   "exclude_core": false,
+   "always_include_btc": true
+  },
+  "name": "b8_s_U4"
+ },
+ "runtime_s": 42.9,
+ "assets_loaded": 52,
+ "scorecard": {
+  "periods": {
+   "full": {
+    "return": 0.6612284056998199,
+    "ann_ret": 0.07943729576037573,
+    "vol": 0.10163575322750824,
+    "sharpe": 0.8028654099867056,
+    "sortino": 1.1597148621167763,
+    "mdd": -0.2176086256682358,
+    "calmar": 0.3650466313843879,
+    "composite": 0.8142595572580387,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "in_sample": {
+    "return": 0.47406118806447917,
+    "ann_ret": 0.08272252424097792,
+    "vol": 0.11142076365040995,
+    "sharpe": 0.7689602259772553,
+    "sortino": 1.1111975084976446,
+    "mdd": -0.2176086256682358,
+    "calmar": 0.38014359029635136,
+    "composite": 0.7892101482811398,
+    "start": "2020-02-15 00:00:00+00:00",
+    "end": "2024-12-31 23:00:00+00:00"
+   },
+   "out_of_sample": {
+    "return": 0.1275370287929256,
+    "ann_ret": 0.07067455846507364,
+    "vol": 0.06738299030252293,
+    "sharpe": 1.0471789003261773,
+    "sortino": 1.5080027207915363,
+    "mdd": -0.06207977235863815,
+    "calmar": 1.138447448820897,
+    "composite": 1.2588889930607368,
+    "start": "2025-01-01 00:00:00+00:00",
+    "end": "2026-10-04 14:00:00+00:00"
+   },
+   "oos_12m_ref": {
+    "return": 0.11348352470709955,
+    "ann_ret": 0.11348352470709955,
+    "vol": 0.08139632321523105,
+    "sharpe": 1.3613787696830693,
+    "sortino": 1.9748172350262072,
+    "mdd": -0.06207977235863815,
+    "calmar": 1.8280273975796686,
+    "composite": 1.7467487441893041,
+    "start": "2025-10-01 00:00:00+00:00",
+    "end": "2026-10-01 00:00:00+00:00"
+   }
+  },
+  "rolling_14d": {
+   "full": {
+    "n_windows": 2410,
+    "median_return": -0.001203456215411458,
+    "pct_positive": 0.4307053941908714,
+    "worst_return": -0.06985077499759973,
+    "best_return": 0.172520819894038,
+    "worst_dd": -0.09109249156457766,
+    "median_dd": -0.010291475677522866,
+    "median_composite": -1.7773847531247393,
+    "mean_composite": 2.754203791711247,
+    "median_sharpe": -0.7848723731407626,
+    "median_active_days": 14.0,
+    "min_active_days": 13,
+    "pct_windows_all_days_active": 0.9941908713692946
+   },
+   "out_of_sample": {
+    "n_windows": 628,
+    "median_return": -0.0006848968695455371,
+    "pct_positive": 0.4554140127388535,
+    "worst_return": -0.03688120695187158,
+    "best_return": 0.10427473902761575,
+    "worst_dd": -0.04646952938298077,
+    "median_dd": -0.008989631589172042,
+    "median_composite": -1.1618448128991634,
+    "mean_composite": 2.4051366221346595,
+    "median_sharpe": -0.49471816941114616,
+    "median_active_days": 14.0,
+    "min_active_days": 14,
+    "pct_windows_all_days_active": 1.0
+   },
+   "in_sample": {
+    "n_windows": 1768,
+    "median_return": -0.0012921377748660867,
+    "pct_positive": 0.4253393665158371,
+    "worst_return": -0.06985077499759973,
+    "best_return": 0.172520819894038,
+    "worst_dd": -0.09109249156457766,
+    "median_dd": -0.010902709595018378,
+    "median_composite": -1.8544199816444893,
+    "mean_composite": 2.9633988403511573,
+    "median_sharpe": -0.8182766227177085,
+    "median_active_days": 14.0,
+    "min_active_days": 13,
+    "pct_windows_all_days_active": 0.9920814479638009
+   }
+  },
+  "regimes": {
+   "shock": {
+    "days": 176,
+    "share_days": 0.07263722657862154,
+    "mean_daily": 0.001716801942025642,
+    "hit_rate": 0.5170454545454546,
+    "ann_sharpe": 3.3661993647430246,
+    "cum_return": 0.3413767145190767
+   },
+   "bull": {
+    "days": 687,
+    "share_days": 0.2835328105654148,
+    "mean_daily": 0.00046324594917502464,
+    "hit_rate": 0.5211062590975255,
+    "ann_sharpe": 1.8069487313751793,
+    "cum_return": 0.3634299134424608
+   },
+   "bear": {
+    "days": 400,
+    "share_days": 0.1650846058605035,
+    "mean_daily": 0.00022768556982970367,
+    "hit_rate": 0.4675,
+    "ann_sharpe": 1.4755805203844152,
+    "cum_return": 0.09345030061349502
+   },
+   "chop": {
+    "days": 1160,
+    "share_days": 0.47874535699546017,
+    "mean_daily": -0.0001341716236382592,
+    "hit_rate": 0.43103448275862066,
+    "ann_sharpe": -0.45839964733172595,
+    "cum_return": -0.15882998649303615
+   }
+  },
+  "regime_share_oos": {
+   "chop": 0.609,
+   "bull": 0.178,
+   "bear": 0.17,
+   "shock": 0.044
+  },
+  "activity": {
+   "trades_total": 4915,
+   "trades_per_day": 2.027640264026403,
+   "active_day_share": 0.9995874587458746,
+   "turnover_per_year_x_equity": 27.3333380646678,
+   "fees_total_usd": 11668.505971020553,
+   "fees_per_year_pct_equity": 0.027333338064667798,
+   "avg_gross_exposure": 0.12011942248304941,
+   "time_brake_active": 0.03158148090841886
+  },
+  "corr_daily_vs_s3v2": 0.7351307377196716
+ },
+ "last_targets": {
+  "time": "2026-10-04 00:00:00+00:00",
+  "members": 20,
+  "target": {
+   "BTCUSDT": 0.05965,
+   "ETHUSDT": 0.02494,
+   "ZECUSDT": -0.0088,
+   "SOLUSDT": 0.01817,
+   "XRPUSDT": -0.00765,
+   "BNBUSDT": 0.0557,
+   "SUIUSDT": 0.00898,
+   "UNIUSDT": 0.00821,
+   "DOGEUSDT": -0.00718,
+   "AVAXUSDT": 0.02065,
+   "LINKUSDT": 0.01198,
+   "ARBUSDT": 0.00713,
+   "WLDUSDT": 0.01496,
+   "ADAUSDT": -0.0059,
+   "PEPEUSDT": 0.00939,
+   "TAOUSDT": 0.00974,
+   "PUMPUSDT": 0.01184
+  }
+ },
+ "events_log": null,
+ "extra": null
+}

@@ -24,14 +24,14 @@ FILE = "variants_b7_combo.yaml"
 REF_RUN = "b3_s3v2e_core10"
 
 
-def margins(name: str) -> dict:
+def margins(name: str, ref: str = REF_RUN) -> dict:
     """Per half: margin and t vs the reference for mean 14d return (paired, overlap-corrected) and median composite
     (14-day moving-block bootstrap, 2000 draws)."""
     out = {}
     rng = np.random.default_rng(0)
     for k in ("IS", "OOS"):
         a, b = HALVES[k]
-        wc, wr = windows(load_hourly(name), a, b), windows(load_hourly(REF_RUN), a, b)
+        wc, wr = windows(load_hourly(name), a, b), windows(load_hourly(ref), a, b)
         m = wc.merge(wr, on="start", suffixes=("", "_r"))
         d = (m["ret"] - m["ret_r"]).values
         n = len(d)

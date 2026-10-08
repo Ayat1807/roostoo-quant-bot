@@ -1,8 +1,8 @@
 # Block 5: risk-adjusted profit and down markets (new team objective)
 
-_Generated 2026-10-07 11:09 UTC. Rules: `variants_b5_shorts.yaml` (declared before any run). Data to 2026-06-30, both halves (IS 2020-02-15 to 2024-12-31, OOS 2025-01-01 to 2026-06-30); Jul-Oct 2026 informational._
+_Generated 2026-10-08 03:16 UTC. Rules: `variants_b5_shorts.yaml` (declared before any run). Data to 2026-06-30, both halves (IS 2020-02-15 to 2024-12-31, OOS 2025-01-01 to 2026-06-30); Jul-Oct 2026 informational._
 
-**Trials:** 496 declared across all blocks; luck threshold about 2.9 standard errors.
+**Trials:** 520 declared across all blocks; luck threshold about 2.9 standard errors.
 
 **Requirements (both halves):** mean 14d return > 0 in DOWN windows (BTC 14d < -5%), P(14d <= -10%) <= 5%, worst 14d >= -15%; OOS Sharpe >= 1.0. **Adopt:** all requirements AND higher median 14d composite AND higher mean 14d return than s3v2e_core10 in both halves.
 
@@ -40,6 +40,36 @@ _Generated 2026-10-07 11:09 UTC. Rules: `variants_b5_shorts.yaml` (declared befo
 | b7_hmm2_erc_cusum | IS | +1.3% (422) | 58% | -0.9% (709) | +1.5% (637) | yes |
 | b7_hmm2_erc_cusum | OOS | +1.6% (141) | 74% | -0.3% (272) | +0.9% (119) | yes |
 | b7_hmm2_erc_cusum | INFO | -2.9% (1) | 0% | -2.1% (51) | +5.8% (30) |  |
+| b7s_b7_hmm2_erc_r1h | IS | +1.8% (422) | 61% | -1.0% (709) | +0.8% (637) | yes |
+| b7s_b7_hmm2_erc_r1h | OOS | +1.6% (141) | 55% | -0.8% (272) | +0.6% (119) | yes |
+| b7s_b7_hmm2_erc_r1h | INFO | -1.8% (1) | 0% | -3.1% (51) | +5.1% (30) |  |
+| b7s_b7_hmm2_erc_r2h | IS | +1.9% (422) | 63% | -0.8% (709) | +1.1% (637) | yes |
+| b7s_b7_hmm2_erc_r2h | OOS | +1.8% (141) | 61% | -0.8% (272) | +1.0% (119) | yes |
+| b7s_b7_hmm2_erc_r2h | INFO | -2.0% (1) | 0% | -3.1% (51) | +4.4% (30) |  |
+| b7s_b7_hmm2_erc_r4h | IS | +2.0% (422) | 66% | -0.6% (709) | +1.2% (637) | yes |
+| b7s_b7_hmm2_erc_r4h | OOS | +1.8% (141) | 55% | -0.5% (272) | +1.0% (119) | yes |
+| b7s_b7_hmm2_erc_r4h | INFO | -1.3% (1) | 0% | -2.5% (51) | +7.6% (30) |  |
+| b7s_b7_hmm2_erc_r6h | IS | +1.6% (422) | 60% | -0.5% (709) | +1.7% (637) | yes |
+| b7s_b7_hmm2_erc_r6h | OOS | +2.2% (141) | 66% | -0.6% (272) | +0.8% (119) | yes |
+| b7s_b7_hmm2_erc_r6h | INFO | -2.3% (1) | 0% | -2.8% (51) | +5.2% (30) |  |
+| b7s_b7_hmm2_erc_r12h | IS | +2.1% (422) | 66% | -0.5% (709) | +1.7% (637) | yes |
+| b7s_b7_hmm2_erc_r12h | OOS | +2.2% (141) | 69% | -0.3% (272) | +1.1% (119) | yes |
+| b7s_b7_hmm2_erc_r12h | INFO | -1.7% (1) | 0% | -2.5% (51) | +6.5% (30) |  |
+| b7s_b7_hmm2_erc_cusum_r1h | IS | +1.8% (422) | 61% | -1.0% (709) | +0.8% (637) | yes |
+| b7s_b7_hmm2_erc_cusum_r1h | OOS | +1.6% (141) | 55% | -0.8% (272) | +0.6% (119) | yes |
+| b7s_b7_hmm2_erc_cusum_r1h | INFO | -1.8% (1) | 0% | -3.1% (51) | +5.1% (30) |  |
+| b7s_b7_hmm2_erc_cusum_r2h | IS | +1.6% (422) | 61% | -0.9% (709) | +0.7% (637) | yes |
+| b7s_b7_hmm2_erc_cusum_r2h | OOS | +1.5% (141) | 58% | -0.7% (272) | +0.8% (119) | yes |
+| b7s_b7_hmm2_erc_cusum_r2h | INFO | -2.7% (1) | 0% | -3.2% (51) | +3.6% (30) |  |
+| b7s_b7_hmm2_erc_cusum_r4h | IS | +1.7% (422) | 64% | -0.6% (709) | +0.9% (637) | yes |
+| b7s_b7_hmm2_erc_cusum_r4h | OOS | +1.5% (141) | 56% | -0.6% (272) | +0.9% (119) | yes |
+| b7s_b7_hmm2_erc_cusum_r4h | INFO | -3.1% (1) | 0% | -3.2% (51) | +4.9% (30) |  |
+| b7s_b7_hmm2_erc_cusum_r6h | IS | +1.5% (422) | 59% | -0.5% (709) | +1.3% (637) | yes |
+| b7s_b7_hmm2_erc_cusum_r6h | OOS | +1.6% (141) | 67% | -0.6% (272) | +0.9% (119) | yes |
+| b7s_b7_hmm2_erc_cusum_r6h | INFO | -2.8% (1) | 0% | -3.0% (51) | +4.8% (30) |  |
+| b7s_b7_hmm2_erc_cusum_r12h | IS | +1.6% (422) | 64% | -0.5% (709) | +1.1% (637) | yes |
+| b7s_b7_hmm2_erc_cusum_r12h | OOS | +1.2% (141) | 70% | -0.2% (272) | +1.2% (119) | yes |
+| b7s_b7_hmm2_erc_cusum_r12h | INFO | -1.6% (1) | 0% | -2.3% (51) | +6.3% (30) |  |
 
 ## Primary metric, risk limits, verdict
 
@@ -72,6 +102,36 @@ _Generated 2026-10-07 11:09 UTC. Rules: `variants_b5_shorts.yaml` (declared befo
 | b7_hmm2_erc_cusum | IS | -1.56 | +0.5% | -0.2% | 0% | -6.7% | 0.80 | -19.5% | 1% | 4.4% | 2.5 |  |  |
 | b7_hmm2_erc_cusum | OOS | 0.77 | +0.5% | +0.1% | 0% | -4.8% | 1.04 | -10.3% | 1% | 4.5% | 2.4 | **yes** | no |
 | b7_hmm2_erc_cusum | INFO | -7.90 | +0.8% | -1.8% | 0% | -5.2% | 0.73 | -8.2% | 16% | 9.4% | 4.1 |  |  |
+| b7s_b7_hmm2_erc_r1h | IS | -2.39 | +0.3% | -0.3% | 0% | -4.9% | 0.47 | -20.1% | 2% | 15.8% | 6.0 |  |  |
+| b7s_b7_hmm2_erc_r1h | OOS | -2.39 | +0.1% | -0.5% | 0% | -4.8% | 0.18 | -15.1% | 3% | 14.7% | 5.8 | no | no |
+| b7s_b7_hmm2_erc_r1h | INFO | -10.05 | -0.1% | -2.4% | 0% | -6.0% | -0.75 | -14.6% | 16% | 25.7% | 9.8 |  |  |
+| b7s_b7_hmm2_erc_r2h | IS | -2.00 | +0.5% | -0.2% | 0% | -4.8% | 0.83 | -14.0% | 3% | 12.1% | 4.7 |  |  |
+| b7s_b7_hmm2_erc_r2h | OOS | -2.43 | +0.3% | -0.4% | 0% | -5.2% | 0.50 | -15.8% | 4% | 11.2% | 4.5 | no | no |
+| b7s_b7_hmm2_erc_r2h | INFO | -10.39 | -0.3% | -2.3% | 0% | -8.3% | -1.01 | -16.6% | 13% | 22.6% | 8.4 |  |  |
+| b7s_b7_hmm2_erc_r4h | IS | -1.02 | +0.7% | -0.1% | 0% | -5.6% | 0.97 | -14.6% | 3% | 9.1% | 3.7 |  |  |
+| b7s_b7_hmm2_erc_r4h | OOS | -2.11 | +0.4% | -0.3% | 0% | -5.1% | 0.68 | -17.4% | 5% | 8.7% | 3.6 | no | no |
+| b7s_b7_hmm2_erc_r4h | INFO | -2.92 | +1.2% | -0.6% | 0% | -5.1% | 0.97 | -12.6% | 16% | 17.7% | 6.8 |  |  |
+| b7s_b7_hmm2_erc_r6h | IS | -0.65 | +0.8% | -0.1% | 0% | -5.4% | 1.16 | -12.1% | 3% | 7.8% | 3.2 |  |  |
+| b7s_b7_hmm2_erc_r6h | OOS | -1.83 | +0.4% | -0.2% | 0% | -5.3% | 0.73 | -18.5% | 4% | 7.3% | 3.1 | no | no |
+| b7s_b7_hmm2_erc_r6h | INFO | -8.69 | +0.1% | -2.2% | 0% | -4.9% | -0.45 | -12.8% | 16% | 14.8% | 5.6 |  |  |
+| b7s_b7_hmm2_erc_r12h | IS | -0.22 | +0.9% | -0.0% | 0% | -7.1% | 1.35 | -12.7% | 3% | 5.6% | 2.5 |  |  |
+| b7s_b7_hmm2_erc_r12h | OOS | -0.42 | +0.7% | -0.1% | 0% | -5.4% | 1.10 | -17.7% | 5% | 5.7% | 2.6 | **yes** | no |
+| b7s_b7_hmm2_erc_r12h | INFO | -4.37 | +0.8% | -1.0% | 0% | -5.6% | 0.56 | -12.0% | 16% | 12.0% | 4.5 |  |  |
+| b7s_b7_hmm2_erc_cusum_r1h | IS | -2.39 | +0.3% | -0.3% | 0% | -4.9% | 0.47 | -20.1% | 2% | 15.8% | 6.0 |  |  |
+| b7s_b7_hmm2_erc_cusum_r1h | OOS | -2.39 | +0.1% | -0.5% | 0% | -4.8% | 0.18 | -15.1% | 3% | 14.7% | 5.8 | no | no |
+| b7s_b7_hmm2_erc_cusum_r1h | INFO | -10.05 | -0.1% | -2.4% | 0% | -6.0% | -0.75 | -14.6% | 16% | 25.7% | 9.8 |  |  |
+| b7s_b7_hmm2_erc_cusum_r2h | IS | -2.56 | +0.3% | -0.2% | 0% | -5.2% | 0.44 | -15.5% | 1% | 12.0% | 5.1 |  |  |
+| b7s_b7_hmm2_erc_cusum_r2h | OOS | -2.36 | +0.2% | -0.4% | 0% | -4.9% | 0.38 | -15.9% | 2% | 11.7% | 5.1 | no | no |
+| b7s_b7_hmm2_erc_cusum_r2h | INFO | -10.20 | -0.7% | -2.6% | 0% | -8.3% | -1.62 | -16.6% | 7% | 23.4% | 9.1 |  |  |
+| b7s_b7_hmm2_erc_cusum_r4h | IS | -1.53 | +0.5% | -0.2% | 0% | -4.8% | 0.81 | -14.0% | 2% | 9.3% | 4.1 |  |  |
+| b7s_b7_hmm2_erc_cusum_r4h | OOS | -1.98 | +0.3% | -0.3% | 0% | -5.0% | 0.47 | -19.1% | 2% | 8.8% | 4.0 | no | no |
+| b7s_b7_hmm2_erc_cusum_r4h | INFO | -10.30 | -0.3% | -2.6% | 0% | -5.4% | -0.90 | -12.9% | 15% | 17.8% | 7.2 |  |  |
+| b7s_b7_hmm2_erc_cusum_r6h | IS | -1.02 | +0.6% | -0.1% | 0% | -5.3% | 1.02 | -11.7% | 2% | 7.9% | 3.6 |  |  |
+| b7s_b7_hmm2_erc_cusum_r6h | OOS | -1.00 | +0.3% | -0.2% | 0% | -4.8% | 0.64 | -15.2% | 2% | 7.7% | 3.6 | no | no |
+| b7s_b7_hmm2_erc_cusum_r6h | INFO | -10.38 | -0.2% | -2.4% | 0% | -5.0% | -0.89 | -12.9% | 16% | 15.2% | 6.1 |  |  |
+| b7s_b7_hmm2_erc_cusum_r12h | IS | -0.30 | +0.6% | -0.0% | 0% | -6.5% | 0.97 | -15.2% | 2% | 5.8% | 2.9 |  |  |
+| b7s_b7_hmm2_erc_cusum_r12h | OOS | 0.07 | +0.5% | +0.0% | 0% | -5.3% | 0.92 | -13.5% | 1% | 5.8% | 2.9 | no | no |
+| b7s_b7_hmm2_erc_cusum_r12h | INFO | -3.29 | +0.9% | -0.6% | 0% | -5.4% | 0.71 | -11.8% | 16% | 12.0% | 4.7 |  |  |
 
 ## Regimes, analogs, long / short, correlation (OOS unless noted)
 
@@ -88,6 +148,16 @@ Regime slices: mean daily return (days) by BTC regime (config/lab.yaml), OOS. An
 | b7_erc_cusum | +0.06% (86) | +0.14% (108) | -0.01% (329) | -0.08% (22) | +0.4% / 0% | +8.6% | +14.5% | 41% | 49% | 0.30 | -0.14 |
 | b7_hmm2_erc | +0.12% (86) | +0.22% (108) | -0.01% (329) | -0.03% (22) | +0.4% / 0% | +11.6% | +27.1% | 46% | 49% | 0.30 | -0.14 |
 | b7_hmm2_erc_cusum | +0.06% (86) | +0.15% (108) | -0.00% (329) | -0.08% (22) | +0.4% / 0% | +9.4% | +16.9% | 45% | 49% | 0.29 | -0.14 |
+| b7s_b7_hmm2_erc_r1h | +0.03% (86) | +0.20% (108) | -0.05% (329) | -0.16% (22) | +0.5% / 0% | +11.5% | +17.5% | 43% | 46% | 0.27 | -0.19 |
+| b7s_b7_hmm2_erc_r2h | +0.05% (86) | +0.20% (108) | -0.03% (329) | -0.11% (22) | +0.6% / 0% | +15.0% | +15.2% | 37% | 47% | 0.27 | -0.17 |
+| b7s_b7_hmm2_erc_r4h | +0.10% (86) | +0.20% (108) | -0.03% (329) | -0.21% (22) | +0.8% / 3% | +15.1% | +15.0% | 38% | 48% | 0.28 | -0.18 |
+| b7s_b7_hmm2_erc_r6h | +0.06% (86) | +0.21% (108) | -0.03% (329) | -0.07% (22) | +0.8% / 0% | +10.7% | +17.8% | 34% | 47% | 0.30 | -0.16 |
+| b7s_b7_hmm2_erc_r12h | +0.12% (86) | +0.22% (108) | -0.02% (329) | -0.06% (22) | +0.6% / 0% | +15.3% | +19.2% | 37% | 51% | 0.31 | -0.16 |
+| b7s_b7_hmm2_erc_cusum_r1h | +0.03% (86) | +0.20% (108) | -0.05% (329) | -0.16% (22) | +0.5% / 0% | +11.5% | +17.5% | 43% | 46% | 0.27 | -0.19 |
+| b7s_b7_hmm2_erc_cusum_r2h | +0.05% (86) | +0.14% (108) | -0.03% (329) | -0.01% (22) | +0.6% / 0% | +13.8% | +13.5% | 36% | 47% | 0.26 | -0.16 |
+| b7s_b7_hmm2_erc_cusum_r4h | +0.04% (86) | +0.14% (108) | -0.02% (329) | -0.08% (22) | +0.8% / 3% | +10.4% | +13.6% | 36% | 49% | 0.28 | -0.16 |
+| b7s_b7_hmm2_erc_cusum_r6h | +0.06% (86) | +0.15% (108) | -0.03% (329) | -0.02% (22) | +0.7% / 0% | +12.0% | +13.1% | 34% | 47% | 0.30 | -0.14 |
+| b7s_b7_hmm2_erc_cusum_r12h | +0.12% (86) | +0.14% (108) | -0.02% (329) | -0.05% (22) | +0.5% / 0% | +17.2% | +9.7% | 37% | 51% | 0.29 | -0.14 |
 
 ## Secondary: 3-day horizon (mean / median / P(> 0) / worst)
 
@@ -102,10 +172,20 @@ Regime slices: mean daily return (days) by BTC regime (config/lab.yaml), OOS. An
 | b7_erc_cusum | +0.1% / -0.1% / 43% / -4.6% | +0.1% / -0.1% / 40% / -3.0% | -0.3% / -0.2% / 23% / -1.6% |
 | b7_hmm2_erc | +0.1% / -0.1% / 43% / -4.8% | +0.2% / -0.1% / 44% / -3.6% | -0.3% / -0.2% / 27% / -1.8% |
 | b7_hmm2_erc_cusum | +0.1% / -0.1% / 43% / -4.6% | +0.1% / -0.1% / 43% / -2.8% | -0.3% / -0.2% / 23% / -1.6% |
+| b7s_b7_hmm2_erc_r1h | +0.1% / -0.1% / 37% / -4.7% | +0.0% / -0.1% / 34% / -4.0% | +0.0% / -0.2% / 37% / -1.5% |
+| b7s_b7_hmm2_erc_r2h | +0.1% / -0.1% / 38% / -4.7% | +0.1% / -0.1% / 34% / -4.0% | -0.0% / -0.1% / 33% / -1.8% |
+| b7s_b7_hmm2_erc_r4h | +0.1% / -0.1% / 39% / -5.4% | +0.1% / -0.1% / 34% / -4.1% | +0.0% / -0.2% / 37% / -1.1% |
+| b7s_b7_hmm2_erc_r6h | +0.2% / -0.1% / 41% / -5.0% | +0.1% / -0.1% / 36% / -4.0% | -0.0% / -0.2% / 40% / -1.2% |
+| b7s_b7_hmm2_erc_r12h | +0.2% / -0.1% / 43% / -6.7% | +0.1% / -0.1% / 41% / -4.1% | -0.1% / -0.1% / 33% / -1.6% |
+| b7s_b7_hmm2_erc_cusum_r1h | +0.1% / -0.1% / 37% / -4.7% | +0.0% / -0.1% / 34% / -4.0% | +0.0% / -0.2% / 37% / -1.5% |
+| b7s_b7_hmm2_erc_cusum_r2h | +0.1% / -0.1% / 38% / -3.6% | +0.0% / -0.1% / 34% / -4.0% | -0.0% / -0.1% / 37% / -1.8% |
+| b7s_b7_hmm2_erc_cusum_r4h | +0.1% / -0.1% / 39% / -3.5% | +0.1% / -0.1% / 34% / -4.1% | +0.0% / -0.2% / 40% / -1.1% |
+| b7s_b7_hmm2_erc_cusum_r6h | +0.1% / -0.1% / 42% / -4.3% | +0.1% / -0.1% / 35% / -3.9% | -0.0% / -0.2% / 40% / -1.2% |
+| b7s_b7_hmm2_erc_cusum_r12h | +0.1% / -0.1% / 42% / -5.4% | +0.1% / -0.1% / 41% / -3.2% | -0.1% / -0.1% / 33% / -1.2% |
 
 ## Margin vs the reference (b3_s3v2e_core10) and the luck threshold
 
-t = margin / standard error (see variants_b7_combo.yaml). Luck threshold for 496 declared trials: about 2.9 SE. A margin is distinguishable from selection luck only if t exceeds it.
+t = margin / standard error (see variants_b7_combo.yaml). Luck threshold for 520 declared trials: about 2.9 SE. A margin is distinguishable from selection luck only if t exceeds it.
 
 | run | half | mean 14d diff | t | median composite diff | t | beats on both (sign) | clears luck threshold on both |
 |---|---|---|---|---|---|---|---|
@@ -123,3 +203,23 @@ t = margin / standard error (see variants_b7_combo.yaml). Luck threshold for 496
 | b7_hmm2_erc | OOS | +0.01% | +0.04 | +1.46 | +1.33 | yes | no |
 | b7_hmm2_erc_cusum | IS | -0.14% | -1.09 | +0.05 | +0.07 | no | no |
 | b7_hmm2_erc_cusum | OOS | -0.31% | -1.15 | +1.05 | +1.11 | no | no |
+| b7s_b7_hmm2_erc_r1h | IS | -0.30% | -1.27 | -0.79 | -0.85 | no | no |
+| b7s_b7_hmm2_erc_r1h | OOS | -0.69% | -2.59 | -2.10 | -1.83 | no | no |
+| b7s_b7_hmm2_erc_r2h | IS | -0.07% | -0.29 | -0.39 | -0.42 | no | no |
+| b7s_b7_hmm2_erc_r2h | OOS | -0.50% | -2.00 | -2.14 | -2.44 | no | no |
+| b7s_b7_hmm2_erc_r4h | IS | +0.03% | +0.13 | +0.58 | +0.59 | yes | no |
+| b7s_b7_hmm2_erc_r4h | OOS | -0.37% | -1.59 | -1.82 | -1.49 | no | no |
+| b7s_b7_hmm2_erc_r6h | IS | +0.16% | +0.81 | +0.96 | +1.00 | yes | no |
+| b7s_b7_hmm2_erc_r6h | OOS | -0.37% | -1.37 | -1.54 | -1.71 | no | no |
+| b7s_b7_hmm2_erc_r12h | IS | +0.29% | +1.43 | +1.38 | +1.38 | yes | no |
+| b7s_b7_hmm2_erc_r12h | OOS | -0.13% | -0.63 | -0.13 | -0.15 | no | no |
+| b7s_b7_hmm2_erc_cusum_r1h | IS | -0.30% | -1.27 | -0.79 | -0.85 | no | no |
+| b7s_b7_hmm2_erc_cusum_r1h | OOS | -0.69% | -2.59 | -2.10 | -1.83 | no | no |
+| b7s_b7_hmm2_erc_cusum_r2h | IS | -0.34% | -1.42 | -0.95 | -0.98 | no | no |
+| b7s_b7_hmm2_erc_cusum_r2h | OOS | -0.61% | -2.55 | -2.07 | -2.29 | no | no |
+| b7s_b7_hmm2_erc_cusum_r4h | IS | -0.12% | -0.51 | +0.07 | +0.07 | no | no |
+| b7s_b7_hmm2_erc_cusum_r4h | OOS | -0.54% | -2.20 | -1.70 | -1.20 | no | no |
+| b7s_b7_hmm2_erc_cusum_r6h | IS | -0.01% | -0.03 | +0.59 | +0.59 | no | no |
+| b7s_b7_hmm2_erc_cusum_r6h | OOS | -0.48% | -2.07 | -0.71 | -0.86 | no | no |
+| b7s_b7_hmm2_erc_cusum_r12h | IS | -0.04% | -0.20 | +1.31 | +1.23 | no | no |
+| b7s_b7_hmm2_erc_cusum_r12h | OOS | -0.34% | -1.61 | +0.35 | +0.47 | no | no |
