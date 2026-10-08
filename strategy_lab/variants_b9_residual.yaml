@@ -1,0 +1,32 @@
+# Research block 9: RESIDUAL MOMENTUM SLEEVE (team hypothesis 2026-10-08: coins have large idiosyncratic moves even when BTC
+# is calm; a wide-universe, intraday, BTC-neutral book can capture them). The trial ledger, frozen at 520, is reopened for
+# this block by team decision. Live bot untouched.
+#
+# STEP 0 = PREMISE TEST (a measurement, NOT a strategy trial: 0 trials). Definitions fixed here BEFORE computing anything
+# (lab/residual_premise.py, report reports/residual_premise.md):
+#   Universe: Roostoo crypto pairs with Binance history (stock tokens excluded), re-selected on the 1st of each month from
+#     data up to the previous day: >= 90 days of history and 30d mean daily quote volume >= $5M. (Live spread <= 5 bps has no
+#     history: not applied; the volume floor is the proxy.) Survivorship caveat: the pool is today's Roostoo list.
+#   Daily data (UTC days, Binance daily close and quote volume). r = daily log return.
+#   beta_i(t) = cov(r_i, r_BTC) / var(r_BTC) over the 30 days ending at t-1 (point-in-time).
+#   residual 3-day move: R3_i(t) = sum over days t-2..t of (r_i - beta_i(t) x r_BTC).
+#   EVENT at day t: |R3_i(t)| >= 10% (log) AND BTC's own 3-day log move over t-2..t within +/-3% (calm BTC).
+#   Frequency: share of days with >= 1 event (all days); median number of distinct event coins per calm week
+#     (ISO week with |BTC 7-day log return| < 3%).
+#   Continuation: next-3-day residual return C = sign(R3) x sum over t+1..t+3 of (r_i - beta_i(t) x r_BTC); positive =
+#     continuation, negative = reversal. Non-overlapping events: after an event, the same coin's next 3 days cannot start
+#     another event.
+#   Costs: a hedged round trip: coin leg 2 x (0.10% taker + 0.02% slippage) (shorts 0.10% on open and close: the same),
+#     BTC hedge leg |beta| x the same => cost = 0.24% x (1 + |beta|). C_net = C - cost.
+#   Splits: event-day volume >= 2x its 30-day average (days t-30..t-1) vs not; the move includes a single-day |r_i| > 25% within
+#     t-2..t vs not; up vs down moves; IS (to 2024-12-31) vs OOS (2025-01-01 to 2026-06-30); Jul-Oct 2026 informational.
+#   Statistics: mean, median, hit rate (C > 0), t-stat with standard errors clustered by event date.
+#   GO / NO-GO (fixed now): STEP 1 is declared and run only if the mean C_net is > 0 with t >= 2 in BOTH halves, either overall or
+#     in the attention subset that STEP 1 would trade (volume >= 2x AND no single-day spike > 25%). Otherwise the block
+#     stops here and is reported as a negative result.
+#
+# STEP 1 (the sleeve, team spec 2026-10-08) will be declared in this file only after a GO, before any of its runs.
+
+declared_trials: 0
+
+runs: []
