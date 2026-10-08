@@ -1,0 +1,23 @@
+# Research block 11: historical dry run of the news risk layer's DETERMINISTIC rules on s3v2e_core10 (team request
+# 2026-10-08, item 6a). Declared BEFORE the run. 1 trial (521); global declared 520 + 1 = 521.
+#
+# Rules exactly as strategy_bot/news_layer.py (reduce-only):
+#   calendar   CPI or FOMC decision (data/events.csv) within the next 24h or less than 4h ago -> all targets x 0.7
+#              (backtest events overlay derisk with scale 0.7, applied hourly)
+#   sentiment  Crypto Fear & Greed (alternative.me daily history, data/fng.csv) >= 85 or <= 10 -> all targets x 0.8
+#              (strategies/s3v2x_fng.py, the day's value at each target computation)
+#   veto       NOT evaluated historically: there is no free archive of timestamped crypto headlines (CryptoPanic history
+#              is paid, the RSS feeds keep only recent items), and asking the LLM to recall past hacks would be fully
+#              hindsight-contaminated. The veto rule is judged only on the forward shadow log of the testing bot.
+# These two rules need no LLM, so this run is NOT hindsight-contaminated.
+# Report (lab/b11.py): how often each rule fired, return / drawdown with vs without the layer for Jan 2025 - Jun 2026 (the
+# team's window) and in both halves, and the team objective (lab/b5.py) vs b3_s3v2e_core10. Adoption for live trading is a
+# separate decision after the forward shadow log; this run only informs it.
+
+declared_trials: 1
+
+defaults:
+  record_positions: true
+
+runs:
+  - {name: b11_news_rules, trial: 521, group: news, base: b3_s3v2e_core10, strategy: s3v2x_fng, params: {fng_high: 85, fng_low: 10, fng_mult: 0.8}, events: {derisk: {types: [CPI, FOMC_DECISION], before_h: 24, after_h: 4, scale: 0.7}}}

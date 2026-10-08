@@ -337,9 +337,12 @@ class Backtest:
                     tgt = np.zeros(A)
                 if ev["derisk"] is not None and ev["derisk"][i]:
                     ev_log["derisk_bars"] += 1
-                    g = np.abs(tgt).sum()
-                    if g > ev["max_gross"]:
-                        tgt = tgt * (ev["max_gross"] / g)
+                    if ev.get("derisk_scale") is not None:      # block 11: scale all targets (news-layer calendar rule)
+                        tgt = tgt * ev["derisk_scale"]
+                    else:
+                        g = np.abs(tgt).sum()
+                        if g > ev["max_gross"]:
+                            tgt = tgt * (ev["max_gross"] / g)
                 g0 = np.abs(target * mult).sum()
                 ev_key = (cash_mode, round(float(np.abs(tgt).sum() / g0), 9) if g0 > 0 else 1.0)
             cp_new = np.zeros(A, dtype=bool)
@@ -516,7 +519,8 @@ class Backtest:
                 a = tau.searchsorted(t - pd.Timedelta(hours=float(d.get("before_h", 24))))
                 b = tau.searchsorted(t + pd.Timedelta(hours=float(d.get("after_h", 4))))
                 on[a:b] = True
-            out["derisk"], out["max_gross"] = on, float(d["max_gross"])
+            out["derisk"], out["max_gross"] = on, float(d.get("max_gross", 1.0))
+            out["derisk_scale"] = float(d["scale"]) if d.get("scale") is not None else None
         if e.get("breakout"):
             b = e["breakout"]
             out["up"], out["down"] = float(b.get("up", 0.02)), float(b.get("down", -0.02))
