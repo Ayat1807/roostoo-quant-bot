@@ -150,3 +150,15 @@ The team's hypothesis was that coins make large idiosyncratic moves while BTC is
   - the attention subset the sleeve would trade (volume ≥ 2× and no single-day spike over 25%): −0.21% (t −0.33) and −0.06% (t −0.06).
 - **No split survives both halves.** Up moves reverse OOS (−1.09%). The single-day-spike subset flips sign (+3.66% IS, −2.68% OOS).
 - **Rule result:** the declared GO rule (mean net > 0 with t ≥ 2 in both halves) fails everywhere. STEP 1 (the sleeve) was not declared and not run; no trials were added (the ledger stays at 520).
+
+## Block 10: intraday jump premise test (variants_b10_jumps.yaml, reports/jump_premise.md): NO-GO
+- **Events:** coin-specific 2h jumps (beta-adjusted vs BTC, at least ±5%, 2h volume at least 3× normal) on 5-minute Binance bars, 2023-01 to 2026-09.
+- **Frequency and capacity:** about 21–22 a week. Capacity is ample: 5% of the next 15 minutes' volume is about $180k median in-sample and $98k OOS, with a 10th percentile of $20–37k.
+- **They do not continue after costs:**
+  - in-sample the next-1h to 12h residual return is significantly negative, i.e. jumps REVERSE (−0.51% net at 1h, t −5.4; −0.54% at 3h, t −4.4);
+  - OOS it is about zero to slightly negative (−0.10% / −0.19% / −0.20% / −0.34% at 1/3/6/12h, |t| ≤ 1.5).
+- **No subset passes in both halves.** Volume ≥ 5×, move size, up or down, time of day: none.
+- **Jumps of 20% or more are disasters:** −13% to −20% OOS, but only 10 cases.
+- **Fading the jumps does not work either.** The in-sample reversal before costs (about +0.26% at 1h) barely covers the 0.25% round trip, and OOS it is negative.
+- **Outcome:** no capture bot was designed; 0 trials, the ledger stays at 520.
+- **Combined lesson with block 9** (daily residual moves): idiosyncratic crypto moves are frequent but not predictably persistent at any horizon from 1 hour to 3 days, net of realistic costs.

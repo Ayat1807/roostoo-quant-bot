@@ -48,6 +48,9 @@ Secondary: 3-day-horizon metrics overall and in the 30 analog windows.
 - Block 9 STEP 0 (residual-momentum premise test, 0 trials): NO-GO (moves frequent, no continuation after costs in either
   half); STEP 1 not declared or run. reports/residual_premise.md. Ledger still 520.
 
+- Block 10 (intraday jump premise test, 0 trials, 5-minute Binance bars in .cache/klines_5m): NO-GO (IS jumps reverse,
+  t -5.4 at 1h; OOS ~0); recorded as a finding (reports/jump_premise.md). No capture bot. Ledger still 520.
+
 ## Running
 - block 8 sweep 511-520 (tables only).
 
