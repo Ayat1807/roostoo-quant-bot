@@ -175,7 +175,7 @@ def main_report() -> int:
                      if d else f"| {n} | {ho['gross'].mean():.0%} | n/a | n/a | {J[n]['OOS']['fees_yr']:.1%} | "
                                f"{J[n]['OOS']['trades_day']:.1f} | {pct(an.get('mean'))} / {pr((ar > 0).mean())} |")
     fd = floor_days()
-    n_dec = len(pd.date_range("2020-03-01", OOS_END, freq="1D"))
+    n_dec = len(pd.date_range(pd.Timestamp("2020-03-01", tz="UTC"), OOS_END, freq="1D"))
     L += ["\n## U6 exposure floor: when it fires\n",
           f"The floor fires on {len(fd)} daily decisions ({len(fd) / n_dec:.0%} of days; IS {int((fd <= IS_END).sum())}, OOS "
           f"{int(((fd >= OOS0) & (fd <= OOS_END)).sum())}). Next-24h return on those days (mean / worst / P(>0)):\n",

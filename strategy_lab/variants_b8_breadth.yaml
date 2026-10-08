@@ -51,3 +51,14 @@ runs:
   - {name: b8_h_U6, trial: 509, group: h, base: b7_hmm2_cusum, params: {floor_breadth: 7, floor_gross: 0.5}}
   - {name: b8_h_U7, trial: 510, group: h, base: b7_hmm2_cusum, band: 0.04}
   # 511-520 sweep: resolved by lab/b8.py --resolve-sweep, appended below
+  # resolved 2026-10-08 03:34 UTC by lab/b8.py --resolve-sweep: best 2 = ['b8_h_U6', 'b8_s_U3']
+  - {name: b8s_b8_h_U6_r1h, trial: 511, group: sweep, base: b8_h_U6, rebalance_every_h: 1}
+  - {name: b8s_b8_h_U6_r2h, trial: 512, group: sweep, base: b8_h_U6, rebalance_every_h: 2}
+  - {name: b8s_b8_h_U6_r4h, trial: 513, group: sweep, base: b8_h_U6, rebalance_every_h: 4}
+  - {name: b8s_b8_h_U6_r6h, trial: 514, group: sweep, base: b8_h_U6, rebalance_every_h: 6}
+  - {name: b8s_b8_h_U6_r12h, trial: 515, group: sweep, base: b8_h_U6, rebalance_every_h: 12}
+  - {name: b8s_b8_s_U3_r1h, trial: 516, group: sweep, base: b8_s_U3, rebalance_every_h: 1}
+  - {name: b8s_b8_s_U3_r2h, trial: 517, group: sweep, base: b8_s_U3, rebalance_every_h: 2}
+  - {name: b8s_b8_s_U3_r4h, trial: 518, group: sweep, base: b8_s_U3, rebalance_every_h: 4}
+  - {name: b8s_b8_s_U3_r6h, trial: 519, group: sweep, base: b8_s_U3, rebalance_every_h: 6}
+  - {name: b8s_b8_s_U3_r12h, trial: 520, group: sweep, base: b8_s_U3, rebalance_every_h: 12}
