@@ -23,7 +23,8 @@ if [ ! -x "${BOT_DIR}/.venv/bin/python" ]; then
     "${PY}" -m venv "${BOT_DIR}/.venv"
 fi
 "${BOT_DIR}/.venv/bin/python" -m pip install --upgrade pip
-"${BOT_DIR}/.venv/bin/python" -m pip install -r "${BOT_DIR}/requirements.txt"
+# requirements-forward-test.txt = requirements.txt + the HMM packages (hmmlearn, scikit-learn, scipy) pinned for Python 3.11
+"${BOT_DIR}/.venv/bin/python" -m pip install -r "${BOT_DIR}/requirements-forward-test.txt"
 
 echo "==> Runtime folders"
 mkdir -p "${BOT_DIR}/logs" "${BOT_DIR}/state"
@@ -37,5 +38,6 @@ else
 fi
 
 echo "==> Sanity check"
-"${BOT_DIR}/.venv/bin/python" -c "import requests, yaml, dotenv, pandas, numpy; print('imports OK: pandas', pandas.__version__)"
+"${BOT_DIR}/.venv/bin/python" -c "import requests, yaml, dotenv, pandas, numpy, scipy, sklearn, hmmlearn; print('imports OK: pandas', pandas.__version__, 'scipy', scipy.__version__, 'hmmlearn', hmmlearn.__version__)"
+echo "HMM parity vs the lab (needs Binance access, ~1-2 min): ${BOT_DIR}/.venv/bin/python ${BOT_DIR}/check_hmm_parity.py"
 echo "Done. Next: see RUNNING.md (tmux or systemd)."

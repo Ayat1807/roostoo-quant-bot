@@ -1,8 +1,8 @@
-# Extra packages for the HMM2 + CUSUM forward test (config_testing_hmm_cusum.yaml, regime_live.py) only.
-# The live competition bot does not need them: pip install -r requirements-forward-test.txt
+# Extra packages for the HMM2 + CUSUM bots (regime_live.py): forward test and Option B. Pinned to versions that exist for
+# Python 3.11 (EC2, Amazon Linux 2023) and are installed there with numpy 2.4.6 / pandas 3.0.6 (requirements.txt).
+# joblib and threadpoolctl come in as scikit-learn dependencies (left to pip).
+# After installing on a new machine run: .venv/bin/python check_hmm_parity.py
 -r requirements.txt
 hmmlearn==0.3.3
 scikit-learn==1.9.1
-scipy==1.18.1
-joblib==1.6.0
-threadpoolctl==3.7.0
+scipy==1.17.1
