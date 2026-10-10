@@ -385,3 +385,42 @@ Vetoes with what each coin did (false alarm or not), how often the calendar / Fe
 would-be P&L difference.
 
 **Turn it off:** set `news_layer: {enabled: false}` and restart, or stop the bot. The layer never changes trades in shadow mode.
+
+## 16. OPTION A on the competition key: s3v2e core10 with target_vol 0.6 (config_competition_s3v2e_tv06.yaml)
+
+**Why:** team decision 2026-10-10. The pre-agreed rule triggered (outside the top 30 after 2-3 days; 47th at -2.8%), so
+exposure goes up. **Backtest caveat** (`../strategy_lab/reports/stats_card_s3v2e_tv06_competition.md`): tv0.6 was worse than
+tv0.4 out of sample: Sharpe 0.59 vs 1.38, max drawdown -21.6% vs -12.0%, worst 14 days -13.0% vs -5.2%, mean 14-day return
++0.6% vs +0.8%. In-sample it returned more (+116% vs +98%) with about twice the drawdown.
+
+**What changes:** only `strategy.target_vol` (0.4 -> 0.6), so per-coin targets are 1.5x larger with the same signs. It uses the
+SAME `logs_competition_s3v2e/`, `state_competition_s3v2e/` and `KILL_competition_s3v2e` (continuous live record). On restart
+the saved tv0.4 targets are rejected as stale, fresh tv0.6 targets are computed once, the existing positions (incl. shorts)
+are read from the account and only traded toward the new targets (6pp band). Nothing is flattened. Tested in
+`tests/test_option_a.py` (restart from a live state holding shorts, 30-day replay, lab parity).
+
+**When:** right after **00:00 UTC** (e.g. 00:05-00:50 UTC). Then the fresh targets use the same bar as the daily schedule,
+so the switch only resizes positions. A restart later in the day computes targets from newer bars, which can flip a coin
+whose signal changed since 00:00 (seen in the test at 11:22 UTC: one coin went long -> short).
+
+**Deploy (Sunday 2026-10-11, never 2026-10-13 to 10-15):**
+```bash
+cd ~/Trading_Competition && git pull && cd strategy_bot && .venv/bin/python -m tests.test_safety
+.venv/bin/python status.py --config config_competition_s3v2e.yaml          # note equity and positions before
+tmux send-keys -t competition_s3v2e C-c; sleep 15; tmux ls                  # session gone (else: tmux kill-session -t competition_s3v2e)
+tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e_tv06.yaml --live'
+```
+Do NOT touch `KILL_competition_s3v2e` (it must stay absent). The session name stays `competition_s3v2e`.
+
+**Check:**
+```bash
+.venv/bin/python status.py --config config_competition_s3v2e_tv06.yaml
+grep 'saved targets ignored\|targets computed' logs_competition_s3v2e/bot.log | tail -n 3      # one fresh computation
+tail -n 20 logs_competition_s3v2e/orders.jsonl
+```
+
+**Rollback to tv0.4** (same procedure, same paths; targets are recomputed once again, positions traded back toward tv0.4):
+```bash
+tmux send-keys -t competition_s3v2e C-c; sleep 15; tmux ls
+tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e.yaml --live'
+```
