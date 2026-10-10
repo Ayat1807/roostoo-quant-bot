@@ -13,7 +13,8 @@
              on a universe without BTC): their weight is set to 0 after sizing.
   bars_per_year: vol annualisation; 8760 for hourly bars (live), 17520 for 30m bars
              (s3v2_fast: horizons/vol_win/regime_win are then counted in 30m bars).
-  max_gross: gross cap (default 1.0 = live). floor_breadth / floor_gross (block 8 U6): when at least floor_breadth coins
+  max_gross: gross cap (default 1.0 = live). floor_breadth (a count) or floor_share (a share of the coins, Option B) /
+             floor_gross (block 8 U6): when at least that many coins
              share the same signal sign and the gross is below floor_gross, all weights are scaled up proportionally to
              floor_gross (per-coin cap max_w still applies; default off).
 Verified equal to s3v2 with defaults by tests/test_strategies.py.
@@ -31,7 +32,7 @@ from lab.strategies import Strategy, live
 DEFAULTS = {**live.s3v2.DEFAULTS, "n_divisor": None, "parking_asset": None, "parking_frac": 1.0,
             "bars_per_year": 24 * 365, "signal": "sign", "tstat_cap": 2.0,
             "vol_method": "std", "ewma_halflife": 168,
-            "no_trade": [], "max_gross": 1.0, "floor_breadth": None, "floor_gross": 0.5}
+            "no_trade": [], "max_gross": 1.0, "floor_breadth": None, "floor_share": None, "floor_gross": 0.5}
 
 
 class S3v2x(Strategy):
@@ -69,11 +70,12 @@ class S3v2x(Strategy):
         bull = btc.iloc[-1] > btc.iloc[-int(p["regime_win"]):].mean()
         raw = raw.where(raw >= 0, raw * (float(p["short_scale_bull"]) if bull else 1.0))
         raw = raw.clip(-float(p["max_w"]), float(p["max_w"]))
-        if p["floor_breadth"] is not None:       # block 8 U6: exposure floor when most coins trend the same way
+        if p["floor_breadth"] is not None or p["floor_share"] is not None:   # exposure floor (block 8 U6; Option B share)
             sg = np.sign(sig)
             agree = max(int((sg > 0).sum()), int((sg < 0).sum()))
+            need = int(p["floor_breadth"]) if p["floor_breadth"] is not None else float(p["floor_share"]) * len(sg)
             g0 = float(raw.abs().sum())
-            if agree >= int(p["floor_breadth"]) and 0 < g0 < float(p["floor_gross"]):
+            if agree >= need and 0 < g0 < float(p["floor_gross"]):
                 raw = (raw * float(p["floor_gross"]) / g0).clip(-float(p["max_w"]), float(p["max_w"]))
                 self.__dict__.setdefault("stats", {"floor_fired": 0, "decisions": 0})["floor_fired"] += 1
             self.__dict__.setdefault("stats", {"floor_fired": 0, "decisions": 0})["decisions"] += 1

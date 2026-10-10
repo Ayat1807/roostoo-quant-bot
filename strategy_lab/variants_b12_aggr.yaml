@@ -1,0 +1,27 @@
+# Research block 12: AGGRESSIVE options for the competition bot (team decision 2026-10-10: pre-agreed rule triggered, outside
+# the top 30 after 2-3 days, 47th at -2.8%). Declared BEFORE any run in this file. 3 trials (522-524); global 521 + 3 = 524.
+# Everything builds on b7_hmm2_cusum (s3v2e core10 + walk-forward HMM2 regime + CUSUM cut 4 / 50%, the forward-test candidate).
+#
+#   522 hmm_cusum_aggr (OPTION B): target_vol 0.8; short_scale_bull 1.0 (full shorts always); universe R1-15 (top 15 Roostoo
+#       coins by 30d volume, >= 90 days of history, >= $10M/day, monthly point-in-time, BTC always included) with sizing divisor
+#       10 (as block 8 U1); band 0.04; exposure floor: gross scaled up to 60% when >= 70% of the coins share the signal sign
+#       (cap 100%, per-coin cap 30%); targets refreshed every 12h (00:00 and 12:00 bars); HMM crisis scaling unchanged
+#       (targets x (1 - 0.5 p_crisis), i.e. floored at 50%); CUSUM cut 4 / 50% unchanged (cuts reset at every refresh);
+#       drawdown brake -6% (halve) / -10% (flat 24h) instead of -4% / -7%.
+#   523 aggr_mid: HMM2 + CUSUM with target_vol 0.6 and band 0.05, daily refresh, core10.
+#   524 aggr_15: HMM2 + CUSUM on R1-15 (divisor 10) with target_vol 0.6, band 0.06, daily refresh.
+# Comparison (lab/b12.py, reports/aggr_comparison.md): the current live config (b3_s3v2e_core10), OPTION A (b3_s3v2e_tv06_core10)
+# and 522-524: stats cards, team objective (lab/b5.py), worst 14d, P(14d <= -10%), 3-day horizon metrics, the 30 analog-to-today
+# windows and the broad-down windows (BTC 14d < -5% AND > 70% of pool coins down). Data to 2026-06-30, both halves; Jul-Oct
+# informational. These runs are options for a team decision on more exposure, not adoption candidates under the block-5 rule.
+
+declared_trials: 3
+
+defaults:
+  base: b7_hmm2_cusum
+  record_positions: true
+
+runs:
+  - {name: b12_hmm_cusum_aggr, trial: 522, group: aggr, band: 0.04, rebalance_every_h: 12, dd_soft: -0.06, dd_hard: -0.10, universe: {type: satellite, rule: R1, n_liquid: 15, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {target_vol: 0.8, short_scale_bull: 1.0, n_divisor: 10, floor_share: 0.7, floor_gross: 0.6}}
+  - {name: b12_aggr_mid, trial: 523, group: aggr, band: 0.05, params: {target_vol: 0.6}}
+  - {name: b12_aggr_15, trial: 524, group: aggr, universe: {type: satellite, rule: R1, n_liquid: 15, min_history_days: 90, min_quote_volume_usd: 10000000.0, crash_guard: false, exclude_core: false, always_include_btc: true}, params: {target_vol: 0.6, n_divisor: 10}}
