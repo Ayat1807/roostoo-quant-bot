@@ -1,7 +1,10 @@
 {
- "total_runs": 536,
+ "total_runs": 539,
  "distinct": [
   "b11_news_rules",
+  "b12_aggr_15",
+  "b12_aggr_mid",
+  "b12_hmm_cusum_aggr",
   "b3_c30_s3v2e_xsmom_tm10",
   "b3_c50_s3v2e_xsmom_besti",
   "b3_c50_s3v2e_xsmom_tm10",
@@ -519,7 +522,7 @@
   "u_top30",
   "u_top30_div10"
  ],
- "updated": "2026-10-08 07:49 UTC",
+ "updated": "2026-10-10 09:37 UTC",
  "corrections": [
   {
    "date": "2026-10-05",
