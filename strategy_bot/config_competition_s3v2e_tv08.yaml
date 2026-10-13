@@ -1,0 +1,81 @@
+# strategy_bot COMPETITION configuration: s3v2e on core10 with target_vol 0.8 / max_w 0.4 (strategy_lab b3_s3v2e_tv08_w04_core10,
+# trial 214), brake -6% / -10% with a 12h flat period. Team decision 2026-10-12: switch to the most aggressive TESTED option
+# for the final week; the live s3v2e bot (tv0.4, brake -4% / -7%, flat 24h) was stopped out by the hard brake after a spike.
+# Backtest caveat (stats card): tv0.8 w0.4 had a LOWER OOS Sharpe than tv0.4 and about twice the drawdown; see the card.
+# SAME log / state / KILL paths as config_competition_s3v2e.yaml, so the live record stays continuous. On restart the
+# strategy change makes the saved targets stale: fresh targets are computed at once from the current (flat) account;
+# brake_reset_before clears the old brake's cooloff ONCE at the first decision (recorded in state/risk.json), and the
+# drawdown peak restarts at the equity at that moment. Rollback: restart with config_competition_s3v2e.yaml (DEPLOY.md
+# section 17). Start: python bot.py --config config_competition_s3v2e_tv08.yaml --live
+
+dry_run: true              # true = log intended orders only (default). Live needs --live or false here.
+poll_s: 60                 # one ticker call (all pairs) per minute
+
+# --- universe: checked at startup (must be crypto, CanTrade, and have live ticker data) ---
+universe: [BTC/USD, ETH/USD, SOL/USD, BNB/USD, XRP/USD, ADA/USD, DOGE/USD, AVAX/USD, LINK/USD, DOT/USD]
+
+# --- strategy plug-in (strategies/<name>.py) and its parameters ---
+strategy:
+  name: s3v2
+  horizons: [24, 72, 168, 336]   # hours: 1d, 3d, 7d, 14d momentum
+  vol_win: 336                   # 14-day realised volatility (hourly returns)
+  regime_win: 336                # BTC regime: price vs its 14-day mean
+  target_vol: 0.80               # was 0.40 (team decision 2026-10-12, see header)
+  short_scale_bull: 0.5          # shorts at half size while BTC > its 14-day mean
+  max_w: 0.40                    # was 0.30: the tested tv0.8 variant (b3_s3v2e_tv08_w04_core10) uses a 40% per-asset cap
+  btc_pair: BTC/USD
+  vol_method: ewma               # EWMA vol (strategy_lab block 2: e_ewma_vol, passed the final exam)
+  ewma_halflife: 168             # hours (7 days)
+  ewma_window: 800               # hourly returns used (= lab backtest lookback); "std" = old 14d vol
+
+allow_short: true          # false: negative weights become 0 (fallback if /v6 is blocked)
+
+# --- liquidity guard (default on): at each decision, skip pairs whose Roostoo spread is wider than
+#     max_spread_bps or whose 24h volume (ticker UnitTradeValue) is below min_volume_usd; logged ---
+liquidity_guard: {enabled: true, max_spread_bps: 15, min_volume_usd: 1000000}
+
+capital_cap_usd: null      # full equity (competition account)
+sizing_frac: 0.97          # weights sized against 97% of equity: at 100% gross (tv0.8) longs + short collateral + fees
+                           # exceed the USD balance and the last short is rejected every hour (seen in the 30-day replay)
+cash_cap_orders: true      # BUY_LONG / OPEN_SHORT sized down to the free USD at order time (logged: capped_from / skipped)
+
+# --- execution ---
+rebalance_hour_utc: 0      # targets recomputed once a day (and at first start)
+band: 0.06                 # only trade a pair if its weight is off target by > 6 pp
+activity_guard_hour_utc: 20
+# If nothing traded today by 20:00 UTC:
+#   full    = rebalance every pair with a 1 pp band (current live behaviour)
+#   minimal = ONE trade on the pair furthest from target, size min(gap, guard_max_frac)
+#   off     = no guard (fails the one-trade-per-day rule on ~5 of 14 days)
+# strategy_lab (2020-2026): minimal = best Sharpe, every day active; full adds +-20pp/yr
+# path variance. Team decision 2026-10-05: minimal. No artificial round trip when the book
+# is flat and all targets are 0 (KILL / hard brake stop): those days may stay inactive.
+activity_guard: minimal
+guard_band: 0.01           # used by `full`
+guard_max_frac: 0.02       # used by `minimal`: max trade size as a fraction of sizing equity
+entry_order: limit         # limit at our side of the touch (0.05% maker), market fallback
+limit_wait_s: 300          # cancel unfilled limit after 5 min, MARKET the remainder
+limit_poll_s: 15
+
+# --- risk (drawdown brake ON; widened 2026-10-12 so one spike cannot take us out for a whole day) ---
+dd_soft: -0.06             # equity vs rolling 14-day peak: halve exposure (was -0.04)
+dd_hard: -0.10             # go flat for cooloff_h, then reset the peak (was -0.07)
+cooloff_h: 12              # was 24
+peak_days: 14
+brake_reset_before: "2026-10-16T00:00:00Z"   # ONE-SHOT: the first decision before this time clears the old brake's cooloff
+                                             # and restarts the peak at the current equity (state/risk.json: brake_reset)
+
+# --- key safety ---
+allow_competition: true    # competition key allowed (10-second warning at start)
+env_file: .env.competition   # competition key pair (git-ignored); the testing bot keeps .env
+stats_card: strategy_lab/reports/stats_card_s3v2e_tv08_competition.md   # REQUIRED for competition configs (tests/test_safety.py)
+
+# --- files: SAME as config_competition_s3v2e.yaml (continuous live record) ---
+bootstrap_hours: 2000          # >= 800 bars needed by s3v2 (ewma_window); 2000 as the other configs
+paths:
+  log_dir: logs_competition_s3v2e
+  state_dir: state_competition_s3v2e
+  kill_file: KILL_competition_s3v2e   # touch KILL_competition_s3v2e to flatten this bot only
+bot_log:
+  max_bytes: 5000000
+  backups: 5

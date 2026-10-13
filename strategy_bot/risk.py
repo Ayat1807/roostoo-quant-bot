@@ -21,18 +21,23 @@ from infra import replace_with_retry
 class RiskManager:
     def __init__(self, soft: float = -0.04, hard: float = -0.07, cooloff_h: int = 24,
                  peak_days: int = 14, state: Path | str = "state/risk.json",
-                 kill_file: Path | str = "KILL") -> None:
+                 kill_file: Path | str = "KILL", reset_before: pd.Timestamp | None = None) -> None:
         self.soft, self.hard, self.cool = soft, hard, pd.Timedelta(hours=cooloff_h)
         self.win = pd.Timedelta(days=peak_days)
         self.state_path, self.kill_file = Path(state), Path(kill_file)
         self.hist: list[tuple[pd.Timestamp, float]] = []
         self.flat_until: pd.Timestamp | None = None
         self.reset_at: pd.Timestamp | None = None
+        # one-shot brake reset (config brake_reset_before): the first scale() before that time clears a running
+        # cooloff and restarts the peak at the current equity; recorded in the state so a later restart does not repeat it
+        self.reset_before = pd.Timestamp(reset_before) if reset_before is not None else None
+        self.reset_done: str | None = None
         if self.state_path.exists():
             d = json.loads(self.state_path.read_text(encoding="utf-8"))
             self.hist = [(pd.Timestamp(t), e) for t, e in d.get("hist", [])]
             self.flat_until = pd.Timestamp(d["flat_until"]) if d.get("flat_until") else None
             self.reset_at = pd.Timestamp(d["reset_at"]) if d.get("reset_at") else None
+            self.reset_done = d.get("brake_reset")
 
     def kill_active(self) -> bool:
         return self.kill_file.exists()
@@ -42,6 +47,10 @@ class RiskManager:
         if self.kill_active():
             return 0.0, "kill_switch"
         self.hist = [(t, e) for t, e in self.hist if t > now - self.win] + [(now, equity)]
+        note = ""
+        if self.reset_before is not None and now < self.reset_before and self.reset_done != str(self.reset_before):
+            note = f" brake_reset(was flat_until={self.flat_until})"
+            self.flat_until, self.reset_at, self.reset_done = None, now, str(self.reset_before)
         floor = self.reset_at or pd.Timestamp(0, tz="UTC")
         peak = (max(e for t, e in self.hist if t >= floor)
                 if any(t >= floor for t, _ in self.hist) else equity)
@@ -55,7 +64,7 @@ class RiskManager:
         elif dd < self.soft:
             out = (0.5, f"soft_brake dd={dd:.4f}")
         self._save()
-        return out
+        return out[0], out[1] + note
 
     def _save(self) -> None:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -63,5 +72,6 @@ class RiskManager:
         tmp.write_text(json.dumps({
             "hist": [(str(t), e) for t, e in self.hist],
             "flat_until": str(self.flat_until) if self.flat_until else None,
-            "reset_at": str(self.reset_at) if self.reset_at else None}), encoding="utf-8")
+            "reset_at": str(self.reset_at) if self.reset_at else None,
+            "brake_reset": self.reset_done}), encoding="utf-8")
         replace_with_retry(tmp, self.state_path)

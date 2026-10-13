@@ -190,10 +190,13 @@ class StrategyBot:
                               float(cfg["limit_wait_s"]), self.dry, cfg.get("capital_cap_usd"),
                               float(cfg.get("limit_poll_s", 15)), sleep=self._sleep_with_heartbeat,
                               should_stop=lambda: self.stop_requested)
+        self.port.sizing_frac = float(cfg.get("sizing_frac", 1.0))
+        self.port.cash_cap = bool(cfg.get("cash_cap_orders", False))
         if not self.dry:
             self.cancel_stale_orders()
         self.risk = RiskManager(cfg["dd_soft"], cfg["dd_hard"], cfg["cooloff_h"],
-                                cfg.get("peak_days", 14), self.state_dir / "risk.json", self.kill_file)
+                                cfg.get("peak_days", 14), self.state_dir / "risk.json", self.kill_file,
+                                pd.Timestamp(cfg["brake_reset_before"]) if cfg.get("brake_reset_before") else None)
         self.logs.write("decisions", {
             "event": "start", "pairs": self.pairs, "dropped": dropped, "dry_run": self.dry,
             "strategy": cfg["strategy"], "allow_short": cfg["allow_short"],

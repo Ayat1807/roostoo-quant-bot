@@ -424,3 +424,55 @@ tail -n 20 logs_competition_s3v2e/orders.jsonl
 tmux send-keys -t competition_s3v2e C-c; sleep 15; tmux ls
 tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e.yaml --live'
 ```
+
+## 17. Switch to the aggressive config (config_competition_s3v2e_tv08.yaml): tv0.8 / max_w 0.4, brake -6% / -10%, flat 12h
+
+**Why:** team decision 2026-10-12. The live s3v2e bot (tv0.4) was stopped out by the -7% hard brake after a spike (flat 24h,
+then re-entry only by the band rule / next daily target). For the final week the team accepts a higher drawdown risk: the
+most aggressive variant with an existing backtest, s3v2e tv0.8 w0.4 (`b3_s3v2e_tv08_w04_core10`, trial 214), with the brake
+widened to -6% (halve) / -10% (flat) and the flat period cut to 12h. **Backtest caveat**
+(`../strategy_lab/reports/stats_card_s3v2e_tv08_competition.md`, `../strategy_lab/reports/aggr_comparison.md`): OOS Sharpe
+0.30 vs 1.38 live, max drawdown -26.7% vs -12.0%, worst 14 days -15.9% vs -5.2%, P(14d <= -10%) 6% vs 0%. OPTION B
+(hmm_cusum_aggr) is NOT deployed: its bot code is untested (branch `option-b-wip`) and its backtest is worse still.
+
+**What changes:** `strategy.target_vol` 0.4 -> 0.8, `strategy.max_w` 0.3 -> 0.4, `dd_soft` -0.06, `dd_hard` -0.10,
+`cooloff_h` 12, and `brake_reset_before: 2026-10-16T00:00:00Z` (ONE-SHOT: the first decision before that time clears the
+old brake's running cooloff and restarts the drawdown peak at the equity at that moment; recorded as `brake_reset` in
+`state_competition_s3v2e/risk.json`, so later restarts and later cooloffs behave normally). SAME `logs_competition_s3v2e/`,
+`state_competition_s3v2e/` and `KILL_competition_s3v2e` (continuous live record). On restart the saved tv0.4 targets are
+stale (config changed): fresh tv0.8 targets are computed at once from the current (flat) account and the positions are
+opened immediately. Tested in `tests/test_option_tv08.py` (restart from a flat, braked state; 30-day replay; lab parity).
+
+**Confirm the brake first (what stopped the live bot, and when it would re-enter):**
+```bash
+cd ~/Trading_Competition/strategy_bot
+grep -o '"brake": "[^"]*"' logs_competition_s3v2e/equity.jsonl | uniq -c | tail -n 8     # hard_stop dd=... then cooloff ...
+grep -n 'hard_stop' logs_competition_s3v2e/equity.jsonl | head -n 1                        # the hour it triggered
+grep 'brake=' logs_competition_s3v2e/bot.log | grep -v 'brake=dd=' | tail -n 5
+cat state_competition_s3v2e/risk.json                                                      # flat_until = re-entry time (old config)
+```
+
+**Deploy (never 2026-10-13 to 10-15, CPI freeze; the 2026-10-12 window was missed, so brake_reset_before is set to 2026-10-16 00:00 UTC: a start on 10-12 or 10-16 both trigger the one-shot reset):**
+```bash
+cd ~/Trading_Competition && git pull && cd strategy_bot && .venv/bin/python -m tests.test_safety
+.venv/bin/python status.py --config config_competition_s3v2e.yaml          # note equity before (should be ~all USD)
+tmux send-keys -t competition_s3v2e C-c; sleep 15; tmux ls                  # session gone (else: tmux kill-session -t competition_s3v2e)
+tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e_tv08.yaml --live'
+```
+Do NOT touch `KILL_competition_s3v2e` (it must stay absent). The session name stays `competition_s3v2e`.
+
+**Check (within a few minutes):**
+```bash
+.venv/bin/python status.py --config config_competition_s3v2e_tv08.yaml
+tail -n 2 logs_competition_s3v2e/equity.jsonl | grep -o '"brake": "[^"]*"'                 # "dd=0.0000 brake_reset(...)" then "dd=..."
+grep 'saved targets ignored\|targets computed' logs_competition_s3v2e/bot.log | tail -n 3  # one fresh computation
+tail -n 20 logs_competition_s3v2e/orders.jsonl                                              # positions opened
+cat state_competition_s3v2e/risk.json                                                       # flat_until null, brake_reset set
+```
+
+**Rollback to tv0.4** (same paths; targets recomputed once, positions traded back toward tv0.4 by the band; the old
+brake settings apply again but the cooloff is gone):
+```bash
+tmux send-keys -t competition_s3v2e C-c; sleep 15; tmux ls
+tmux new-session -d -s competition_s3v2e -c /home/ec2-user/Trading_Competition/strategy_bot '.venv/bin/python bot.py --config config_competition_s3v2e.yaml --live'
+```

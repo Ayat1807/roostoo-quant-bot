@@ -47,6 +47,8 @@ class Portfolio:
         self.c, self.pairs, self.info, self.logs = client, pairs, info, logs
         self.entry, self.limit_wait_s, self.dry = entry, limit_wait_s, dry_run
         self.cap = capital_cap_usd
+        self.cash_cap = False       # config cash_cap_orders: BUY_LONG / OPEN_SHORT sized down to the free USD at order time
+        self.sizing_frac = 1.0      # config sizing_frac: weights sized against sizing x this (cash reserve for fees / short collateral)
         self.poll_s, self.sleep, self.should_stop = poll_s, sleep, should_stop
         self.last_snapshot: dict[str, Any] = {}
         self.order_tags: dict[str, dict[str, float]] = {}   # sleeve mode: pair -> {sleeve: usd}
@@ -85,7 +87,7 @@ class Portfolio:
             short_val += pv
             expo[pair] = q_long * bid - q_short * ask
             units[pair] = (q_long, q_short, num(w, "Free"))
-        sizing = min(equity, self.cap) if self.cap else equity
+        sizing = (min(equity, self.cap) if self.cap else equity) * self.sizing_frac
         self.last_snapshot = {"equity": equity, "sizing_equity": sizing,
                               "usd": num(usd, "Free") + num(usd, "Lock"),
                               "usd_free": num(usd, "Free"), "long_value": long_val,
@@ -136,6 +138,20 @@ class Portfolio:
                 log.info("stop requested: skipping remaining planned orders")
                 break
             try:
+                if self.cash_cap and action in ("BUY_LONG", "OPEN_SHORT"):
+                    # at full gross a buy can exceed the free USD (drift, short collateral): size it to the cash
+                    # instead of letting the exchange reject it every hour
+                    free = num(extract_wallet(self.c.balance()).get("USD", {}), "Free")
+                    room = max(free - 1.0, 0.0) / 1.002
+                    if room < usd:
+                        if room < max(1.0, float(self.info[p]["MiniOrder"])):
+                            self.logs.write("orders", {"action": action, "pair": p, "usd": round(usd, 2),
+                                                       "skipped": f"cash: free USD {free:.2f}", "dry_run": self.dry})
+                            log.info("%s %s skipped: free USD %.2f", action, p, free)
+                            continue
+                        self.logs.write("orders", {"action": action, "pair": p, "usd": round(room, 2),
+                                                   "capped_from": round(usd, 2), "free_usd": round(free, 2), "dry_run": self.dry})
+                        usd = room
                 if self._execute(action, p, usd, tick, units):
                     n += 1
             except requests.RequestException as exc:
